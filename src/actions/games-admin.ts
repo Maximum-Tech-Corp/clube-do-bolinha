@@ -109,6 +109,39 @@ export async function cancelGame(gameId: string): Promise<{ error?: string }> {
   return {};
 }
 
+export async function toggleTournament(
+  gameId: string,
+  isTournament: boolean
+): Promise<{ error?: string }> {
+  const teamId = await getAdminTeamId();
+  if (!teamId) return { error: "Não autorizado." };
+
+  const service = createServiceClient();
+  const { data: game } = await service
+    .from("games")
+    .select("id, draw_done, status")
+    .eq("id", gameId)
+    .eq("team_id", teamId)
+    .maybeSingle();
+
+  if (!game) return { error: "Jogo não encontrado." };
+  if (!game.draw_done) return { error: "O sorteio ainda não foi realizado." };
+  if (game.status === "cancelled") return { error: "Jogo cancelado." };
+
+  // TODO (Step 11/12): ao desmarcar, verificar se já existem placares registrados
+  // em game_team_players. Se sim, avisar que os placares serão perdidos ou bloquear.
+
+  const { error } = await service
+    .from("games")
+    .update({ is_tournament: isTournament })
+    .eq("id", gameId);
+
+  if (error) return { error: "Erro ao atualizar modo campeonato." };
+
+  revalidatePath(`/dashboard/jogos/${gameId}`);
+  return {};
+}
+
 export async function removeConfirmedPlayer(
   gameId: string,
   playerId: string

@@ -30,6 +30,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { StaminaLevel } from "@/types/database.types";
+import { getDrawInfo } from "@/lib/draw-algorithm";
+import { DrawModal } from "@/components/dashboard/draw-modal";
 
 interface Player {
   id: string;
@@ -416,58 +418,6 @@ function CreateAndAddPlayerPanel({ gameId }: { gameId: string }) {
   );
 }
 
-// ── Validação do sorteio ─────────────────────────────────────────────────────
-
-const TEAM_SIZE = 5;
-
-function getDrawValidation(count: number): {
-  canDraw: boolean;
-  message: string | null;
-  isWarning: boolean;
-} {
-  const teams = Math.floor(count / TEAM_SIZE);
-  const leftover = count % TEAM_SIZE;
-
-  if (teams < 3) {
-    const missing = 15 - count;
-    return {
-      canDraw: false,
-      message: `Mínimo 15 jogadores (3 times de 5). Faltam ${missing}.`,
-      isWarning: false,
-    };
-  }
-  if (teams === 5 && leftover > 0) {
-    return {
-      canDraw: false,
-      message: `5 times completos + ${leftover} jogador(es) sobrando. Remova os excedentes.`,
-      isWarning: false,
-    };
-  }
-  if (teams > 5) {
-    return {
-      canDraw: false,
-      message: `Jogadores demais (${count}). Remova até fechar em 25 ou menos.`,
-      isWarning: false,
-    };
-  }
-  if (leftover === 1 || leftover === 2) {
-    const needed = 3 - leftover;
-    return {
-      canDraw: false,
-      message: `${leftover} jogador(es) sobrando sem time. Adicione mais ${needed} ou remova ${leftover}.`,
-      isWarning: false,
-    };
-  }
-  if (leftover === 3 || leftover === 4) {
-    return {
-      canDraw: true,
-      message: `Terá 1 time incompleto com ${leftover} jogadores.`,
-      isWarning: true,
-    };
-  }
-  return { canDraw: true, message: null, isWarning: false };
-}
-
 // ── Componente principal ─────────────────────────────────────────────────────
 
 export function GameDetailClient({
@@ -477,7 +427,8 @@ export function GameDetailClient({
   waitlist,
   availablePlayers,
 }: Props) {
-  const drawValidation = getDrawValidation(confirmed.length);
+  const [drawModalOpen, setDrawModalOpen] = useState(false);
+  const drawInfo = getDrawInfo(confirmed.length);
 
   return (
     <div className="space-y-6">
@@ -485,21 +436,25 @@ export function GameDetailClient({
       <div className="space-y-2">
         <div className="flex gap-2 flex-wrap">
           {!drawDone && (
-            // Botão de sorteio: lógica implementada no Step 10
-            <Button disabled={!drawValidation.canDraw}>Rodar sorteio</Button>
+            <Button
+              disabled={!drawInfo.canDraw}
+              onClick={() => setDrawModalOpen(true)}
+            >
+              Rodar sorteio
+            </Button>
           )}
           {drawDone && (
             <Button disabled variant="secondary">Sorteio realizado</Button>
           )}
           <CancelGameButton gameId={gameId} />
         </div>
-        {!drawDone && drawValidation.message && (
+        {!drawDone && drawInfo.message && (
           <p
             className={`text-sm ${
-              drawValidation.isWarning ? "text-yellow-600" : "text-destructive"
+              drawInfo.isWarning ? "text-yellow-600" : "text-destructive"
             }`}
           >
-            {drawValidation.message}
+            {drawInfo.message}
           </p>
         )}
       </div>
@@ -528,6 +483,13 @@ export function GameDetailClient({
         />
         <CreateAndAddPlayerPanel gameId={gameId} />
       </div>
+
+      <DrawModal
+        gameId={gameId}
+        confirmedCount={confirmed.length}
+        open={drawModalOpen}
+        onOpenChange={setDrawModalOpen}
+      />
     </div>
   );
 }

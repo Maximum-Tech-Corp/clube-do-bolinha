@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { GameDetailClient } from "@/components/dashboard/game-detail-client";
+import { TournamentToggle } from "@/components/dashboard/tournament-toggle";
 import { Badge } from "@/components/ui/badge";
 
 interface Props {
@@ -138,14 +139,17 @@ export default async function GameDetailPage({ params }: Props) {
       </div>
 
       {game.status === "open" && game.draw_done && (
-        <div className="rounded-lg border border-border p-3 text-sm text-muted-foreground">
-          Sorteio já realizado.{" "}
-          <Link
-            href={`/dashboard/jogos/${gameId}/times`}
-            className="underline text-foreground"
-          >
-            Ver times →
-          </Link>
+        <div className="rounded-lg border border-border p-3 space-y-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Sorteio realizado.</span>
+            <Link
+              href={`/dashboard/jogos/${gameId}/times`}
+              className="underline text-foreground text-sm"
+            >
+              Ver times →
+            </Link>
+          </div>
+          <TournamentToggle gameId={gameId} isTournament={game.is_tournament} />
         </div>
       )}
 

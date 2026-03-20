@@ -1,0 +1,113 @@
+"use server";
+
+import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
+import { runDraw, getDrawInfo } from "@/lib/draw-algorithm";
+import type { StaminaLevel } from "@/types/database.types";
+
+async function getAdminTeamId(): Promise<string | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const service = createServiceClient();
+  const { data: admin } = await service
+    .from("admins")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+  if (!admin) return null;
+
+  const { data: team } = await service
+    .from("teams")
+    .select("id")
+    .eq("admin_id", admin.id)
+    .single();
+
+  return team?.id ?? null;
+}
+
+export async function executeDraw(
+  gameId: string,
+  isTournament: boolean
+): Promise<{ error?: string }> {
+  const teamId = await getAdminTeamId();
+  if (!teamId) return { error: "Não autorizado." };
+
+  const service = createServiceClient();
+
+  const { data: game } = await service
+    .from("games")
+    .select("id, status, draw_done")
+    .eq("id", gameId)
+    .eq("team_id", teamId)
+    .maybeSingle();
+
+  if (!game) return { error: "Jogo não encontrado." };
+  if (game.status !== "open") return { error: "Jogo não está aberto." };
+  if (game.draw_done) return { error: "Sorteio já realizado." };
+
+  // Busca jogadores confirmados
+  const { data: confirmations } = await service
+    .from("game_confirmations")
+    .select("player_id")
+    .eq("game_id", gameId)
+    .eq("status", "confirmed");
+
+  const playerIds = (confirmations ?? []).map((c) => c.player_id);
+  if (playerIds.length === 0) return { error: "Nenhum jogador confirmado." };
+
+  const { data: playersData } = await service
+    .from("players")
+    .select("id, name, weight_kg, stamina, is_star")
+    .in("id", playerIds);
+
+  if (!playersData || playersData.length === 0) {
+    return { error: "Erro ao buscar dados dos jogadores." };
+  }
+
+  // Valida se pode sortear
+  const { canDraw, message } = getDrawInfo(playersData.length);
+  if (!canDraw) return { error: message ?? "Sorteio inválido." };
+
+  // Executa o algoritmo de sorteio
+  const teams = runDraw(
+    playersData.map((p) => ({
+      id: p.id,
+      name: p.name,
+      weight_kg: p.weight_kg,
+      stamina: p.stamina as StaminaLevel,
+      is_star: p.is_star,
+    }))
+  );
+
+  // Persiste os times e jogadores no banco
+  for (let i = 0; i < teams.length; i++) {
+    const { data: gameTeam, error: teamError } = await service
+      .from("game_teams")
+      .insert({ game_id: gameId, team_number: i + 1 })
+      .select("id")
+      .single();
+
+    if (teamError || !gameTeam) return { error: "Erro ao salvar time." };
+
+    for (const player of teams[i]) {
+      const { error: playerError } = await service
+        .from("game_team_players")
+        .insert({ game_team_id: gameTeam.id, player_id: player.id });
+
+      if (playerError) return { error: "Erro ao salvar jogador no time." };
+    }
+  }
+
+  // Marca o sorteio como realizado e define modo campeonato
+  await service
+    .from("games")
+    .update({ draw_done: true, is_tournament: isTournament })
+    .eq("id", gameId);
+
+  revalidatePath(`/dashboard/jogos/${gameId}`);
+  return {};
+}
