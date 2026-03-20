@@ -330,12 +330,6 @@ export default async function RankingsPage({ searchParams }: Props) {
         </div>
       )}
 
-      <Link
-        href="/dashboard"
-        className="block text-sm text-muted-foreground underline pt-2"
-      >
-        ← Voltar ao painel
-      </Link>
     </div>
   );
 }

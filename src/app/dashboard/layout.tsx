@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { BottomNav } from "@/components/dashboard/bottom-nav";
 
 export default async function DashboardLayout({
   children,
@@ -25,5 +26,10 @@ export default async function DashboardLayout({
     redirect("/pagamento-pendente");
   }
 
-  return <div className="min-h-screen bg-background">{children}</div>;
+  return (
+    <div className="min-h-screen bg-background pb-16">
+      {children}
+      <BottomNav />
+    </div>
+  );
 }

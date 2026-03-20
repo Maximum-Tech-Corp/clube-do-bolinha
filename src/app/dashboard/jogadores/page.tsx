@@ -84,14 +84,6 @@ export default async function JogadoresPage() {
         </div>
       )}
 
-      <div className="pt-2">
-        <Link
-          href="/dashboard"
-          className="text-sm text-muted-foreground underline"
-        >
-          ← Voltar ao painel
-        </Link>
-      </div>
     </div>
   );
 }

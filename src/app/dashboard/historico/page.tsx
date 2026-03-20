@@ -81,12 +81,6 @@ export default async function HistoricoPage() {
         </ul>
       )}
 
-      <Link
-        href="/dashboard"
-        className="block text-sm text-muted-foreground underline pt-2"
-      >
-        ← Voltar ao painel
-      </Link>
     </div>
   );
 }

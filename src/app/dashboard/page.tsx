@@ -1,15 +1,9 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { AccessCodeCard } from "@/components/dashboard/access-code-card";
+import { AppLogo } from "@/components/app-logo";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -39,51 +33,19 @@ export default async function DashboardPage() {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
   return (
-    <div className="max-w-md mx-auto p-4 space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Olá, {admin.name}!</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Turma:{" "}
-            <span className="font-medium text-foreground">{team.name}</span>
-          </p>
-        </CardContent>
-      </Card>
+    <div className="max-w-md mx-auto p-4 pt-8 space-y-6">
+      <div className="flex flex-col items-center gap-1 pb-2">
+        <AppLogo size="sm" />
+        <p className="text-sm text-muted-foreground mt-1">
+          Olá, <span className="font-medium text-foreground">{admin.name}</span>!
+        </p>
+      </div>
 
       <AccessCodeCard
         teamName={team.name}
         accessCode={team.access_code}
         appUrl={appUrl}
       />
-
-      <div className="grid grid-cols-2 gap-2">
-        <Link
-          href="/dashboard/jogadores"
-          className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-2.5 h-8 text-sm font-medium hover:bg-muted transition-colors"
-        >
-          Jogadores
-        </Link>
-        <Link
-          href="/dashboard/jogos"
-          className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-2.5 h-8 text-sm font-medium hover:bg-muted transition-colors"
-        >
-          Jogos
-        </Link>
-        <Link
-          href="/dashboard/historico"
-          className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-2.5 h-8 text-sm font-medium hover:bg-muted transition-colors"
-        >
-          Histórico
-        </Link>
-        <Link
-          href="/dashboard/rankings"
-          className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-2.5 h-8 text-sm font-medium hover:bg-muted transition-colors"
-        >
-          Rankings
-        </Link>
-      </div>
 
       <form action={logout}>
         <Button variant="outline" className="w-full" type="submit">

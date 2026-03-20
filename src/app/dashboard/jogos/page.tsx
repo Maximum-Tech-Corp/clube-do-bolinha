@@ -16,6 +16,12 @@ const statusVariant: Record<GameStatus, "default" | "secondary" | "outline"> = {
   finished: "secondary",
 };
 
+const statusClassName: Record<GameStatus, string> = {
+  open: "",
+  cancelled: "text-muted-foreground",
+  finished: "",
+};
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString("pt-BR", {
     weekday: "short",
@@ -53,7 +59,10 @@ function GameRow({ game }: { game: Game }) {
         {game.draw_done && (
           <Badge variant="secondary" className="text-xs">Sorteio feito</Badge>
         )}
-        <Badge variant={statusVariant[game.status]}>
+        <Badge
+          variant={statusVariant[game.status]}
+          className={statusClassName[game.status]}
+        >
           {statusLabel[game.status]}
         </Badge>
       </div>
@@ -102,12 +111,6 @@ export default async function JogosPage() {
         )}
       </section>
 
-      <Link
-        href="/dashboard"
-        className="block text-sm text-muted-foreground underline"
-      >
-        ← Voltar ao painel
-      </Link>
     </div>
   );
 }

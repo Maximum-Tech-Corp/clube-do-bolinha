@@ -1,15 +1,14 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { AppLogo } from "@/components/app-logo";
 
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-muted/40">
-      <div className="w-full max-w-sm space-y-8">
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Clube do Bolinha
-          </h1>
-          <p className="text-muted-foreground">
+      <div className="w-full max-w-sm space-y-10">
+        <div className="text-center">
+          <AppLogo size="lg" />
+          <p className="mt-3 text-muted-foreground text-sm">
             Organize suas peladas semanais
           </p>
         </div>
