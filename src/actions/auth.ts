@@ -57,7 +57,7 @@ export async function signup(data: {
     return { error: "Erro ao criar turma. Tente novamente." };
   }
 
-  redirect("/dashboard");
+  redirect("/pagamento-pendente");
 }
 
 export async function login(data: {
