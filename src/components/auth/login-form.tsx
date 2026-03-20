@@ -95,6 +95,9 @@ export function LoginForm() {
               Cadastre-se
             </Link>
           </p>
+          <Link href="/" className="text-sm text-muted-foreground underline text-center">
+            Voltar ao início
+          </Link>
         </CardFooter>
       </form>
     </Card>
