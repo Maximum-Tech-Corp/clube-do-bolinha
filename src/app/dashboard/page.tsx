@@ -71,6 +71,18 @@ export default async function DashboardPage() {
         >
           Jogos
         </Link>
+        <Link
+          href="/dashboard/historico"
+          className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-2.5 h-8 text-sm font-medium hover:bg-muted transition-colors"
+        >
+          Histórico
+        </Link>
+        <Link
+          href="/dashboard/rankings"
+          className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-2.5 h-8 text-sm font-medium hover:bg-muted transition-colors"
+        >
+          Rankings
+        </Link>
       </div>
 
       <form action={logout}>
