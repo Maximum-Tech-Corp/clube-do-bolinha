@@ -138,18 +138,30 @@ export default async function GameDetailPage({ params }: Props) {
         </p>
       </div>
 
-      {game.status === "open" && game.draw_done && (
+      {game.draw_done && game.status !== "cancelled" && (
         <div className="rounded-lg border border-border p-3 space-y-3">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Sorteio realizado.</span>
-            <Link
-              href={`/dashboard/jogos/${gameId}/times`}
-              className="underline text-foreground text-sm"
-            >
-              Ver times →
-            </Link>
+            <div className="flex items-center gap-3">
+              {game.is_tournament && (
+                <Link
+                  href={`/dashboard/jogos/${gameId}/campeonato`}
+                  className="underline text-foreground text-sm"
+                >
+                  Ver campeonato →
+                </Link>
+              )}
+              <Link
+                href={`/dashboard/jogos/${gameId}/times`}
+                className="underline text-foreground text-sm"
+              >
+                Ver times →
+              </Link>
+            </div>
           </div>
-          <TournamentToggle gameId={gameId} isTournament={game.is_tournament} />
+          {game.status === "open" && (
+            <TournamentToggle gameId={gameId} isTournament={game.is_tournament} />
+          )}
         </div>
       )}
 

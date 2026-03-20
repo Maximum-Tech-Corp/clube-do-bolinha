@@ -3,6 +3,7 @@
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { runDraw, getDrawInfo } from "@/lib/draw-algorithm";
+import { buildGroupMatchOrder } from "@/lib/tournament-utils";
 import type { StaminaLevel } from "@/types/database.types";
 
 async function getAdminTeamId(): Promise<string | null> {
@@ -107,6 +108,29 @@ export async function executeDraw(
     .from("games")
     .update({ draw_done: true, is_tournament: isTournament })
     .eq("id", gameId);
+
+  // Gera partidas da fase de grupos para o campeonato
+  if (isTournament) {
+    const { data: gameTeams } = await service
+      .from("game_teams")
+      .select("id")
+      .eq("game_id", gameId)
+      .order("team_number");
+
+    const ids = (gameTeams ?? []).map((t) => t.id);
+    const pairs = buildGroupMatchOrder(ids);
+    const matchInserts = pairs.map(([home, away], idx) => ({
+      game_id: gameId,
+      phase: "group" as const,
+      home_team_id: home,
+      away_team_id: away,
+      match_order: idx + 1,
+    }));
+
+    if (matchInserts.length > 0) {
+      await service.from("tournament_matches").insert(matchInserts);
+    }
+  }
 
   revalidatePath(`/dashboard/jogos/${gameId}`);
   return {};
