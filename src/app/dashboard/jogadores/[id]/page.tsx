@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getPlayer, getPlayerStats } from "@/actions/players-admin";
 import { EditPlayerForm } from "@/components/dashboard/edit-player-form";
 import { RetroactiveStatForm } from "@/components/dashboard/retroactive-stat-form";
+import { PlayerSituationForm } from "@/components/dashboard/player-situation-form";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 
@@ -51,6 +52,18 @@ export default async function EditPlayerPage({ params }: Props) {
         )}
 
         <RetroactiveStatForm playerId={player.id} />
+      </div>
+
+      <Separator />
+
+      <div className="space-y-3">
+        <h2 className="font-semibold">Situação do jogador</h2>
+        <PlayerSituationForm
+          playerId={player.id}
+          isBanned={player.is_banned}
+          suspendedUntil={player.suspended_until}
+          suspensionReason={player.suspension_reason}
+        />
       </div>
 
       <Link

@@ -44,7 +44,7 @@ export default async function TeamPage({ params }: Props) {
     playerPhone
       ? service
           .from("players")
-          .select("id, name, phone, weight_kg, stamina, is_star")
+          .select("id, name, phone, weight_kg, stamina, is_star, is_banned, suspended_until, suspension_reason")
           .eq("team_id", team.id)
           .eq("phone", playerPhone)
           .maybeSingle()
@@ -88,6 +88,12 @@ export default async function TeamPage({ params }: Props) {
     };
   }
 
+  // Verifica se o jogador identificado pelo cookie está banido ou suspenso
+  const isBanned = playerData?.is_banned === true;
+  const isActivelySuspended =
+    !!playerData?.suspended_until &&
+    new Date(playerData.suspended_until) > new Date();
+
   return (
     <div className="max-w-md mx-auto p-4 space-y-4">
       <div className="flex items-center justify-between">
@@ -102,6 +108,36 @@ export default async function TeamPage({ params }: Props) {
           Trocar turma
         </Link>
       </div>
+
+      {isBanned && (
+        <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 text-sm space-y-1">
+          <p className="font-semibold text-destructive">Acesso bloqueado</p>
+          <p className="text-muted-foreground">
+            Você foi banido desta turma e não pode confirmar presença nos jogos.
+            Em caso de dúvidas, entre em contato com o organizador.
+          </p>
+        </div>
+      )}
+
+      {!isBanned && isActivelySuspended && (
+        <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 text-sm space-y-1">
+          <p className="font-semibold text-destructive">
+            Suspenso até{" "}
+            {new Date(playerData!.suspended_until!).toLocaleDateString(
+              "pt-BR",
+              { day: "2-digit", month: "2-digit", year: "numeric" }
+            )}
+          </p>
+          {playerData?.suspension_reason && (
+            <p className="text-muted-foreground">
+              {playerData.suspension_reason}
+            </p>
+          )}
+          <p className="text-muted-foreground">
+            Você não pode confirmar presença durante este período.
+          </p>
+        </div>
+      )}
 
       {gameList.length === 0 ? (
         <p className="text-muted-foreground text-sm text-center py-12">

@@ -30,7 +30,9 @@ type Step =
   | "waitlist_offer"
   | "confirmed"
   | "waitlisted"
-  | "already_confirmed";
+  | "already_confirmed"
+  | "banned"
+  | "suspended";
 
 const phoneSchema = z.object({
   phone: z.string().min(10, "Informe um celular válido"),
@@ -65,6 +67,10 @@ export function ConfirmPresenceDialog({
   const [pendingNewPlayer, setPendingNewPlayer] =
     useState<RegisterData | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [suspensionInfo, setSuspensionInfo] = useState<{
+    until: string;
+    reason: string | null;
+  } | null>(null);
 
   const phoneForm = useForm<PhoneData>({
     resolver: zodResolver(phoneSchema),
@@ -91,6 +97,11 @@ export function ConfirmPresenceDialog({
     const result = await confirmPresence({ gameId, teamId, phone: data.phone });
 
     if ("error" in result) return setServerError(result.error);
+    if ("banned" in result) return setStep("banned");
+    if ("suspended" in result) {
+      setSuspensionInfo({ until: result.until, reason: result.reason });
+      return setStep("suspended");
+    }
     if ("needsRegistration" in result) return setStep("register");
     if ("gameFull" in result) return setStep("waitlist_offer");
     if ("alreadyConfirmed" in result) return setStep("already_confirmed");
@@ -112,6 +123,11 @@ export function ConfirmPresenceDialog({
     });
 
     if ("error" in result) return setServerError(result.error);
+    if ("banned" in result) return setStep("banned");
+    if ("suspended" in result) {
+      setSuspensionInfo({ until: result.until, reason: result.reason });
+      return setStep("suspended");
+    }
     if ("needsRegistration" in result) return;
     if ("gameFull" in result) return setStep("waitlist_offer");
     if ("alreadyConfirmed" in result) return setStep("already_confirmed");
@@ -135,6 +151,11 @@ export function ConfirmPresenceDialog({
     });
 
     if ("error" in result) return setServerError(result.error);
+    if ("banned" in result) return setStep("banned");
+    if ("suspended" in result) {
+      setSuspensionInfo({ until: result.until, reason: result.reason });
+      return setStep("suspended");
+    }
     if ("needsRegistration" in result) return;
     if ("gameFull" in result) return;
     if ("alreadyConfirmed" in result) return setStep("already_confirmed");
@@ -320,6 +341,37 @@ export function ConfirmPresenceDialog({
               <DialogTitle>Você já confirmou!</DialogTitle>
               <DialogDescription>
                 Sua presença neste jogo já foi registrada.
+              </DialogDescription>
+            </DialogHeader>
+            <Button onClick={() => handleClose(false)}>Fechar</Button>
+          </>
+        )}
+
+        {step === "banned" && (
+          <>
+            <DialogHeader>
+              <DialogTitle>Acesso bloqueado</DialogTitle>
+              <DialogDescription>
+                Você foi banido desta turma e não pode confirmar presença. Em
+                caso de dúvidas, entre em contato com o organizador.
+              </DialogDescription>
+            </DialogHeader>
+            <Button onClick={() => handleClose(false)}>Fechar</Button>
+          </>
+        )}
+
+        {step === "suspended" && suspensionInfo && (
+          <>
+            <DialogHeader>
+              <DialogTitle>Jogador suspenso</DialogTitle>
+              <DialogDescription>
+                Você está suspenso até{" "}
+                {new Date(suspensionInfo.until).toLocaleDateString("pt-BR", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                })}
+                {suspensionInfo.reason && `: ${suspensionInfo.reason}`}.
               </DialogDescription>
             </DialogHeader>
             <Button onClick={() => handleClose(false)}>Fechar</Button>

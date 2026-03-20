@@ -22,6 +22,8 @@ type ConfirmPresenceResult =
   | { gameFull: true }
   | { alreadyConfirmed: true; currentStatus: "confirmed" | "waitlist" }
   | { status: "confirmed" | "waitlist" }
+  | { banned: true }
+  | { suspended: true; until: string; reason: string | null }
   | { error: string };
 
 export async function confirmPresence(params: {
@@ -34,13 +36,29 @@ export async function confirmPresence(params: {
   const { gameId, teamId, phone, newPlayer, joinWaitlist = false } = params;
   const service = createServiceClient();
 
-  // Busca jogador pelo telefone na turma
+  // Busca jogador pelo telefone na turma (inclui campos de ban/suspensão)
   const { data: existingPlayer } = await service
     .from("players")
-    .select("id")
+    .select("id, is_banned, suspended_until, suspension_reason")
     .eq("team_id", teamId)
     .eq("phone", phone)
     .maybeSingle();
+
+  // Verifica ban/suspensão antes de prosseguir
+  if (existingPlayer) {
+    if (existingPlayer.is_banned) return { banned: true };
+
+    if (existingPlayer.suspended_until) {
+      const until = new Date(existingPlayer.suspended_until);
+      if (until > new Date()) {
+        return {
+          suspended: true,
+          until: existingPlayer.suspended_until,
+          reason: existingPlayer.suspension_reason,
+        };
+      }
+    }
+  }
 
   // Telefone não cadastrado e sem dados de registro fornecidos
   if (!existingPlayer && !newPlayer) {

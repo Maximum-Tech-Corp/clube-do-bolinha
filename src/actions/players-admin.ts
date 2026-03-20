@@ -82,12 +82,110 @@ export async function getPlayer(playerId: string) {
   const service = createServiceClient();
   const { data } = await service
     .from("players")
-    .select("id, name, phone, weight_kg, stamina, is_star")
+    .select("id, name, phone, weight_kg, stamina, is_star, is_banned, suspended_until, suspension_reason")
     .eq("id", playerId)
     .eq("team_id", teamId)
     .single();
 
   return data;
+}
+
+async function assertPlayerOwnership(
+  playerId: string,
+  teamId: string
+): Promise<boolean> {
+  const service = createServiceClient();
+  const { data } = await service
+    .from("players")
+    .select("id")
+    .eq("id", playerId)
+    .eq("team_id", teamId)
+    .maybeSingle();
+  return !!data;
+}
+
+export async function banPlayer(
+  playerId: string
+): Promise<{ error?: string }> {
+  const teamId = await getAdminTeamId();
+  if (!teamId) return { error: "Não autorizado." };
+  if (!(await assertPlayerOwnership(playerId, teamId)))
+    return { error: "Jogador não encontrado." };
+
+  const service = createServiceClient();
+  const { error } = await service
+    .from("players")
+    .update({ is_banned: true })
+    .eq("id", playerId);
+
+  if (error) return { error: "Erro ao banir jogador." };
+  revalidatePath(`/dashboard/jogadores/${playerId}`);
+  return {};
+}
+
+export async function unbanPlayer(
+  playerId: string
+): Promise<{ error?: string }> {
+  const teamId = await getAdminTeamId();
+  if (!teamId) return { error: "Não autorizado." };
+  if (!(await assertPlayerOwnership(playerId, teamId)))
+    return { error: "Jogador não encontrado." };
+
+  const service = createServiceClient();
+  const { error } = await service
+    .from("players")
+    .update({ is_banned: false })
+    .eq("id", playerId);
+
+  if (error) return { error: "Erro ao remover banimento." };
+  revalidatePath(`/dashboard/jogadores/${playerId}`);
+  return {};
+}
+
+export async function suspendPlayer(
+  playerId: string,
+  suspendedUntil: string,
+  reason: string
+): Promise<{ error?: string }> {
+  const teamId = await getAdminTeamId();
+  if (!teamId) return { error: "Não autorizado." };
+  if (!(await assertPlayerOwnership(playerId, teamId)))
+    return { error: "Jogador não encontrado." };
+
+  if (new Date(suspendedUntil) <= new Date())
+    return { error: "A data de encerramento deve ser futura." };
+
+  const service = createServiceClient();
+  const { error } = await service
+    .from("players")
+    .update({
+      suspended_until: suspendedUntil,
+      suspension_reason: reason.trim() || null,
+    })
+    .eq("id", playerId);
+
+  if (error) return { error: "Erro ao suspender jogador." };
+  revalidatePath(`/dashboard/jogadores/${playerId}`);
+  return {};
+}
+
+export async function removeSuspension(
+  playerId: string
+): Promise<{ error?: string }> {
+  const teamId = await getAdminTeamId();
+  if (!teamId) return { error: "Não autorizado." };
+  if (!(await assertPlayerOwnership(playerId, teamId)))
+    return { error: "Jogador não encontrado." };
+
+  const service = createServiceClient();
+  const { error } = await service
+    .from("players")
+    .update({ suspended_until: null, suspension_reason: null })
+    .eq("id", playerId);
+
+  if (error) return { error: "Erro ao remover suspensão." };
+  revalidatePath(`/dashboard/jogadores/${playerId}`);
+  return {};
 }
 
 export async function createPlayer(params: {
