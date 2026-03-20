@@ -299,7 +299,8 @@ tournament_matches
 - Listagem carrega todos os jogadores
 - Edição salva corretamente
 - Cadastro manual valida telefone duplicado
-- Lançamento retroativo soma às estatísticas do ano correto
+- Lançamento retroativo salvo em `player_stat_adjustments` (múltiplos lançamentos por ano são válidos — o ranking os soma)
+- Taxa de presença exibida aqui usa `game_confirmations` como placeholder; será corrigida no Step 13 para usar `game_team_players`
 
 ---
 
@@ -473,10 +474,14 @@ tournament_matches
 - Nenhum campo editável
 
 **Rankings (ano corrente por padrão, com seletor de ano):**
-- **Artilheiros:** jogadores ordenados por total de gols (jogo + retroativo do ano)
-- **Assistências:** jogadores ordenados por total de assistências
-- **MVP:** jogadores ordenados por gols totais (desempate: assistências)
-- **Taxa de presença:** jogadores ordenados por % de confirmações vs jogos realizados
+- **Artilheiros:** gols de `game_team_players` (jogos do ano) + gols de `player_stat_adjustments` do mesmo ano
+- **Assistências:** idem, somando assists das duas fontes
+- **MVP:** ordenado por gols totais (desempate: assistências), mesma lógica de soma
+- **Taxa de presença:** % de jogos finalizados em que o jogador aparece em `game_team_players` (não apenas confirmação — presença real = entrou no sorteio)
+
+> **Regra de presença:** confirmação ≠ presença. Presença é contabilizada apenas quando o jogador aparece em `game_team_players` de um jogo finalizado. O admin remove ausentes antes do sorteio; quem permanece e entra no sorteio é considerado presente.
+
+> **Stats retroativas:** `player_stat_adjustments` acumula múltiplos lançamentos por ano para o mesmo jogador. O ranking soma todos os lançamentos daquele ano + stats reais dos jogos do ano.
 
 **Verificar antes de avançar:**
 - Histórico lista apenas jogos finalizados

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,21 @@ export default async function DashboardPage() {
         accessCode={team.access_code}
         appUrl={appUrl}
       />
+
+      <div className="grid grid-cols-2 gap-2">
+        <Link
+          href="/dashboard/jogadores"
+          className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-2.5 h-8 text-sm font-medium hover:bg-muted transition-colors"
+        >
+          Jogadores
+        </Link>
+        <Link
+          href="/dashboard/jogos"
+          className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-2.5 h-8 text-sm font-medium hover:bg-muted transition-colors"
+        >
+          Jogos
+        </Link>
+      </div>
 
       <form action={logout}>
         <Button variant="outline" className="w-full" type="submit">
