@@ -17,10 +17,13 @@
 ## Visão da Stack
 
 ```
-Next.js (App Router)
+Next.js (App Router) — PWA
   ├─ Server Actions       → lógica de negócio e acesso ao banco
   ├─ Route Handlers       → webhooks (Stripe) e endpoints públicos
   └─ Middleware           → proteção de rotas
+
+shadcn/ui + Tailwind CSS
+  └─ Componentes de UI prontos, mobile-first
 
 Supabase
   ├─ Auth                 → autenticação do admin
@@ -33,6 +36,9 @@ Stripe
 Vercel
   └─ Deploy + Edge Network
 ```
+
+> **PWA:** O app é um Progressive Web App — instalável no celular via browser, sem App Store/Play Store.
+> A configuração de PWA (manifest, service worker, ícones) é feita no **Step 14**.
 
 ---
 
@@ -56,8 +62,11 @@ Vercel
   ├─ actions/          → Server Actions organizadas por domínio
   └─ types/            → tipos TypeScript globais
   ```
+- Remover arquivos de boilerplate do Next.js (SVGs do public/, page.tsx padrão, etc.)
 - Configurar `.env.local` com as variáveis necessárias (template sem valores)
 - Instalar dependências base: `@supabase/supabase-js`, `@supabase/ssr`, `stripe`, `@stripe/stripe-js`
+- Instalar e configurar **shadcn/ui** (`npx shadcn@latest init`)
+- Alinhar variável de fonte com o tema do shadcn (`--font-sans`)
 
 **Verificar antes de avançar:**
 - `npm run dev` sobe sem erros
