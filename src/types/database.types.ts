@@ -17,10 +17,10 @@ export type TournamentPhase = "group" | "semi" | "final";
 export type StaminaLevel = "1" | "2" | "3" | "4plus";
 
 // ============================================================
-// Database schema — formato compatível com @supabase/supabase-js
+// Database schema — formato compatível com @supabase/supabase-js 2.x
 // ============================================================
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       admins: {
@@ -54,6 +54,7 @@ export interface Database {
           subscription_status?: SubscriptionStatus;
           created_at?: string;
         };
+        Relationships: [];
       };
       teams: {
         Row: {
@@ -80,6 +81,7 @@ export interface Database {
           access_code_prefix?: string;
           created_at?: string;
         };
+        Relationships: [];
       };
       players: {
         Row: {
@@ -112,6 +114,7 @@ export interface Database {
           is_star?: boolean;
           created_at?: string;
         };
+        Relationships: [];
       };
       player_stat_adjustments: {
         Row: {
@@ -138,6 +141,7 @@ export interface Database {
           year?: number;
           created_at?: string;
         };
+        Relationships: [];
       };
       games: {
         Row: {
@@ -173,6 +177,7 @@ export interface Database {
           created_at?: string;
           finished_at?: string | null;
         };
+        Relationships: [];
       };
       game_confirmations: {
         Row: {
@@ -199,6 +204,7 @@ export interface Database {
           waitlist_position?: number | null;
           confirmed_at?: string;
         };
+        Relationships: [];
       };
       game_teams: {
         Row: {
@@ -219,6 +225,7 @@ export interface Database {
           team_number?: number;
           created_at?: string;
         };
+        Relationships: [];
       };
       game_team_players: {
         Row: {
@@ -242,6 +249,7 @@ export interface Database {
           goals?: number;
           assists?: number;
         };
+        Relationships: [];
       };
       tournament_matches: {
         Row: {
@@ -277,8 +285,11 @@ export interface Database {
           match_order?: number;
           completed?: boolean;
         };
+        Relationships: [];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
     Enums: {
       subscription_status: SubscriptionStatus;
       game_status: GameStatus;
@@ -286,5 +297,6 @@ export interface Database {
       tournament_phase: TournamentPhase;
       stamina_level: StaminaLevel;
     };
+    CompositeTypes: Record<string, never>;
   };
-}
+};
