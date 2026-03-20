@@ -1,0 +1,533 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+  cancelGame,
+  removeConfirmedPlayer,
+  promoteWaitlistPlayer,
+  addPlayerToGame,
+  createAndAddPlayer,
+} from "@/actions/games-admin";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { StaminaLevel } from "@/types/database.types";
+
+interface Player {
+  id: string;
+  name: string;
+  phone: string;
+}
+
+interface ConfirmedEntry {
+  confirmationId: string;
+  player: Player;
+}
+
+interface WaitlistEntry {
+  confirmationId: string;
+  position: number;
+  player: Player;
+}
+
+interface Props {
+  gameId: string;
+  drawDone: boolean;
+  confirmed: ConfirmedEntry[];
+  waitlist: WaitlistEntry[];
+  availablePlayers: { id: string; name: string }[];
+}
+
+// ── Botão cancelar jogo ──────────────────────────────────────────────────────
+
+function CancelGameButton({ gameId }: { gameId: string }) {
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function handleConfirm() {
+    setError(null);
+    startTransition(async () => {
+      const result = await cancelGame(gameId);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setOpen(false);
+      }
+    });
+  }
+
+  return (
+    <>
+      <Button variant="destructive" size="sm" onClick={() => setOpen(true)}>
+        Cancelar jogo
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Cancelar jogo?</DialogTitle>
+            <DialogDescription>
+              Esta ação não pode ser desfeita. O jogo ficará visível como
+              cancelado para os jogadores.
+            </DialogDescription>
+          </DialogHeader>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <div className="flex gap-2">
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={handleConfirm}
+              disabled={pending}
+            >
+              {pending ? "Cancelando..." : "Confirmar cancelamento"}
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setOpen(false)}
+            >
+              Voltar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+// ── Lista de confirmados ─────────────────────────────────────────────────────
+
+function ConfirmedList({
+  gameId,
+  entries,
+}: {
+  gameId: string;
+  entries: ConfirmedEntry[];
+}) {
+  const [pending, startTransition] = useTransition();
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  function handleRemove(playerId: string) {
+    setError(null);
+    setLoadingId(playerId);
+    startTransition(async () => {
+      const result = await removeConfirmedPlayer(gameId, playerId);
+      if (result.error) setError(result.error);
+      setLoadingId(null);
+    });
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold">
+          Confirmados{" "}
+          <span className="text-muted-foreground font-normal text-sm">
+            ({entries.length}/25)
+          </span>
+        </h2>
+      </div>
+
+      {error && <p className="text-sm text-destructive">{error}</p>}
+
+      {entries.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-2">
+          Nenhum confirmado ainda.
+        </p>
+      ) : (
+        <ul className="space-y-1">
+          {entries.map(({ confirmationId, player }) => (
+            <li
+              key={confirmationId}
+              className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{player.name}</p>
+                <p className="text-xs text-muted-foreground">{player.phone}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive shrink-0"
+                disabled={pending && loadingId === player.id}
+                onClick={() => handleRemove(player.id)}
+              >
+                {pending && loadingId === player.id ? "..." : "Remover"}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+// ── Lista de espera ──────────────────────────────────────────────────────────
+
+function WaitlistPanel({
+  gameId,
+  entries,
+}: {
+  gameId: string;
+  entries: WaitlistEntry[];
+}) {
+  const [pending, startTransition] = useTransition();
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  function handlePromote(confirmationId: string) {
+    setError(null);
+    setLoadingId(confirmationId);
+    startTransition(async () => {
+      const result = await promoteWaitlistPlayer(confirmationId, gameId);
+      if (result.error) setError(result.error);
+      setLoadingId(null);
+    });
+  }
+
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <h2 className="font-semibold">
+        Lista de espera{" "}
+        <span className="text-muted-foreground font-normal text-sm">
+          ({entries.length})
+        </span>
+      </h2>
+
+      {error && <p className="text-sm text-destructive">{error}</p>}
+
+      <ul className="space-y-1">
+        {entries.map(({ confirmationId, position, player }) => (
+          <li
+            key={confirmationId}
+            className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xs text-muted-foreground w-4 shrink-0">
+                {position}
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{player.name}</p>
+                <p className="text-xs text-muted-foreground">{player.phone}</p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              disabled={pending && loadingId === confirmationId}
+              onClick={() => handlePromote(confirmationId)}
+            >
+              {pending && loadingId === confirmationId ? "..." : "Promover"}
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// ── Adicionar jogador existente ──────────────────────────────────────────────
+
+function AddExistingPlayerPanel({
+  gameId,
+  availablePlayers,
+}: {
+  gameId: string;
+  availablePlayers: { id: string; name: string }[];
+}) {
+  const [selectedId, setSelectedId] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function handleAdd() {
+    if (!selectedId) return;
+    setError(null);
+    startTransition(async () => {
+      const result = await addPlayerToGame(gameId, selectedId);
+      if (result.error) setError(result.error);
+      else setSelectedId("");
+    });
+  }
+
+  if (availablePlayers.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <Label>Adicionar jogador da turma</Label>
+      <div className="flex gap-2">
+        <Select value={selectedId} onValueChange={(v) => setSelectedId(v ?? "")}>
+          <SelectTrigger className="flex-1">
+            <SelectValue placeholder="Selecione um jogador" />
+          </SelectTrigger>
+          <SelectContent>
+            {availablePlayers.map((p) => (
+              <SelectItem key={p.id} value={p.id}>
+                {p.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          onClick={handleAdd}
+          disabled={!selectedId || pending}
+          size="sm"
+        >
+          {pending ? "..." : "Adicionar"}
+        </Button>
+      </div>
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
+  );
+}
+
+// ── Cadastrar e adicionar novo jogador ───────────────────────────────────────
+
+const newPlayerSchema = z.object({
+  name: z.string().min(2, "Informe o nome"),
+  phone: z.string().min(10, "Informe um celular válido"),
+  weight_kg: z.number().min(30).max(250),
+  stamina: z.enum(["1", "2", "3", "4plus"] as const),
+});
+
+type NewPlayerData = z.infer<typeof newPlayerSchema>;
+
+function CreateAndAddPlayerPanel({ gameId }: { gameId: string }) {
+  const [open, setOpen] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<NewPlayerData>({
+    resolver: zodResolver(newPlayerSchema),
+  });
+
+  async function onSubmit(data: NewPlayerData) {
+    setServerError(null);
+    const result = await createAndAddPlayer(gameId, {
+      name: data.name,
+      phone: data.phone,
+      weight_kg: data.weight_kg,
+      stamina: data.stamina as StaminaLevel,
+    });
+
+    if (result.error) {
+      setServerError(result.error);
+      return;
+    }
+
+    reset();
+    setOpen(false);
+  }
+
+  return (
+    <div>
+      <Button variant="outline" size="sm" onClick={() => setOpen(!open)}>
+        {open ? "Fechar" : "+ Cadastrar novo jogador"}
+      </Button>
+
+      {open && (
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-3 space-y-3">
+          <div className="space-y-1">
+            <Label htmlFor="cn-name">Nome</Label>
+            <Input id="cn-name" placeholder="Nome ou apelido" {...register("name")} />
+            {errors.name && (
+              <p className="text-xs text-destructive">{errors.name.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="cn-phone">Celular</Label>
+            <Input id="cn-phone" type="tel" placeholder="(11) 99999-9999" {...register("phone")} />
+            {errors.phone && (
+              <p className="text-xs text-destructive">{errors.phone.message}</p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label htmlFor="cn-weight">Peso (kg)</Label>
+              <Input
+                id="cn-weight"
+                type="number"
+                placeholder="75"
+                {...register("weight_kg", { valueAsNumber: true })}
+              />
+              {errors.weight_kg && (
+                <p className="text-xs text-destructive">{errors.weight_kg.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <Label>Resistência</Label>
+              <Select onValueChange={(v) => setValue("stamina", v as StaminaLevel)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Jogos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 jogo</SelectItem>
+                  <SelectItem value="2">2 jogos</SelectItem>
+                  <SelectItem value="3">3 jogos</SelectItem>
+                  <SelectItem value="4plus">4+</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.stamina && (
+                <p className="text-xs text-destructive">{errors.stamina.message}</p>
+              )}
+            </div>
+          </div>
+
+          {serverError && (
+            <p className="text-sm text-destructive">{serverError}</p>
+          )}
+
+          <Button type="submit" size="sm" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Salvando..." : "Cadastrar e adicionar"}
+          </Button>
+        </form>
+      )}
+    </div>
+  );
+}
+
+// ── Validação do sorteio ─────────────────────────────────────────────────────
+
+const TEAM_SIZE = 5;
+
+function getDrawValidation(count: number): {
+  canDraw: boolean;
+  message: string | null;
+  isWarning: boolean;
+} {
+  const teams = Math.floor(count / TEAM_SIZE);
+  const leftover = count % TEAM_SIZE;
+
+  if (teams < 3) {
+    const missing = 15 - count;
+    return {
+      canDraw: false,
+      message: `Mínimo 15 jogadores (3 times de 5). Faltam ${missing}.`,
+      isWarning: false,
+    };
+  }
+  if (teams === 5 && leftover > 0) {
+    return {
+      canDraw: false,
+      message: `5 times completos + ${leftover} jogador(es) sobrando. Remova os excedentes.`,
+      isWarning: false,
+    };
+  }
+  if (teams > 5) {
+    return {
+      canDraw: false,
+      message: `Jogadores demais (${count}). Remova até fechar em 25 ou menos.`,
+      isWarning: false,
+    };
+  }
+  if (leftover === 1 || leftover === 2) {
+    const needed = 3 - leftover;
+    return {
+      canDraw: false,
+      message: `${leftover} jogador(es) sobrando sem time. Adicione mais ${needed} ou remova ${leftover}.`,
+      isWarning: false,
+    };
+  }
+  if (leftover === 3 || leftover === 4) {
+    return {
+      canDraw: true,
+      message: `Terá 1 time incompleto com ${leftover} jogadores.`,
+      isWarning: true,
+    };
+  }
+  return { canDraw: true, message: null, isWarning: false };
+}
+
+// ── Componente principal ─────────────────────────────────────────────────────
+
+export function GameDetailClient({
+  gameId,
+  drawDone,
+  confirmed,
+  waitlist,
+  availablePlayers,
+}: Props) {
+  const drawValidation = getDrawValidation(confirmed.length);
+
+  return (
+    <div className="space-y-6">
+      {/* Ações principais */}
+      <div className="space-y-2">
+        <div className="flex gap-2 flex-wrap">
+          {!drawDone && (
+            // Botão de sorteio: lógica implementada no Step 10
+            <Button disabled={!drawValidation.canDraw}>Rodar sorteio</Button>
+          )}
+          {drawDone && (
+            <Button disabled variant="secondary">Sorteio realizado</Button>
+          )}
+          <CancelGameButton gameId={gameId} />
+        </div>
+        {!drawDone && drawValidation.message && (
+          <p
+            className={`text-sm ${
+              drawValidation.isWarning ? "text-yellow-600" : "text-destructive"
+            }`}
+          >
+            {drawValidation.message}
+          </p>
+        )}
+      </div>
+
+      <Separator />
+
+      {/* Confirmados */}
+      <ConfirmedList gameId={gameId} entries={confirmed} />
+
+      {/* Lista de espera */}
+      {waitlist.length > 0 && (
+        <>
+          <Separator />
+          <WaitlistPanel gameId={gameId} entries={waitlist} />
+        </>
+      )}
+
+      <Separator />
+
+      {/* Adicionar jogadores */}
+      <div className="space-y-4">
+        <h2 className="font-semibold">Adicionar jogador</h2>
+        <AddExistingPlayerPanel
+          gameId={gameId}
+          availablePlayers={availablePlayers}
+        />
+        <CreateAndAddPlayerPanel gameId={gameId} />
+      </div>
+    </div>
+  );
+}

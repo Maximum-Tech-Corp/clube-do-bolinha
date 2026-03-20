@@ -52,10 +52,10 @@ END $$;
 
 Edite as duas variáveis no topo antes de rodar:
 
-| Variável | O que é |
-|---|---|
-| `v_game_id` | ID do jogo (`SELECT id FROM games ORDER BY created_at DESC LIMIT 5`) |
-| `v_quantidade` | Quantos jogadores confirmar |
+| Variável       | O que é                                                              |
+| -------------- | -------------------------------------------------------------------- |
+| `v_game_id`    | ID do jogo (`SELECT id FROM games ORDER BY created_at DESC LIMIT 5`) |
+| `v_quantidade` | Quantos jogadores confirmar                                          |
 
 ```sql
 DO $$
@@ -113,6 +113,7 @@ END $$;
 ```
 
 **Comportamento:**
+
 - Seleciona jogadores aleatórios da turma dona do jogo
 - Ignora quem já confirmou (seguro para rodar múltiplas vezes)
 - Respeita o limite de 25: excedentes vão automaticamente para `waitlist` com posição correta

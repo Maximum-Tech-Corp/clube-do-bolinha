@@ -491,7 +491,40 @@ tournament_matches
 
 ---
 
-### STEP 14 — PWA (Progressive Web App)
+### STEP 14 — Suspensão e Banimento de Jogadores
+
+**Objetivo:** Admin pode suspender ou banir jogadores. Jogador banido/suspenso não consegue confirmar presença.
+
+**Banco de dados — rodar migration:**
+```sql
+ALTER TABLE players ADD COLUMN is_banned BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE players ADD COLUMN suspended_until TIMESTAMPTZ;
+ALTER TABLE players ADD COLUMN suspension_reason TEXT CHECK (char_length(suspension_reason) <= 100);
+```
+
+**Admin — em `/dashboard/jogadores/[id]`:**
+- Seção "Situação do jogador" com:
+  - Botão "Banir jogador" / "Remover banimento" (toggle, sem motivo obrigatório)
+  - Form de suspensão: data de encerramento + motivo (até 100 chars)
+  - Exibe suspensão ativa (data e motivo)
+- Nunca deletar — apenas banir/suspender
+
+**Jogador — impacto no fluxo:**
+- Ao confirmar presença (`confirmPresence`): verifica `is_banned` e `suspended_until`
+  - Se banido: retorna `{ banned: true }` → dialog mostra mensagem de banimento
+  - Se suspenso e `suspended_until > now`: retorna `{ suspended: true; until: string; reason: string }` → dialog mostra data e motivo
+- Na página `/jogador/[code]` (cookie presente): se jogador identificado pelo cookie estiver banido, exibe mensagem de banimento no lugar da lista de jogos
+
+**Verificar antes de avançar:**
+- Migration aplicada no Supabase
+- Admin bane → jogador não consegue confirmar presença
+- Admin suspende → dialog mostra data de encerramento e motivo
+- Após `suspended_until` passar → jogador pode confirmar normalmente
+- Unban funciona imediatamente
+
+---
+
+### STEP 15 — PWA (Progressive Web App)
 
 **Objetivo:** App instalável no celular com comportamento nativo.
 
@@ -509,7 +542,7 @@ tournament_matches
 
 ---
 
-### STEP 15 — UI/UX e Polish
+### STEP 16 — UI/UX e Polish
 
 **Objetivo:** Interface mobile-first, fluida e com feedback adequado.
 
@@ -531,7 +564,7 @@ tournament_matches
 
 ---
 
-### STEP 16 — Deploy
+### STEP 17 — Deploy
 
 **Objetivo:** App em produção na Vercel.
 
@@ -567,6 +600,7 @@ tournament_matches
 | 11 | Gols e Assistências (Pós-sorteio) | Core |
 | 12 | Modo Campeonato | Core |
 | 13 | Histórico e Rankings | Core |
-| 14 | PWA | Frontend |
-| 15 | UI/UX e Polish | Frontend |
-| 16 | Deploy | Infra |
+| 14 | Suspensão e Banimento | Core |
+| 15 | PWA | Frontend |
+| 16 | UI/UX e Polish | Frontend |
+| 17 | Deploy | Infra |

@@ -92,6 +92,9 @@ export type Database = {
           weight_kg: number;
           stamina: StaminaLevel;
           is_star: boolean;
+          is_banned: boolean;
+          suspended_until: string | null;
+          suspension_reason: string | null;
           created_at: string;
         };
         Insert: {
@@ -102,6 +105,9 @@ export type Database = {
           weight_kg: number;
           stamina: StaminaLevel;
           is_star?: boolean;
+          is_banned?: boolean;
+          suspended_until?: string | null;
+          suspension_reason?: string | null;
           created_at?: string;
         };
         Update: {
@@ -112,6 +118,9 @@ export type Database = {
           weight_kg?: number;
           stamina?: StaminaLevel;
           is_star?: boolean;
+          is_banned?: boolean;
+          suspended_until?: string | null;
+          suspension_reason?: string | null;
           created_at?: string;
         };
         Relationships: [];
