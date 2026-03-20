@@ -45,8 +45,7 @@ export function DrawModal({ gameId, confirmedCount, open, onOpenChange }: Props)
         return;
       }
       handleClose(false);
-      // TODO (Step 11): trocar para /times quando a página for criada
-      router.push(`/dashboard/jogos/${gameId}`);
+      router.push(`/dashboard/jogos/${gameId}/times`);
     });
   }
 
