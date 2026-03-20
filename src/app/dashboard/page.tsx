@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { AccessCodeCard } from "@/components/dashboard/access-code-card";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -19,53 +19,49 @@ export default async function DashboardPage() {
 
   if (!user) redirect("/login");
 
-  const [{ data: admin }, { data: team }] = await Promise.all([
-    supabase
-      .from("admins")
-      .select("id, name")
-      .eq("user_id", user.id)
-      .single(),
-    supabase
-      .from("teams")
-      .select("name, access_code")
-      .eq(
-        "admin_id",
-        (
-          await supabase
-            .from("admins")
-            .select("id")
-            .eq("user_id", user.id)
-            .single()
-        ).data?.id ?? ""
-      )
-      .single(),
-  ]);
+  const { data: admin } = await supabase
+    .from("admins")
+    .select("id, name")
+    .eq("user_id", user.id)
+    .single();
+
+  if (!admin) redirect("/login");
+
+  const { data: team } = await supabase
+    .from("teams")
+    .select("name, access_code")
+    .eq("admin_id", admin.id)
+    .single();
+
+  if (!team) redirect("/login");
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
+    <div className="max-w-md mx-auto p-4 space-y-4">
+      <Card>
         <CardHeader>
-          <CardTitle>Bem-vindo, {admin?.name}!</CardTitle>
-          <CardDescription>Painel do organizador</CardDescription>
+          <CardTitle>Olá, {admin.name}!</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {team && (
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Turma</p>
-              <p className="font-medium">{team.name}</p>
-              <p className="text-sm text-muted-foreground">Código de acesso</p>
-              <p className="font-mono font-bold tracking-widest">
-                {team.access_code}
-              </p>
-            </div>
-          )}
-          <form action={logout}>
-            <Button variant="outline" className="w-full" type="submit">
-              Sair
-            </Button>
-          </form>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Turma:{" "}
+            <span className="font-medium text-foreground">{team.name}</span>
+          </p>
         </CardContent>
       </Card>
+
+      <AccessCodeCard
+        teamName={team.name}
+        accessCode={team.access_code}
+        appUrl={appUrl}
+      />
+
+      <form action={logout}>
+        <Button variant="outline" className="w-full" type="submit">
+          Sair
+        </Button>
+      </form>
     </div>
   );
 }
