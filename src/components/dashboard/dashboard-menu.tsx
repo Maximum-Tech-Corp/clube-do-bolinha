@@ -39,7 +39,18 @@ export function DashboardMenu({ appUrl, teamName, matchDurationMinutes }: Props)
   }, []);
 
   const shareText = encodeURIComponent(
-    `⚽ *Clube do Bolinha* — Organize o futebol da sua turma de forma simples!\n\nConfirme presença, veja os times sorteados e acompanhe rankings.\n\n👉 Acesse: ${appUrl}\n\n📱 *Instale como app no celular:*\n• *Android:* Chrome → menu ⋮ → "Adicionar à tela inicial"\n• *iPhone:* Safari → botão ↑ compartilhar → "Adicionar à Tela de Início"`
+    `*Clube do Bolinha*
+Organize o futebol da sua turma de forma simples!
+
+- Confirme presenca nos jogos
+- Veja os times sorteados
+- Acompanhe rankings e historico
+
+Acesse: ${appUrl}
+
+*Para instalar como app:*
+Android: abra no Chrome, toque nos 3 pontos e selecione "Adicionar a tela inicial"
+iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de Inicio"`
   );
 
   async function handleSave() {

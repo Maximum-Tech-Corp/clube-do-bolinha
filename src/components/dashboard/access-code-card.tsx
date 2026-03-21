@@ -36,7 +36,14 @@ export function AccessCodeCard({ teamName, accessCode, appUrl }: Props) {
   const suffix = currentCode.split("-")[1];
 
   const whatsappText = encodeURIComponent(
-    `Olá! Use o código *${currentCode}* para acessar a turma *${teamName}* no Clube do Bolinha.\n\nAcesse: ${appUrl}/jogador\n\n💡 *Dica:* Para usar como app no celular, abra o link no navegador e adicione à tela inicial.\n• *Android:* toque no menu do Chrome → "Adicionar à tela inicial"\n• *iPhone:* abra no Safari → botão compartilhar ↑ → "Adicionar à Tela de Início"`
+    `Ola! Acesse a turma *${teamName}* no Clube do Bolinha.
+
+Codigo de acesso: *${currentCode}*
+Link: ${appUrl}/jogador
+
+*Para instalar como app:*
+Android: abra no Chrome, toque nos 3 pontos e selecione "Adicionar a tela inicial"
+iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de Inicio"`
   );
 
   async function handleSave() {

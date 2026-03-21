@@ -4,7 +4,7 @@ export function ShareAppLink() {
   function handleShare() {
     const url = window.location.origin;
     const text = encodeURIComponent(
-      `⚽ *Clube do Bolinha* — Organize o futebol da sua turma!\n\nConfirme presença, veja os times sorteados e acompanhe rankings.\n\n👉 Acesse: ${url}\n\n📱 *Instale como app no celular:*\n• *Android:* Chrome → menu ⋮ → "Adicionar à tela inicial"\n• *iPhone:* Safari → botão ↑ compartilhar → "Adicionar à Tela de Início"`
+      `*Clube do Bolinha*\nOrganize o futebol da sua turma de forma simples!\n\n- Confirme presenca nos jogos\n- Veja os times sorteados\n- Acompanhe rankings e historico\n\nAcesse: ${url}\n\n*Para instalar como app:*\nAndroid: abra no Chrome, toque nos 3 pontos e selecione "Adicionar a tela inicial"\niPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de Inicio"`
     );
     window.open(`https://wa.me/?text=${text}`, "_blank", "noopener,noreferrer");
   }
