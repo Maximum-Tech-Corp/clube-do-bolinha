@@ -524,25 +524,7 @@ ALTER TABLE players ADD COLUMN suspension_reason TEXT CHECK (char_length(suspens
 
 ---
 
-### STEP 15 — PWA (Progressive Web App)
-
-**Objetivo:** App instalável no celular com comportamento nativo.
-
-**O que fazer:**
-- Criar `public/manifest.json` com nome, ícones, cores, `display: standalone`, `start_url`
-- Gerar ícones em múltiplos tamanhos (192x192, 512x512 mínimo)
-- Adicionar meta tags no `layout.tsx` root (theme-color, apple-touch-icon, viewport)
-- Configurar Service Worker básico (cache de assets estáticos, página offline)
-- Testar instalação no Chrome Android e Safari iOS
-
-**Verificar antes de avançar:**
-- Lighthouse PWA score aceitável
-- App instalável no Android (banner de instalação aparece)
-- Funciona offline com página de fallback amigável
-
----
-
-### STEP 16 — UI/UX e Polish
+### STEP 15 — UI/UX e Polish ✅
 
 **Objetivo:** Interface mobile-first, fluida e com feedback adequado.
 
@@ -561,6 +543,24 @@ ALTER TABLE players ADD COLUMN suspension_reason TEXT CHECK (char_length(suspens
 - Sem erros de console
 - Todas as ações têm feedback visual
 - Build de produção sem erros (`npm run build`)
+
+---
+
+### STEP 16 — PWA (Progressive Web App) ✅
+
+**Objetivo:** App instalável no celular com comportamento nativo.
+
+**O que fazer:**
+- Criar `app/manifest.ts` com nome, ícones, cores, `display: standalone`, `start_url`
+- Gerar ícones dinamicamente via `app/icon.tsx` (ImageResponse) em 192×192 e 512×512
+- Adicionar meta tags no `layout.tsx` root (themeColor, viewport, apple-mobile-web-app-*)
+- Configurar Service Worker básico em `public/sw.js` (cache offline, página de fallback)
+- Adicionar headers para `sw.js` no `next.config.ts`
+
+**Verificar antes de avançar:**
+- Lighthouse PWA score aceitável
+- App instalável no Android (banner de instalação aparece)
+- Funciona offline com página de fallback amigável
 
 ---
 
@@ -601,6 +601,6 @@ ALTER TABLE players ADD COLUMN suspension_reason TEXT CHECK (char_length(suspens
 | 12 | Modo Campeonato | Core |
 | 13 | Histórico e Rankings | Core |
 | 14 | Suspensão e Banimento | Core |
-| 15 | PWA | Frontend |
-| 16 | UI/UX e Polish | Frontend |
+| 15 | UI/UX e Polish | Frontend |
+| 16 | PWA | Frontend |
 | 17 | Deploy | Infra |

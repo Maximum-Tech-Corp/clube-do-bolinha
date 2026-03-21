@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { GameCard } from "@/components/player/game-card";
 import { PlayerDataSection } from "@/components/player/player-data-section";
 import { PlayerBottomNav } from "@/components/player/player-bottom-nav";
+import { InstallBanner } from "@/components/player/install-banner";
 
 interface Props {
   params: Promise<{ code: string }>;
@@ -153,6 +154,8 @@ export default async function TeamPage({ params }: Props) {
       )}
 
       {playerData && <PlayerDataSection player={playerData} teamId={team.id} />}
+
+      <InstallBanner />
 
       <PlayerBottomNav teamCode={code.toUpperCase()} />
     </div>
