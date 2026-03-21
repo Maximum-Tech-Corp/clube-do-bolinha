@@ -37,12 +37,17 @@ export default async function TeamPage({ params }: Props) {
 
   const gameList = games ?? [];
 
+  // IDs de jogos com campeonato e sorteio feito para verificar se fase de grupos iniciou
+  const openTournamentGameIds = gameList
+    .filter((g) => g.is_tournament && g.draw_done)
+    .map((g) => g.id);
+
   // Lê telefone do cookie (jogador que já confirmou antes)
   const cookieStore = await cookies();
   const playerPhone = cookieStore.get(`player_${team.id}`)?.value ?? undefined;
 
-  // Busca dados do jogador e confirmaçoes em paralelo
-  const [playerResult, confirmationsResult] = await Promise.all([
+  // Busca dados do jogador, confirmações e partidas de grupo concluídas em paralelo
+  const [playerResult, confirmationsResult, startedMatchesResult] = await Promise.all([
     playerPhone
       ? service
           .from("players")
@@ -62,10 +67,68 @@ export default async function TeamPage({ params }: Props) {
           )
           .in("status", ["confirmed", "waitlist"])
       : Promise.resolve({ data: [] }),
+
+    openTournamentGameIds.length > 0
+      ? service
+          .from("tournament_matches")
+          .select("game_id")
+          .in("game_id", openTournamentGameIds)
+          .eq("phase", "group")
+          .eq("completed", true)
+          .limit(openTournamentGameIds.length)
+      : Promise.resolve({ data: [] }),
   ]);
 
   const playerData = playerResult.data;
   const confirmations = confirmationsResult.data ?? [];
+
+  // Set de game_ids onde a fase de grupos já começou (ao menos 1 partida concluída)
+  const tournamentStartedGameIds = new Set(
+    (startedMatchesResult.data ?? []).map((m) => m.game_id)
+  );
+
+  // Busca o último jogo finalizado em que o jogador participou
+  let lastGame: {
+    id: string;
+    location: string | null;
+    scheduled_at: string;
+    status: string;
+    is_tournament: boolean;
+    draw_done: boolean;
+  } | null = null;
+  let lastGameConfirmedCount = 0;
+
+  if (playerData) {
+    const { data: playerConfirmedGames } = await service
+      .from("game_confirmations")
+      .select("game_id")
+      .eq("player_id", playerData.id)
+      .in("status", ["confirmed", "waitlist"]);
+
+    const playerGameIds = (playerConfirmedGames ?? []).map((c) => c.game_id);
+
+    if (playerGameIds.length > 0) {
+      const { data: lastGameRaw } = await service
+        .from("games")
+        .select("id, location, scheduled_at, status, is_tournament, draw_done")
+        .eq("team_id", team.id)
+        .eq("status", "finished")
+        .in("id", playerGameIds)
+        .order("finished_at", { ascending: false, nullsFirst: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (lastGameRaw) {
+        lastGame = lastGameRaw;
+        const { count } = await service
+          .from("game_confirmations")
+          .select("id", { count: "exact", head: true })
+          .eq("game_id", lastGameRaw.id)
+          .eq("status", "confirmed");
+        lastGameConfirmedCount = count ?? 0;
+      }
+    }
+  }
 
   // Monta mapa de contagens e status do jogador por jogo
   const gameStats: Record<
@@ -148,8 +211,26 @@ export default async function TeamPage({ params }: Props) {
               confirmedCount={gameStats[game.id].confirmedCount}
               playerStatus={gameStats[game.id].playerStatus}
               defaultPhone={playerPhone}
+              tournamentStarted={tournamentStartedGameIds.has(game.id)}
             />
           ))}
+        </div>
+      )}
+
+      {lastGame && (
+        <div className="space-y-2">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            Último jogo
+          </h2>
+          <GameCard
+            game={lastGame}
+            teamId={team.id}
+            teamCode={code.toUpperCase()}
+            confirmedCount={lastGameConfirmedCount}
+            playerStatus="confirmed"
+            defaultPhone={playerPhone}
+            detailsHref={`/jogador/${code.toUpperCase()}/historico/${lastGame.id}`}
+          />
         </div>
       )}
 

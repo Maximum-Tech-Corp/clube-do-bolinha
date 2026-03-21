@@ -44,33 +44,51 @@ export async function listPlayers() {
 
   if (error) return { error: "Erro ao buscar jogadores.", players: [] };
 
-  // Busca contagem de confirmações por jogador (status confirmed)
   const playerIds = players.map((p) => p.id);
-  const { data: confirmations } = await service
-    .from("game_confirmations")
-    .select("player_id")
-    .in("player_id", playerIds)
-    .eq("status", "confirmed");
 
-  const confirmationCounts: Record<string, number> = {};
-  for (const c of confirmations ?? []) {
-    confirmationCounts[c.player_id] = (confirmationCounts[c.player_id] ?? 0) + 1;
-  }
-
-  // Busca total de jogos finalizados da turma para calcular taxa de presença
-  const { count: totalGames } = await service
+  // Busca jogos finalizados com data para filtrar por cadastro do jogador
+  const { data: finishedGames } = await service
     .from("games")
-    .select("*", { count: "exact", head: true })
+    .select("id, scheduled_at")
     .eq("team_id", teamId)
     .eq("status", "finished");
 
-  const total = totalGames ?? 0;
+  const finishedGameList = finishedGames ?? [];
+  const finishedGameIds = finishedGameList.map((g) => g.id);
 
-  const enriched = players.map((p) => ({
-    ...p,
-    attendanceCount: confirmationCounts[p.id] ?? 0,
-    attendanceRate: total > 0 ? Math.round(((confirmationCounts[p.id] ?? 0) / total) * 100) : null,
-  }));
+  // Busca confirmações (confirmed + waitlist) nos jogos finalizados
+  const { data: confirmationsRaw } = finishedGameIds.length > 0 && playerIds.length > 0
+    ? await service
+        .from("game_confirmations")
+        .select("player_id, game_id")
+        .in("game_id", finishedGameIds)
+        .in("player_id", playerIds)
+        .in("status", ["confirmed", "waitlist"])
+    : { data: [] };
+
+  const confirmations = confirmationsRaw ?? [];
+
+  // Por jogador:
+  // denominador = jogos finalizados ocorridos após o cadastro do jogador
+  // numerador = confirmações (confirmed ou waitlist) nesses jogos
+  const enriched = players.map((p) => {
+    const registeredAt = new Date(p.created_at);
+    const eligibleGames = finishedGameList.filter(
+      (g) => new Date(g.scheduled_at) >= registeredAt
+    );
+    const eligibleGameIds = new Set(eligibleGames.map((g) => g.id));
+    const denominator = eligibleGames.length;
+
+    const numerator = confirmations.filter(
+      (c) => c.player_id === p.id && eligibleGameIds.has(c.game_id)
+    ).length;
+
+    return {
+      ...p,
+      attendanceCount: numerator,
+      attendanceRate: denominator > 0 ? Math.round((numerator / denominator) * 100) : null,
+    };
+  });
 
   return { players: enriched };
 }

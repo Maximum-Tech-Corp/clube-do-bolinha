@@ -117,18 +117,28 @@ export async function executeDraw(
       .eq("game_id", gameId)
       .order("team_number");
 
-    const ids = (gameTeams ?? []).map((t) => t.id);
-    const pairs = buildGroupMatchOrder(ids);
-    const matchInserts = pairs.map(([home, away], idx) => ({
-      game_id: gameId,
-      phase: "group" as const,
-      home_team_id: home,
-      away_team_id: away,
-      match_order: idx + 1,
-    }));
+    // Verifica se já existem partidas de grupo antes de inserir (guard anti-duplicata)
+    const { data: existingGroupMatches } = await service
+      .from("tournament_matches")
+      .select("id")
+      .eq("game_id", gameId)
+      .eq("phase", "group")
+      .limit(1);
 
-    if (matchInserts.length > 0) {
-      await service.from("tournament_matches").insert(matchInserts);
+    if (!existingGroupMatches || existingGroupMatches.length === 0) {
+      const ids = (gameTeams ?? []).map((t) => t.id);
+      const pairs = buildGroupMatchOrder(ids);
+      const matchInserts = pairs.map(([home, away], idx) => ({
+        game_id: gameId,
+        phase: "group" as const,
+        home_team_id: home,
+        away_team_id: away,
+        match_order: idx + 1,
+      }));
+
+      if (matchInserts.length > 0) {
+        await service.from("tournament_matches").insert(matchInserts);
+      }
     }
   }
 

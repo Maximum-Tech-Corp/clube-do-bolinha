@@ -16,7 +16,7 @@ function formatDate(iso: string) {
   });
 }
 
-export default async function PlayerTimesPage({ params }: Props) {
+export default async function PlayerListaPage({ params }: Props) {
   const { code, gameId } = await params;
   const upperCode = code.toUpperCase();
 
@@ -37,40 +37,26 @@ export default async function PlayerTimesPage({ params }: Props) {
     .eq("team_id", team.id)
     .maybeSingle();
 
-  if (!game || !game.draw_done || game.status !== "open") notFound();
+  // Só disponível para jogos abertos sem sorteio
+  if (!game || game.draw_done || game.status !== "open") notFound();
 
-  const { data: gameTeams } = await service
-    .from("game_teams")
-    .select("id, team_number")
+  const { data: confirmationsRaw } = await service
+    .from("game_confirmations")
+    .select("player_id, status")
     .eq("game_id", gameId)
-    .order("team_number");
+    .eq("status", "confirmed");
 
-  const teamIds = (gameTeams ?? []).map((t) => t.id);
-
-  const { data: teamPlayersRaw } = teamIds.length > 0
-    ? await service
-        .from("game_team_players")
-        .select("game_team_id, player_id")
-        .in("game_team_id", teamIds)
-    : { data: [] };
-
-  const playerIds = (teamPlayersRaw ?? []).map((tp) => tp.player_id);
+  const playerIds = (confirmationsRaw ?? []).map((c) => c.player_id);
 
   const { data: playersRaw } = playerIds.length > 0
     ? await service
         .from("players")
         .select("id, name")
         .in("id", playerIds)
+        .order("name")
     : { data: [] };
 
-  const playerMap = new Map((playersRaw ?? []).map((p) => [p.id, p.name]));
-
-  const teamsData = (gameTeams ?? []).map((gt) => ({
-    teamNumber: gt.team_number,
-    players: (teamPlayersRaw ?? [])
-      .filter((tp) => tp.game_team_id === gt.id)
-      .map((tp) => playerMap.get(tp.player_id) ?? "—"),
-  }));
+  const players = playersRaw ?? [];
 
   return (
     <div className="max-w-md mx-auto p-4 pb-24 space-y-4">
@@ -82,7 +68,7 @@ export default async function PlayerTimesPage({ params }: Props) {
           <ChevronLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-xl font-bold">Times sorteados</h1>
+          <h1 className="text-xl font-bold">Lista de confirmados</h1>
           <p className="text-sm text-muted-foreground capitalize">
             {formatDate(game.scheduled_at)}
             {game.location ? ` · ${game.location}` : ""}
@@ -90,25 +76,26 @@ export default async function PlayerTimesPage({ params }: Props) {
         </div>
       </div>
 
-      <div className="space-y-3">
-        {teamsData.map((team) => (
-          <div
-            key={team.teamNumber}
-            className="rounded-lg border border-border overflow-hidden"
-          >
-            <div className="px-4 py-2 bg-muted/50">
-              <h2 className="font-semibold text-sm">Time {team.teamNumber}</h2>
-            </div>
-            <ul className="divide-y divide-border">
-              {team.players.map((name, i) => (
-                <li key={i} className="px-4 py-2.5 text-sm font-medium">
-                  {name}
-                </li>
-              ))}
-            </ul>
+      {players.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-12">
+          Nenhum jogador confirmado ainda.
+        </p>
+      ) : (
+        <div className="rounded-lg border border-border overflow-hidden">
+          <div className="px-4 py-2 bg-muted/50">
+            <p className="text-sm font-semibold">
+              {players.length} confirmado{players.length !== 1 ? "s" : ""}
+            </p>
           </div>
-        ))}
-      </div>
+          <ul className="divide-y divide-border">
+            {players.map((player) => (
+              <li key={player.id} className="px-4 py-2.5 text-sm font-medium">
+                {player.name}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <PlayerBottomNav teamCode={upperCode} />
     </div>

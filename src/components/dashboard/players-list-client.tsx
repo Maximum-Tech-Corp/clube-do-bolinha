@@ -79,7 +79,7 @@ export function PlayersListClient({ players }: Props) {
                           ? `${player.attendanceRate}%`
                           : "—"}
                       </p>
-                      <p className="text-xs text-muted-foreground">presença</p>
+                      <p className="text-xs text-muted-foreground">participação</p>
                     </div>
                   </div>
                 </CardContent>

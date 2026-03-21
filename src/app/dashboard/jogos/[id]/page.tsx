@@ -54,6 +54,16 @@ export default async function GameDetailPage({ params }: Props) {
 
   if (!game) notFound();
 
+  // Conta times sorteados (para exibir o toggle de campeonato apenas com 4+ times)
+  let teamCount = 0;
+  if (game.draw_done) {
+    const { data: gameTeamsForCount } = await service
+      .from("game_teams")
+      .select("id")
+      .eq("game_id", gameId);
+    teamCount = (gameTeamsForCount ?? []).length;
+  }
+
   // Busca confirmações (confirmed + waitlist)
   const { data: confirmations } = await service
     .from("game_confirmations")
@@ -157,7 +167,7 @@ export default async function GameDetailPage({ params }: Props) {
               </Link>
             )}
           </div>
-          {game.status === "open" && (
+          {game.status === "open" && teamCount >= 4 && (
             <TournamentToggle gameId={gameId} isTournament={game.is_tournament} />
           )}
         </div>

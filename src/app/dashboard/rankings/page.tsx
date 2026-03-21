@@ -88,7 +88,7 @@ function AttendanceTable({ rows }: { rows: PlayerRanking[] }) {
   return (
     <div className="rounded-lg border border-border overflow-hidden">
       <div className="px-4 py-2 bg-muted/50">
-        <h2 className="font-semibold text-sm">Presença</h2>
+        <h2 className="font-semibold text-sm">Participação</h2>
       </div>
       <table className="w-full text-sm">
         <thead>
@@ -181,13 +181,13 @@ export default async function RankingsPage({ searchParams }: Props) {
     // Jogadores da turma
     service
       .from("players")
-      .select("id, name")
+      .select("id, name, created_at")
       .eq("team_id", team.id)
       .order("name"),
     // Jogos finalizados no ano selecionado
     service
       .from("games")
-      .select("id")
+      .select("id, scheduled_at")
       .eq("team_id", team.id)
       .eq("status", "finished")
       .gte("scheduled_at", yearStart)
@@ -206,7 +206,8 @@ export default async function RankingsPage({ searchParams }: Props) {
   const teamPlayers = players ?? [];
   const playerIds = teamPlayers.map((p) => p.id);
 
-  const finishedGameIds = (finishedGamesInYear ?? []).map((g) => g.id);
+  const finishedGameList = finishedGamesInYear ?? [];
+  const finishedGameIds = finishedGameList.map((g) => g.id);
   const totalFinishedGames = finishedGameIds.length;
 
   // Busca stats reais dos jogos do ano
@@ -230,6 +231,19 @@ export default async function RankingsPage({ searchParams }: Props) {
       gtpRows = gtp ?? [];
     }
   }
+
+  // Confirmações (confirmed + waitlist) nos jogos finalizados do ano
+  const confirmationsInYear =
+    finishedGameIds.length > 0 && playerIds.length > 0
+      ? (
+          await service
+            .from("game_confirmations")
+            .select("player_id, game_id")
+            .in("game_id", finishedGameIds)
+            .in("player_id", playerIds)
+            .in("status", ["confirmed", "waitlist"])
+        ).data ?? []
+      : [];
 
   // Lançamentos retroativos do ano selecionado para jogadores desta turma
   const adjustmentsInYear =
@@ -256,15 +270,18 @@ export default async function RankingsPage({ searchParams }: Props) {
       myGtp.reduce((s, r) => s + r.assists, 0) +
       myAdj.reduce((s, a) => s + a.assists, 0);
 
-    // Presença: jogos distintos em que o jogador aparece em game_team_players
-    const distinctGames = new Set(
-      myGtp.map((r) => gameTeamGameMap.get(r.game_team_id)).filter(Boolean)
+    // Presença: confirmações (confirmed/waitlist) ÷ jogos finalizados após cadastro do jogador
+    const registeredAt = new Date(player.created_at);
+    const eligibleGames = finishedGameList.filter(
+      (g) => new Date(g.scheduled_at) >= registeredAt
     );
-    const gamesPlayed = distinctGames.size;
+    const eligibleGameIds = new Set(eligibleGames.map((g) => g.id));
+    const denominator = eligibleGames.length;
+    const gamesPlayed = confirmationsInYear.filter(
+      (c) => c.player_id === player.id && eligibleGameIds.has(c.game_id)
+    ).length;
     const attendanceRate =
-      totalFinishedGames > 0
-        ? Math.round((gamesPlayed / totalFinishedGames) * 100)
-        : 0;
+      denominator > 0 ? Math.round((gamesPlayed / denominator) * 100) : 0;
 
     return {
       playerId: player.id,

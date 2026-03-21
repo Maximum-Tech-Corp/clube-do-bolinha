@@ -24,7 +24,7 @@ export interface DrawInfo {
   canDraw: boolean;
   isWarning: boolean;
   message: string | null;
-  canBeTournament: boolean; // apenas times completos, 4 ou 5 times
+  canBeTournament: boolean; // 4 ou 5 times (incluindo time incompleto)
 }
 
 export function getDrawInfo(count: number): DrawInfo {
@@ -99,7 +99,7 @@ export function getDrawInfo(count: number): DrawInfo {
       hasPartialTeam: true,
       canDraw: true,
       isWarning: true,
-      canBeTournament: false,
+      canBeTournament,
       message: `Terá 1 time incompleto com ${leftover} jogadores.`,
     };
   }

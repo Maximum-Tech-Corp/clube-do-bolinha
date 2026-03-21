@@ -22,6 +22,8 @@ interface Props {
   confirmedCount: number;
   playerStatus: string | null;
   defaultPhone?: string;
+  detailsHref?: string;
+  tournamentStarted?: boolean;
 }
 
 export function GameCard({
@@ -31,6 +33,8 @@ export function GameCard({
   confirmedCount,
   playerStatus,
   defaultPhone,
+  detailsHref,
+  tournamentStarted,
 }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -110,12 +114,39 @@ export function GameCard({
             </div>
           )}
 
-          {isOpen && game.draw_done && (
+          {isOpen && !game.draw_done && (
+            <Link
+              href={`/jogador/${teamCode}/lista/${game.id}`}
+              className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-1.5 hover:bg-primary/10 transition-colors"
+            >
+              Ver lista
+            </Link>
+          )}
+
+          {isOpen && game.draw_done && game.is_tournament && tournamentStarted && (
+            <Link
+              href={`/jogador/${teamCode}/campeonato/${game.id}`}
+              className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-1.5 hover:bg-primary/10 transition-colors"
+            >
+              Acompanhar Jogos
+            </Link>
+          )}
+
+          {isOpen && game.draw_done && (!game.is_tournament || !tournamentStarted) && (
             <Link
               href={`/jogador/${teamCode}/times/${game.id}`}
               className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-1.5 hover:bg-primary/10 transition-colors"
             >
               Ver times sorteados
+            </Link>
+          )}
+
+          {isFinished && detailsHref && (
+            <Link
+              href={detailsHref}
+              className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-1.5 hover:bg-primary/10 transition-colors"
+            >
+              Ver detalhes
             </Link>
           )}
         </CardContent>

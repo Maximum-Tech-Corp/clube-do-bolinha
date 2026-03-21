@@ -568,7 +568,34 @@ ALTER TABLE players ADD COLUMN suspension_reason TEXT CHECK (char_length(suspens
 
 **Objetivo:** App funcionando em produção na Vercel, acessível por usuários reais. Stripe em modo de teste — a área restrita do admin funciona, mas cobranças reais não são processadas ainda.
 
+> ⚠️ **O banco de dados será zerado antes do deploy.** Todo o conteúdo criado durante o desenvolvimento (admins, turmas, jogadores, jogos) deve ser apagado para o início limpo em produção.
+
+**Como zerar o banco (Supabase):**
+
+A forma mais segura e completa é via SQL Editor no painel do Supabase (`supabase.com → projeto → SQL Editor`). Execute o script abaixo na ordem correta (respeitando as foreign keys):
+
+```sql
+-- Limpa dados em ordem inversa das dependências
+TRUNCATE TABLE tournament_matches     CASCADE;
+TRUNCATE TABLE game_team_players      CASCADE;
+TRUNCATE TABLE game_teams             CASCADE;
+TRUNCATE TABLE game_confirmations     CASCADE;
+TRUNCATE TABLE player_stat_adjustments CASCADE;
+TRUNCATE TABLE games                  CASCADE;
+TRUNCATE TABLE players                CASCADE;
+TRUNCATE TABLE teams                  CASCADE;
+TRUNCATE TABLE admins                 CASCADE;
+
+-- Remove usuários do Supabase Auth (requer service_role)
+-- Execute via API ou diretamente no Dashboard → Authentication → Users → apagar manualmente
+```
+
+> **Atenção:** Usuários do Supabase Auth (`auth.users`) **não são apagados pelo TRUNCATE** das tabelas da aplicação. Apague-os manualmente em: Supabase Dashboard → Authentication → Users → selecionar todos → Delete.
+>
+> Alternativa mais radical (não recomendada em produção): resetar o banco inteiro pelo CLI com `supabase db reset` — isso re-aplica todas as migrations do zero, mas exige acesso ao projeto via Supabase CLI vinculado ao projeto de produção.
+
 **O que fazer:**
+- Zerar o banco conforme descrito acima
 - Criar repositório Git (GitHub) e fazer push do código
 - Criar projeto na Vercel conectado ao repositório
 - Configurar todas as variáveis de ambiente na Vercel (Supabase, Stripe test keys, `NEXT_PUBLIC_APP_URL`)
@@ -578,6 +605,7 @@ ALTER TABLE players ADD COLUMN suspension_reason TEXT CHECK (char_length(suspens
 - Testar fluxo completo em produção: cadastro admin → Stripe test checkout → área restrita → jogadores
 
 **Verificar antes de avançar:**
+- Banco zerado (sem dados de desenvolvimento)
 - Deploy bem-sucedido, sem erros de build na Vercel
 - HTTPS ativo (automático na Vercel)
 - Admin consegue se cadastrar e acessar o painel
@@ -605,6 +633,33 @@ ALTER TABLE players ADD COLUMN suspension_reason TEXT CHECK (char_length(suspens
 - Pagamento real processado com sucesso
 - Webhook live recebendo eventos e atualizando `subscription_status` corretamente
 - Admin com assinatura ativa consegue acessar o painel normalmente
+
+---
+
+**Usuário fixo sem mensalidade (admin interno / conta própria):**
+
+Para que o organizador do próprio sistema (você) possa usar o app sem pagar mensalidade, a abordagem mais simples é **direto no Stripe**, sem mudança de código:
+
+1. **No Stripe Dashboard (modo live):**
+   - Crie a assinatura manualmente para o seu customer: Customers → selecionar o seu → Create subscription
+   - Aplique um **cupom de 100% de desconto permanente** (`forever`): Coupons → New → 100% off → Duration: Forever
+   - Vincule o cupom à assinatura — o Stripe processa normalmente (subscription `active`), mas nunca cobra
+
+2. **Alternativa via Stripe CLI / API:**
+   ```bash
+   stripe coupons create --percent-off=100 --duration=forever --name="Conta Interna"
+   stripe subscriptions create \
+     --customer=cus_XXXXX \
+     --items[0][price]=price_XXXXX \
+     --coupon=COUPON_ID
+   ```
+
+3. **Por que não mudar o código:**
+   - O webhook já trata `subscription_status = active` → nenhuma lógica nova necessária
+   - Manter a lógica de acesso uniforme evita bifurcações e bugs futuros
+   - O Stripe registra tudo normalmente (histórico, renewals) — só não cobra
+
+> Se o Stripe for descartado no futuro, basta atualizar `subscription_status = 'active'` diretamente na tabela `admins` via SQL no Supabase — independente de assinatura.
 
 ---
 

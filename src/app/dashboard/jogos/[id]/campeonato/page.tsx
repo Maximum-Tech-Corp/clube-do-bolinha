@@ -1,7 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { TournamentClient } from "@/components/dashboard/tournament-client";
+import { MatchTimer } from "@/components/dashboard/match-timer";
 import { computeStandings, buildGroupMatchOrder } from "@/lib/tournament-utils";
 import type { MatchRow } from "@/lib/tournament-utils";
 
@@ -29,7 +31,7 @@ export default async function CampeonatoPage({ params }: Props) {
 
   const { data: team } = await service
     .from("teams")
-    .select("id")
+    .select("id, match_duration_minutes")
     .eq("admin_id", admin.id)
     .single();
   if (!team) redirect("/login");
@@ -63,7 +65,8 @@ export default async function CampeonatoPage({ params }: Props) {
 
   // Gera partidas da fase de grupos se ainda não existem
   // (ocorre quando o modo campeonato é ativado após o sorteio via TournamentToggle)
-  if (matches.length === 0 && gameTeams.length >= 4) {
+  const groupMatchesExist = matches.some((m) => m.phase === "group");
+  if (!groupMatchesExist && gameTeams.length >= 4) {
     const ids = gameTeams.map((t) => t.id);
     const pairs = buildGroupMatchOrder(ids);
     const inserts = pairs.map(([home, away], idx) => ({
@@ -79,7 +82,7 @@ export default async function CampeonatoPage({ params }: Props) {
       .insert(inserts)
       .select("*");
 
-    matches = (inserted ?? []) as MatchRow[];
+    matches = [...((inserted ?? []) as MatchRow[]), ...matches];
   }
 
   const teamMap = new Map(gameTeams.map((t) => [t.id, t.team_number]));
@@ -118,12 +121,12 @@ export default async function CampeonatoPage({ params }: Props) {
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-4">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <Link
-          href={`/dashboard/jogos/${gameId}/times`}
-          className="inline-flex items-center justify-center rounded-lg border border-border bg-background text-sm font-medium h-9 px-3 hover:bg-muted/50 transition-colors shrink-0"
+          href={`/dashboard/jogos/${gameId}`}
+          className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground shrink-0"
         >
-          ← Times
+          <ChevronLeft className="w-5 h-5" />
         </Link>
         <div>
           <h1 className="text-xl font-bold">Campeonato</h1>
@@ -132,6 +135,13 @@ export default async function CampeonatoPage({ params }: Props) {
           </p>
         </div>
       </div>
+
+      {game.status !== "finished" && (
+        <MatchTimer
+          gameId={`${gameId}_camp`}
+          defaultMinutes={team.match_duration_minutes ?? 10}
+        />
+      )}
 
       <TournamentClient
         gameId={gameId}

@@ -1,7 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { TeamsClient } from "@/components/dashboard/teams-client";
+import { MatchTimer } from "@/components/dashboard/match-timer";
 import { Badge } from "@/components/ui/badge";
 
 interface Props {
@@ -38,7 +40,7 @@ export default async function TimesPage({ params }: Props) {
 
   const { data: team } = await service
     .from("teams")
-    .select("id")
+    .select("id, match_duration_minutes")
     .eq("admin_id", admin.id)
     .single();
   if (!team) redirect("/login");
@@ -132,19 +134,27 @@ export default async function TimesPage({ params }: Props) {
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-4">
       {/* Cabeçalho */}
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <h1 className="text-xl font-bold">Times</h1>
-          <p className="text-sm text-muted-foreground">
-            {formatDate(game.scheduled_at)}
-            {game.location ? ` · ${game.location}` : ""}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {game.is_tournament && (
-            <Badge variant="secondary">Campeonato</Badge>
-          )}
-          {isFinished && <Badge variant="outline">Finalizado</Badge>}
+      <div className="flex items-start gap-2">
+        <Link
+          href={`/dashboard/jogos/${gameId}`}
+          className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground shrink-0 mt-0.5"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </Link>
+        <div className="flex-1 flex items-start justify-between gap-2">
+          <div>
+            <h1 className="text-xl font-bold">Times</h1>
+            <p className="text-sm text-muted-foreground">
+              {formatDate(game.scheduled_at)}
+              {game.location ? ` · ${game.location}` : ""}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {game.is_tournament && (
+              <Badge variant="secondary">Campeonato</Badge>
+            )}
+            {isFinished && <Badge variant="outline">Finalizado</Badge>}
+          </div>
         </div>
       </div>
 
@@ -156,6 +166,13 @@ export default async function TimesPage({ params }: Props) {
         >
           Ver campeonato
         </Link>
+      )}
+
+      {!isFinished && !game.is_tournament && (
+        <MatchTimer
+          gameId={gameId}
+          defaultMinutes={team.match_duration_minutes ?? 10}
+        />
       )}
 
       <TeamsClient
