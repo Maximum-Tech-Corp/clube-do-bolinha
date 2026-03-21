@@ -363,12 +363,6 @@ export default async function HistoricoDetailPage({ params }: Props) {
         </section>
       )}
 
-      <Link
-        href="/dashboard/historico"
-        className="block text-sm text-muted-foreground underline pt-2"
-      >
-        ← Voltar ao histórico
-      </Link>
     </div>
   );
 }

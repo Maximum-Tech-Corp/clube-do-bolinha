@@ -118,11 +118,19 @@ export default async function CampeonatoPage({ params }: Props) {
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-4">
-      <div>
-        <h1 className="text-xl font-bold">Campeonato</h1>
-        <p className="text-sm text-muted-foreground">
-          {gameTeams.length} times · fase de grupos
-        </p>
+      <div className="flex items-center gap-3">
+        <Link
+          href={`/dashboard/jogos/${gameId}/times`}
+          className="inline-flex items-center justify-center rounded-lg border border-border bg-background text-sm font-medium h-9 px-3 hover:bg-muted/50 transition-colors shrink-0"
+        >
+          ← Times
+        </Link>
+        <div>
+          <h1 className="text-xl font-bold">Campeonato</h1>
+          <p className="text-sm text-muted-foreground">
+            {gameTeams.length} times
+          </p>
+        </div>
       </div>
 
       <TournamentClient
@@ -133,13 +141,6 @@ export default async function CampeonatoPage({ params }: Props) {
         standings={standingsData}
         isFinished={game.status === "finished"}
       />
-
-      <Link
-        href={`/dashboard/jogos/${gameId}/times`}
-        className="block text-sm text-muted-foreground underline pt-2"
-      >
-        ← Voltar aos times
-      </Link>
     </div>
   );
 }

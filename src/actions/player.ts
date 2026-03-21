@@ -5,6 +5,12 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import type { StaminaLevel } from "@/types/database.types";
 
+export async function clearPlayerCookie(teamId: string): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete(`player_${teamId}`);
+  revalidatePath(`/jogador`);
+}
+
 export async function validateTeamCode(
   code: string
 ): Promise<{ valid: boolean }> {

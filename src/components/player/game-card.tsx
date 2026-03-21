@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ConfirmPresenceDialog } from "./confirm-presence-dialog";
@@ -11,11 +12,13 @@ interface GameData {
   scheduled_at: string;
   status: string;
   is_tournament: boolean;
+  draw_done: boolean;
 }
 
 interface Props {
   game: GameData;
   teamId: string;
+  teamCode: string;
   confirmedCount: number;
   playerStatus: string | null;
   defaultPhone?: string;
@@ -24,6 +27,7 @@ interface Props {
 export function GameCard({
   game,
   teamId,
+  teamCode,
   confirmedCount,
   playerStatus,
   defaultPhone,
@@ -64,36 +68,55 @@ export function GameCard({
               {game.location && (
                 <p className="text-sm text-muted-foreground">{game.location}</p>
               )}
+              {game.is_tournament && !isCancelled && (
+                <p className="text-xs text-primary font-medium">Modo Campeonato</p>
+              )}
             </div>
-            {isCancelled && (
-              <span className="text-xs font-medium text-destructive border border-destructive rounded px-2 py-0.5">
-                Cancelado
-              </span>
-            )}
-            {game.is_tournament && !isCancelled && (
-              <span className="text-xs font-medium text-primary border border-primary rounded px-2 py-0.5">
-                Campeonato
-              </span>
-            )}
+            <div className="shrink-0">
+              {isCancelled && (
+                <span className="text-xs font-medium text-destructive border border-destructive rounded px-2 py-0.5">
+                  Cancelado
+                </span>
+              )}
+              {isFinished && (
+                <span className="text-xs font-medium text-muted-foreground border border-border rounded px-2 py-0.5">
+                  Finalizado
+                </span>
+              )}
+              {isOpen && (
+                <span className="text-xs font-medium text-primary border border-primary/40 bg-primary/5 rounded px-2 py-0.5">
+                  Agendado
+                </span>
+              )}
+            </div>
           </div>
 
           {!isCancelled && !isFinished && (
-            <div className="flex items-center justify-between">
+            <div className="space-y-2">
               <p className="text-sm text-muted-foreground">
                 {confirmedCount} confirmado{confirmedCount !== 1 ? "s" : ""}
               </p>
               {playerStatusLabel ? (
-                <span className="text-sm font-medium text-green-600">
+                <span className="text-sm font-medium text-primary">
                   {playerStatusLabel}
                 </span>
               ) : (
                 isOpen && (
-                  <Button size="sm" onClick={() => setDialogOpen(true)}>
+                  <Button size="sm" className="w-full" onClick={() => setDialogOpen(true)}>
                     Confirmar presença
                   </Button>
                 )
               )}
             </div>
+          )}
+
+          {isOpen && game.draw_done && (
+            <Link
+              href={`/jogador/${teamCode}/times/${game.id}`}
+              className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-1.5 hover:bg-primary/10 transition-colors"
+            >
+              Ver times sorteados
+            </Link>
           )}
         </CardContent>
       </Card>

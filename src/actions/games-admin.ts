@@ -49,7 +49,8 @@ export async function listGames() {
       .select("id, location, scheduled_at, status, draw_done, is_tournament")
       .eq("team_id", teamId)
       .or(`scheduled_at.lt.${now},status.in.(finished,cancelled)`)
-      .order("scheduled_at", { ascending: false }),
+      .order("scheduled_at", { ascending: false })
+      .limit(5),
   ]);
 
   return {

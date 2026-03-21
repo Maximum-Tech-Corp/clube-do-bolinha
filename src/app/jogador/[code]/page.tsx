@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/server";
 import { GameCard } from "@/components/player/game-card";
 import { PlayerDataSection } from "@/components/player/player-data-section";
-import Link from "next/link";
+import { PlayerBottomNav } from "@/components/player/player-bottom-nav";
 
 interface Props {
   params: Promise<{ code: string }>;
@@ -21,14 +21,15 @@ export default async function TeamPage({ params }: Props) {
 
   if (!team) notFound();
 
-  // Jogos nos próximos 7 dias (inclui cancelados para mostrar status)
+  // Jogos em aberto nos próximos 7 dias
   const now = new Date();
   const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
   const { data: games } = await service
     .from("games")
-    .select("id, location, scheduled_at, status, is_tournament")
+    .select("id, location, scheduled_at, status, is_tournament, draw_done")
     .eq("team_id", team.id)
+    .eq("status", "open")
     .gte("scheduled_at", now.toISOString())
     .lte("scheduled_at", sevenDaysLater.toISOString())
     .order("scheduled_at", { ascending: true });
@@ -95,18 +96,10 @@ export default async function TeamPage({ params }: Props) {
     new Date(playerData.suspended_until) > new Date();
 
   return (
-    <div className="max-w-md mx-auto p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold">{team.name}</h1>
-          <p className="text-sm text-muted-foreground">Próximos 7 dias</p>
-        </div>
-        <Link
-          href="/jogador"
-          className="text-sm text-muted-foreground underline"
-        >
-          Trocar turma
-        </Link>
+    <div className="max-w-md mx-auto p-4 pb-24 space-y-4">
+      <div>
+        <h1 className="text-xl font-bold">{team.name}</h1>
+        <p className="text-sm text-muted-foreground">Próximos 7 dias</p>
       </div>
 
       {isBanned && (
@@ -150,6 +143,7 @@ export default async function TeamPage({ params }: Props) {
               key={game.id}
               game={game}
               teamId={team.id}
+              teamCode={code.toUpperCase()}
               confirmedCount={gameStats[game.id].confirmedCount}
               playerStatus={gameStats[game.id].playerStatus}
               defaultPhone={playerPhone}
@@ -158,7 +152,9 @@ export default async function TeamPage({ params }: Props) {
         </div>
       )}
 
-      {playerData && <PlayerDataSection player={playerData} />}
+      {playerData && <PlayerDataSection player={playerData} teamId={team.id} />}
+
+      <PlayerBottomNav teamCode={code.toUpperCase()} />
     </div>
   );
 }

@@ -1,4 +1,8 @@
+"use client";
+
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { clearPlayerCookie } from "@/actions/player";
 
 const STAMINA_LABEL: Record<string, string> = {
   "1": "1 jogo",
@@ -15,9 +19,17 @@ interface Props {
     stamina: string;
     is_star: boolean;
   };
+  teamId: string;
 }
 
-export function PlayerDataSection({ player }: Props) {
+export function PlayerDataSection({ player, teamId }: Props) {
+  const router = useRouter();
+
+  async function handleNotMe() {
+    await clearPlayerCookie(teamId);
+    router.refresh();
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -48,6 +60,15 @@ export function PlayerDataSection({ player }: Props) {
             <span className="font-medium">⭐ Estrela</span>
           </div>
         )}
+        <div className="pt-2 border-t border-border">
+          <button
+            type="button"
+            onClick={handleNotMe}
+            className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+          >
+            Eu não sou esse jogador
+          </button>
+        </div>
       </CardContent>
     </Card>
   );

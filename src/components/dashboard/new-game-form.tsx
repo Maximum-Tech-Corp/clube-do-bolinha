@@ -6,6 +6,7 @@ import { createGame } from "@/actions/games-admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
 
 export function NewGameForm() {
   const [dateTime, setDateTime] = useState("");
@@ -66,7 +67,14 @@ export function NewGameForm() {
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       <Button type="submit" className="w-full" disabled={!dateTime || loading}>
-        {loading ? "Salvando..." : "Criar jogo"}
+        {loading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Salvando...
+          </>
+        ) : (
+          "Criar jogo"
+        )}
       </Button>
     </form>
   );

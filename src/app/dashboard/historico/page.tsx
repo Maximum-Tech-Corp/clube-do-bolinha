@@ -42,7 +42,7 @@ export default async function HistoricoPage() {
     .select("id, location, scheduled_at, is_tournament, finished_at")
     .eq("team_id", team.id)
     .eq("status", "finished")
-    .order("scheduled_at", { ascending: false });
+    .order("finished_at", { ascending: false, nullsFirst: false });
 
   const finishedGames = games ?? [];
 

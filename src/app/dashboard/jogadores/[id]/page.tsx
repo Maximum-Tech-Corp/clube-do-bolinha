@@ -66,12 +66,6 @@ export default async function EditPlayerPage({ params }: Props) {
         />
       </div>
 
-      <Link
-        href="/dashboard/jogadores"
-        className="block text-sm text-muted-foreground underline"
-      >
-        ← Voltar
-      </Link>
     </div>
   );
 }

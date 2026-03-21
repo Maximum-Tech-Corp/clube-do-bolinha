@@ -24,6 +24,14 @@ export function AccessCodeCard({ teamName, accessCode, appUrl }: Props) {
   const [currentCode, setCurrentCode] = useState(accessCode);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  function handleCopyCode() {
+    navigator.clipboard.writeText(currentCode).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
 
   const suffix = currentCode.split("-")[1];
 
@@ -61,9 +69,19 @@ export function AccessCodeCard({ teamName, accessCode, appUrl }: Props) {
       <CardContent className="space-y-4">
         {!editing ? (
           <>
-            <p className="font-mono text-2xl font-bold tracking-widest text-center py-3 bg-muted rounded-md">
+            <button
+              type="button"
+              onClick={handleCopyCode}
+              className="w-full font-mono text-2xl font-bold tracking-widest text-center py-3 bg-muted rounded-md hover:bg-muted/70 transition-colors cursor-pointer relative"
+              title="Clique para copiar"
+            >
               {currentCode}
-            </p>
+              {copied && (
+                <span className="absolute inset-0 flex items-center justify-center rounded-md bg-muted text-sm font-sans font-medium tracking-normal text-primary">
+                  Copiado!
+                </span>
+              )}
+            </button>
             <div className="flex gap-2">
               <Button
                 variant="outline"

@@ -126,7 +126,7 @@ export function CadastroForm() {
             )}
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1 mb-2">
             <Label htmlFor="confirmPassword">Confirmar senha</Label>
             <Input
               id="confirmPassword"

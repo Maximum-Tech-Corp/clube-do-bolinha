@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { NewGameForm } from "@/components/dashboard/new-game-form";
 
 export default function NovoJogoPage() {
@@ -10,13 +9,6 @@ export default function NovoJogoPage() {
       </div>
 
       <NewGameForm />
-
-      <Link
-        href="/dashboard/jogos"
-        className="block text-sm text-muted-foreground underline"
-      >
-        ← Voltar
-      </Link>
     </div>
   );
 }

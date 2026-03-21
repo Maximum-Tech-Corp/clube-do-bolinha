@@ -140,24 +140,22 @@ export default async function GameDetailPage({ params }: Props) {
 
       {game.draw_done && game.status !== "cancelled" && (
         <div className="rounded-lg border border-border p-3 space-y-3">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Sorteio realizado.</span>
-            <div className="flex items-center gap-3">
-              {game.is_tournament && (
-                <Link
-                  href={`/dashboard/jogos/${gameId}/campeonato`}
-                  className="underline text-foreground text-sm"
-                >
-                  Ver campeonato →
-                </Link>
-              )}
+          <p className="text-sm text-muted-foreground">Sorteio realizado.</p>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/dashboard/jogos/${gameId}/times`}
+              className="flex-1 inline-flex items-center justify-center rounded-lg border border-border bg-background text-sm font-medium h-9 hover:bg-muted/50 transition-colors"
+            >
+              Ver times
+            </Link>
+            {game.is_tournament && (
               <Link
-                href={`/dashboard/jogos/${gameId}/times`}
-                className="underline text-foreground text-sm"
+                href={`/dashboard/jogos/${gameId}/campeonato`}
+                className="flex-1 inline-flex items-center justify-center rounded-lg border border-primary/40 bg-primary/5 text-primary text-sm font-medium h-9 hover:bg-primary/10 transition-colors"
               >
-                Ver times →
+                Ver campeonato
               </Link>
-            </div>
+            )}
           </div>
           {game.status === "open" && (
             <TournamentToggle gameId={gameId} isTournament={game.is_tournament} />
@@ -206,12 +204,6 @@ export default async function GameDetailPage({ params }: Props) {
         />
       )}
 
-      <Link
-        href="/dashboard/jogos"
-        className="block text-sm text-muted-foreground underline"
-      >
-        ← Voltar aos jogos
-      </Link>
     </div>
   );
 }

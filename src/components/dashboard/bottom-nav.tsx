@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, Calendar, Users, History, Trophy } from "lucide-react";
 
 const navItems = [
-  { href: "/dashboard", label: "Painel", icon: LayoutDashboard, exact: true },
+  { href: "/dashboard", label: "Início", icon: LayoutDashboard, exact: true },
   { href: "/dashboard/jogos", label: "Jogos", icon: Calendar, exact: false },
   { href: "/dashboard/jogadores", label: "Jogadores", icon: Users, exact: false },
   { href: "/dashboard/historico", label: "Histórico", icon: History, exact: false },
@@ -26,7 +26,7 @@ export function BottomNav() {
             <Link
               key={href}
               href={href}
-              className={`flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-[10px] font-medium transition-colors min-h-[56px] ${
+              className={`flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-[10px] font-medium transition-colors min-h-14 ${
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"

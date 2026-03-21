@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import type { StaminaLevel } from "@/types/database.types";
 import { getDrawInfo } from "@/lib/draw-algorithm";
 import { DrawModal } from "@/components/dashboard/draw-modal";
@@ -79,7 +80,7 @@ function CancelGameButton({ gameId }: { gameId: string }) {
 
   return (
     <>
-      <Button variant="destructive" size="sm" onClick={() => setOpen(true)}>
+      <Button variant="destructive" onClick={() => setOpen(true)}>
         Cancelar jogo
       </Button>
 
@@ -100,7 +101,11 @@ function CancelGameButton({ gameId }: { gameId: string }) {
               onClick={handleConfirm}
               disabled={pending}
             >
-              {pending ? "Cancelando..." : "Confirmar cancelamento"}
+              {pending ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Cancelando...</>
+              ) : (
+                "Confirmar cancelamento"
+              )}
             </Button>
             <Button
               variant="outline"
@@ -174,7 +179,11 @@ function ConfirmedList({
                 disabled={pending && loadingId === player.id}
                 onClick={() => handleRemove(player.id)}
               >
-                {pending && loadingId === player.id ? "..." : "Remover"}
+                {pending && loadingId === player.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Remover"
+                )}
               </Button>
             </li>
           ))}
@@ -242,11 +251,95 @@ function WaitlistPanel({
               disabled={pending && loadingId === confirmationId}
               onClick={() => handlePromote(confirmationId)}
             >
-              {pending && loadingId === confirmationId ? "..." : "Promover"}
+              {pending && loadingId === confirmationId ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Promover"
+              )}
             </Button>
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+// ── Select com pesquisa ──────────────────────────────────────────────────────
+
+function SearchablePlayerSelect({
+  players,
+  value,
+  onChange,
+}: {
+  players: { id: string; name: string }[];
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const selected = players.find((p) => p.id === value);
+  const filtered = search.trim()
+    ? players.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
+    : players;
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setSearch("");
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  function handleSelect(player: { id: string; name: string }) {
+    onChange(player.id);
+    setSearch("");
+    setOpen(false);
+  }
+
+  return (
+    <div ref={ref} className="relative flex-1">
+      <div
+        className="flex h-9 w-full items-center rounded-md border border-input bg-background px-3 py-1 text-sm cursor-pointer"
+        onClick={() => setOpen((o) => !o)}
+      >
+        {open ? (
+          <input
+            autoFocus
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            placeholder="Buscar jogador..."
+            className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
+          />
+        ) : (
+          <span className={selected ? "" : "text-muted-foreground"}>
+            {selected ? selected.name : "Selecionar jogador"}
+          </span>
+        )}
+      </div>
+      {open && (
+        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-background shadow-md max-h-48 overflow-y-auto">
+          {filtered.length === 0 ? (
+            <p className="px-3 py-2 text-sm text-muted-foreground">Nenhum jogador encontrado</p>
+          ) : (
+            filtered.map((p) => (
+              <div
+                key={p.id}
+                className="px-3 py-2 text-sm cursor-pointer hover:bg-muted"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => handleSelect(p)}
+              >
+                {p.name}
+              </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -280,24 +373,17 @@ function AddExistingPlayerPanel({
     <div className="space-y-2">
       <Label>Adicionar jogador da turma</Label>
       <div className="flex gap-2">
-        <Select value={selectedId} onValueChange={(v) => setSelectedId(v ?? "")}>
-          <SelectTrigger className="flex-1">
-            <SelectValue placeholder="Selecione um jogador" />
-          </SelectTrigger>
-          <SelectContent>
-            {availablePlayers.map((p) => (
-              <SelectItem key={p.id} value={p.id}>
-                {p.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          onClick={handleAdd}
-          disabled={!selectedId || pending}
-          size="sm"
-        >
-          {pending ? "..." : "Adicionar"}
+        <SearchablePlayerSelect
+          players={availablePlayers}
+          value={selectedId}
+          onChange={setSelectedId}
+        />
+        <Button onClick={handleAdd} disabled={!selectedId || pending}>
+          {pending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            "Adicionar"
+          )}
         </Button>
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
@@ -350,9 +436,24 @@ function CreateAndAddPlayerPanel({ gameId }: { gameId: string }) {
 
   return (
     <div>
-      <Button variant="outline" size="sm" onClick={() => setOpen(!open)}>
-        {open ? "Fechar" : "+ Cadastrar novo jogador"}
-      </Button>
+      {open ? (
+        <Button
+          variant="outline"
+          className="border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
+          onClick={() => { setOpen(false); reset(); setServerError(null); }}
+        >
+          <ChevronUp className="mr-1.5 h-4 w-4" />
+          Não Cadastrar
+        </Button>
+      ) : (
+        <Button
+          className="bg-primary hover:bg-primary/80"
+          onClick={() => setOpen(true)}
+        >
+          <ChevronDown className="mr-1.5 h-4 w-4" />
+          Cadastrar novo jogador
+        </Button>
+      )}
 
       {open && (
         <form onSubmit={handleSubmit(onSubmit)} className="mt-3 space-y-3">
@@ -409,8 +510,12 @@ function CreateAndAddPlayerPanel({ gameId }: { gameId: string }) {
             <p className="text-sm text-destructive">{serverError}</p>
           )}
 
-          <Button type="submit" size="sm" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? "Salvando..." : "Cadastrar e adicionar"}
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Cadastrando...</>
+            ) : (
+              "Cadastrar e confirmar presença"
+            )}
           </Button>
         </form>
       )}

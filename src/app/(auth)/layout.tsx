@@ -6,8 +6,8 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-muted/40 p-4 gap-6">
-      <AppLogo size="sm" />
+    <div className="min-h-screen flex flex-col items-center justify-start pt-16 bg-muted/40 p-4 gap-6">
+      <AppLogo size="md" />
       {children}
     </div>
   );

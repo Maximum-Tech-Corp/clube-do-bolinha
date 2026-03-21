@@ -148,14 +148,13 @@ export default async function TimesPage({ params }: Props) {
         </div>
       </div>
 
-      {/* Link para campeonato */}
+      {/* Botão para campeonato */}
       {game.is_tournament && (
         <Link
           href={`/dashboard/jogos/${gameId}/campeonato`}
-          className="block rounded-lg border border-border p-3 text-sm hover:bg-muted/50 transition-colors"
+          className="inline-flex w-full items-center justify-center rounded-lg border border-primary/40 bg-primary/5 text-primary text-sm font-medium h-9 hover:bg-primary/10 transition-colors"
         >
-          <span className="font-medium">Ver campeonato</span>
-          <span className="text-muted-foreground"> →</span>
+          Ver campeonato
         </Link>
       )}
 
@@ -167,12 +166,6 @@ export default async function TimesPage({ params }: Props) {
         tournamentCompleted={tournamentCompleted}
       />
 
-      <Link
-        href={`/dashboard/jogos/${gameId}`}
-        className="block text-sm text-muted-foreground underline pt-2"
-      >
-        ← Voltar ao jogo
-      </Link>
     </div>
   );
 }
