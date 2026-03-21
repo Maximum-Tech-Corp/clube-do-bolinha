@@ -564,22 +564,82 @@ ALTER TABLE players ADD COLUMN suspension_reason TEXT CHECK (char_length(suspens
 
 ---
 
-### STEP 17 — Deploy
+### STEP 17a — Deploy para Produção (sem pagamento ativo)
 
-**Objetivo:** App em produção na Vercel.
+**Objetivo:** App funcionando em produção na Vercel, acessível por usuários reais. Stripe em modo de teste — a área restrita do admin funciona, mas cobranças reais não são processadas ainda.
 
 **O que fazer:**
-- Conectar repositório à Vercel
-- Configurar variáveis de ambiente na Vercel (Supabase, Stripe)
-- Configurar domínio customizado (se houver)
-- Configurar webhook do Stripe apontando para a URL de produção
-- Testar fluxo completo em produção com cartão de teste Stripe
-- Habilitar HTTPS (automático na Vercel)
+- Criar repositório Git (GitHub) e fazer push do código
+- Criar projeto na Vercel conectado ao repositório
+- Configurar todas as variáveis de ambiente na Vercel (Supabase, Stripe test keys, `NEXT_PUBLIC_APP_URL`)
+- Configurar domínio customizado (se houver) — Vercel oferece subdomínio `.vercel.app` gratuito
+- Configurar webhook do Stripe (modo teste) apontando para a URL de produção
+- Verificar que o build passa sem erros (`npm run build` localmente antes de subir)
+- Testar fluxo completo em produção: cadastro admin → Stripe test checkout → área restrita → jogadores
 
 **Verificar antes de avançar:**
-- Deploy bem-sucedido sem erros de build
-- Fluxo de cadastro e pagamento funcionando em produção
-- Webhook do Stripe recebendo eventos corretamente
+- Deploy bem-sucedido, sem erros de build na Vercel
+- HTTPS ativo (automático na Vercel)
+- Admin consegue se cadastrar e acessar o painel
+- Jogador consegue acessar via código, confirmar presença
+- PWA instalável no celular via URL de produção
+- Webhook Stripe recebendo eventos de teste corretamente
+
+---
+
+### STEP 17b — Virada de Chave: Stripe em Produção
+
+> ⚠️ **Esta etapa só deve ser executada após o ciclo completo de validação descrito abaixo.**
+
+**Objetivo:** Ativar cobranças reais. Usuários passam a pagar de verdade ao se cadastrar.
+
+**O que fazer:**
+- Trocar chaves Stripe de teste (`sk_test_*`, `pk_test_*`) pelas chaves de produção (`sk_live_*`, `pk_live_*`) nas variáveis da Vercel
+- Criar novo webhook no Stripe Dashboard apontando para a URL de produção com as chaves live
+- Atualizar `STRIPE_WEBHOOK_SECRET` na Vercel com o secret do webhook live
+- Criar produto e preço no Stripe em modo live (mesma configuração do teste)
+- Atualizar `STRIPE_PRICE_ID` nas variáveis de ambiente
+- Fazer um pagamento real de teste para confirmar o fluxo end-to-end
+
+**Verificar antes de concluir:**
+- Pagamento real processado com sucesso
+- Webhook live recebendo eventos e atualizando `subscription_status` corretamente
+- Admin com assinatura ativa consegue acessar o painel normalmente
+
+---
+
+## Ciclo de Validação Pré-Virada (entre 17a e 17b)
+
+> Antes de ativar o Stripe em produção, o produto passa por um ciclo de maturação com usuários reais.
+
+### Testes E2E com Usuários Reais
+- Sessões guiadas com o admin e jogadores reais (grupo de WhatsApp da pelada)
+- Cobrir todos os fluxos: cadastro, confirmação de presença, sorteio, campeonato, histórico
+- Coletar feedback qualitativo: o que trava, o que confunde, o que falta
+
+### Melhorias de Engenharia
+- Revisão de queries N+1 identificadas em produção
+- Auditoria de RLS no Supabase (garantir que nenhum dado vaza entre turmas)
+- Revisão de tipos TypeScript — eliminar qualquer `as` desnecessário
+- Avaliar memoização em componentes com renders excessivos
+
+### Monitoramento de Erros
+- Integrar **Sentry** (ou similar) para capturar exceções em runtime
+- Configurar alertas para erros críticos (ex: falha em Server Actions)
+- Criar dashboard de erros por rota
+
+### Monitoramento de Consumo e Precificação
+- Acompanhar uso do Supabase: banco de dados (rows, storage), Auth (MAU), Edge Functions
+- Acompanhar uso da Vercel: execuções de funções, largura de banda, duração
+- Com base no consumo real por turma ativa, calcular custo de infraestrutura por admin/mês
+- Definir o valor da mensalidade com margem saudável (custo infra + margem + impostos)
+- Avaliar modelo freemium: ex. turma pequena gratuita (até X jogadores) vs. plano pago
+
+### Melhorias de Produto (pós-feedback)
+- Ajustes de layout e UX baseados em feedback dos usuários de teste
+- Novas funcionalidades priorizadas pelo organizador (admin)
+- Possível adição de notificações de jogo via WhatsApp (link automático)
+- Avaliar suporte a múltiplas turmas por admin
 
 ---
 
@@ -603,4 +663,6 @@ ALTER TABLE players ADD COLUMN suspension_reason TEXT CHECK (char_length(suspens
 | 14 | Suspensão e Banimento | Core |
 | 15 | UI/UX e Polish | Frontend |
 | 16 | PWA | Frontend |
-| 17 | Deploy | Infra |
+| 17a | Deploy para Produção (Stripe teste) | Infra |
+| — | Ciclo de Validação Pré-Virada | Produto |
+| 17b | Virada de Chave Stripe (produção) | Infra |
