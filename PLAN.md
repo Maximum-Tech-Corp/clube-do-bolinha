@@ -623,16 +623,42 @@ TRUNCATE TABLE admins                 CASCADE;
 
 **O que fazer:**
 - Trocar chaves Stripe de teste (`sk_test_*`, `pk_test_*`) pelas chaves de produção (`sk_live_*`, `pk_live_*`) nas variáveis da Vercel
-- Criar novo webhook no Stripe Dashboard apontando para a URL de produção com as chaves live
-- Atualizar `STRIPE_WEBHOOK_SECRET` na Vercel com o secret do webhook live
 - Criar produto e preço no Stripe em modo live (mesma configuração do teste)
 - Atualizar `STRIPE_PRICE_ID` nas variáveis de ambiente
+- Criar novo webhook no Stripe Dashboard (modo live) apontando para `https://sua-url.vercel.app/api/webhooks/stripe`
+- Eventos: `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_succeeded`, `invoice.payment_failed`
+- Copiar o Signing Secret do webhook live e atualizar `STRIPE_WEBHOOK_SECRET` na Vercel
+- Fazer Redeploy na Vercel para as variáveis entrarem em vigor
 - Fazer um pagamento real de teste para confirmar o fluxo end-to-end
+
+**Verificar o webhook em produção (passo crítico):**
+
+> O webhook pode silenciosamente falhar em produção mesmo que localmente pareça ok. Siga estes passos para confirmar que está funcionando de verdade:
+
+1. **Stripe Dashboard → Developers → Webhooks → selecione o endpoint live**
+   - Aba **"Recent deliveries"**: deve mostrar eventos com status `200 OK` após o pagamento de teste
+   - Se aparecer `401`, `400` ou `500`: o `STRIPE_WEBHOOK_SECRET` está errado ou o Redeploy não foi feito
+
+2. **Verificar se o `subscription_status` foi atualizado no Supabase**
+   - Supabase Dashboard → Table Editor → tabela `admins`
+   - Após o pagamento, o campo `subscription_status` do admin deve ser `active`
+   - Se continuar `null` ou `incomplete`: o webhook chegou mas o handler falhou — checar logs da Vercel
+
+3. **Logs da Vercel**
+   - Vercel Dashboard → seu projeto → **Logs** (aba Functions)
+   - Filtrar por `/api/webhooks/stripe`
+   - Qualquer erro aparece aqui com stack trace completo
+
+4. **Reenviar evento manualmente (se necessário)**
+   - Stripe Dashboard → Webhooks → endpoint → Recent deliveries → selecionar evento → **Resend**
+   - Útil para testar sem fazer um novo pagamento
 
 **Verificar antes de concluir:**
 - Pagamento real processado com sucesso
-- Webhook live recebendo eventos e atualizando `subscription_status` corretamente
+- Aba "Recent deliveries" do webhook mostrando `200 OK`
+- Tabela `admins` no Supabase com `subscription_status = active`
 - Admin com assinatura ativa consegue acessar o painel normalmente
+- Logs da Vercel sem erros no endpoint `/api/webhooks/stripe`
 
 ---
 

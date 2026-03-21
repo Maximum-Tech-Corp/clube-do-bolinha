@@ -63,6 +63,7 @@ export type Database = {
           name: string;
           access_code: string;
           access_code_prefix: string;
+          match_duration_minutes: number;
           created_at: string;
         };
         Insert: {
@@ -71,6 +72,7 @@ export type Database = {
           name: string;
           access_code: string;
           access_code_prefix: string;
+          match_duration_minutes?: number;
           created_at?: string;
         };
         Update: {
@@ -79,6 +81,7 @@ export type Database = {
           name?: string;
           access_code?: string;
           access_code_prefix?: string;
+          match_duration_minutes?: number;
           created_at?: string;
         };
         Relationships: [];
