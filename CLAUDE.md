@@ -20,7 +20,7 @@ PWA for organizing amateur football (futsal/soccer) groups. Admins manage teams,
 
 ## Rules
 
-**No unit tests.**
+**Tests:** Vitest + Testing Library. Run `npm test` in watch mode, `npm run test:run` for single run, `npm run test:coverage` for coverage report. Test files go in `__tests__/` folders alongside the code or in `src/test/`.
 
 **Code**
 - Clean code, self-explanatory names
