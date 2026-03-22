@@ -165,6 +165,18 @@ supabase/
 
 ---
 
+## Testes
+
+```bash
+npm test                 # modo watch (desenvolvimento)
+npm run test:run         # execução única (CI)
+npm run test:coverage    # relatório de cobertura
+```
+
+O relatório de cobertura em HTML fica em `coverage/index.html` após rodar `test:coverage`.
+
+---
+
 ## Deploy (produção)
 
 1. Conecte o repositório à [Vercel](https://vercel.com)
