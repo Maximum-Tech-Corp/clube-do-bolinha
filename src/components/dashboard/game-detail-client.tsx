@@ -1,38 +1,38 @@
-"use client";
+'use client';
 
-import { useState, useTransition, useRef, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useState, useTransition, useRef, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import {
   cancelGame,
   removeConfirmedPlayer,
   promoteWaitlistPlayer,
   addPlayerToGame,
   createAndAddPlayer,
-} from "@/actions/games-admin";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+} from '@/actions/games-admin';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Loader2, ChevronDown, ChevronUp } from "lucide-react";
-import type { StaminaLevel } from "@/types/database.types";
-import { getDrawInfo } from "@/lib/draw-algorithm";
-import { DrawModal } from "@/components/dashboard/draw-modal";
+} from '@/components/ui/select';
+import { Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import type { StaminaLevel } from '@/types/database.types';
+import { getDrawInfo } from '@/lib/draw-algorithm';
+import { DrawModal } from '@/components/dashboard/draw-modal';
 
 interface Player {
   id: string;
@@ -102,9 +102,12 @@ function CancelGameButton({ gameId }: { gameId: string }) {
               disabled={pending}
             >
               {pending ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Cancelando...</>
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Cancelando...
+                </>
               ) : (
-                "Confirmar cancelamento"
+                'Confirmar cancelamento'
               )}
             </Button>
             <Button
@@ -148,7 +151,7 @@ function ConfirmedList({
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <h2 className="font-semibold">
-          Confirmados{" "}
+          Confirmados{' '}
           <span className="text-muted-foreground font-normal text-sm">
             ({entries.length}/25)
           </span>
@@ -182,7 +185,7 @@ function ConfirmedList({
                 {pending && loadingId === player.id ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  "Remover"
+                  'Remover'
                 )}
               </Button>
             </li>
@@ -221,7 +224,7 @@ function WaitlistPanel({
   return (
     <div className="space-y-2">
       <h2 className="font-semibold">
-        Lista de espera{" "}
+        Lista de espera{' '}
         <span className="text-muted-foreground font-normal text-sm">
           ({entries.length})
         </span>
@@ -254,7 +257,7 @@ function WaitlistPanel({
               {pending && loadingId === confirmationId ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                "Promover"
+                'Promover'
               )}
             </Button>
           </li>
@@ -275,29 +278,29 @@ function SearchablePlayerSelect({
   value: string;
   onChange: (id: string) => void;
 }) {
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const selected = players.find((p) => p.id === value);
+  const selected = players.find(p => p.id === value);
   const filtered = search.trim()
-    ? players.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
+    ? players.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
     : players;
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false);
-        setSearch("");
+        setSearch('');
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   function handleSelect(player: { id: string; name: string }) {
     onChange(player.id);
-    setSearch("");
+    setSearch('');
     setOpen(false);
   }
 
@@ -305,33 +308,35 @@ function SearchablePlayerSelect({
     <div ref={ref} className="relative flex-1">
       <div
         className="flex h-9 w-full items-center rounded-md border border-input bg-background px-3 py-1 text-sm cursor-pointer"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen(o => !o)}
       >
         {open ? (
           <input
             autoFocus
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onClick={(e) => e.stopPropagation()}
+            onChange={e => setSearch(e.target.value)}
+            onClick={e => e.stopPropagation()}
             placeholder="Buscar jogador..."
             className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
           />
         ) : (
-          <span className={selected ? "" : "text-muted-foreground"}>
-            {selected ? selected.name : "Selecionar jogador"}
+          <span className={selected ? '' : 'text-muted-foreground'}>
+            {selected ? selected.name : 'Selecionar jogador'}
           </span>
         )}
       </div>
       {open && (
         <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-background shadow-md max-h-48 overflow-y-auto">
           {filtered.length === 0 ? (
-            <p className="px-3 py-2 text-sm text-muted-foreground">Nenhum jogador encontrado</p>
+            <p className="px-3 py-2 text-sm text-muted-foreground">
+              Nenhum jogador encontrado
+            </p>
           ) : (
-            filtered.map((p) => (
+            filtered.map(p => (
               <div
                 key={p.id}
                 className="px-3 py-2 text-sm cursor-pointer hover:bg-muted"
-                onMouseDown={(e) => e.preventDefault()}
+                onMouseDown={e => e.preventDefault()}
                 onClick={() => handleSelect(p)}
               >
                 {p.name}
@@ -353,7 +358,7 @@ function AddExistingPlayerPanel({
   gameId: string;
   availablePlayers: { id: string; name: string }[];
 }) {
-  const [selectedId, setSelectedId] = useState("");
+  const [selectedId, setSelectedId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -363,7 +368,7 @@ function AddExistingPlayerPanel({
     startTransition(async () => {
       const result = await addPlayerToGame(gameId, selectedId);
       if (result.error) setError(result.error);
-      else setSelectedId("");
+      else setSelectedId('');
     });
   }
 
@@ -379,11 +384,7 @@ function AddExistingPlayerPanel({
           onChange={setSelectedId}
         />
         <Button onClick={handleAdd} disabled={!selectedId || pending}>
-          {pending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            "Adicionar"
-          )}
+          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Adicionar'}
         </Button>
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
@@ -394,10 +395,10 @@ function AddExistingPlayerPanel({
 // ── Cadastrar e adicionar novo jogador ───────────────────────────────────────
 
 const newPlayerSchema = z.object({
-  name: z.string().min(2, "Informe o nome"),
-  phone: z.string().min(10, "Informe um celular válido"),
+  name: z.string().min(2, 'Informe o nome'),
+  phone: z.string().min(10, 'Informe um celular válido'),
   weight_kg: z.number().min(30).max(250),
-  stamina: z.enum(["1", "2", "3", "4plus"] as const),
+  stamina: z.enum(['1', '2', '3', '4plus'] as const),
 });
 
 type NewPlayerData = z.infer<typeof newPlayerSchema>;
@@ -440,7 +441,11 @@ function CreateAndAddPlayerPanel({ gameId }: { gameId: string }) {
         <Button
           variant="outline"
           className="border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
-          onClick={() => { setOpen(false); reset(); setServerError(null); }}
+          onClick={() => {
+            setOpen(false);
+            reset();
+            setServerError(null);
+          }}
         >
           <ChevronUp className="mr-1.5 h-4 w-4" />
           Não Cadastrar
@@ -459,7 +464,11 @@ function CreateAndAddPlayerPanel({ gameId }: { gameId: string }) {
         <form onSubmit={handleSubmit(onSubmit)} className="mt-3 space-y-3">
           <div className="space-y-1">
             <Label htmlFor="cn-name">Nome</Label>
-            <Input id="cn-name" placeholder="Nome ou apelido" {...register("name")} />
+            <Input
+              id="cn-name"
+              placeholder="Nome ou apelido"
+              {...register('name')}
+            />
             {errors.name && (
               <p className="text-xs text-destructive">{errors.name.message}</p>
             )}
@@ -467,7 +476,12 @@ function CreateAndAddPlayerPanel({ gameId }: { gameId: string }) {
 
           <div className="space-y-1">
             <Label htmlFor="cn-phone">Celular</Label>
-            <Input id="cn-phone" type="tel" placeholder="(11) 99999-9999" {...register("phone")} />
+            <Input
+              id="cn-phone"
+              type="tel"
+              placeholder="(11) 99999-9999"
+              {...register('phone')}
+            />
             {errors.phone && (
               <p className="text-xs text-destructive">{errors.phone.message}</p>
             )}
@@ -480,16 +494,20 @@ function CreateAndAddPlayerPanel({ gameId }: { gameId: string }) {
                 id="cn-weight"
                 type="number"
                 placeholder="75"
-                {...register("weight_kg", { valueAsNumber: true })}
+                {...register('weight_kg', { valueAsNumber: true })}
               />
               {errors.weight_kg && (
-                <p className="text-xs text-destructive">{errors.weight_kg.message}</p>
+                <p className="text-xs text-destructive">
+                  {errors.weight_kg.message}
+                </p>
               )}
             </div>
 
             <div className="space-y-1">
               <Label>Resistência</Label>
-              <Select onValueChange={(v) => setValue("stamina", v as StaminaLevel)}>
+              <Select
+                onValueChange={v => setValue('stamina', v as StaminaLevel)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Jogos" />
                 </SelectTrigger>
@@ -501,7 +519,9 @@ function CreateAndAddPlayerPanel({ gameId }: { gameId: string }) {
                 </SelectContent>
               </Select>
               {errors.stamina && (
-                <p className="text-xs text-destructive">{errors.stamina.message}</p>
+                <p className="text-xs text-destructive">
+                  {errors.stamina.message}
+                </p>
               )}
             </div>
           </div>
@@ -512,9 +532,12 @@ function CreateAndAddPlayerPanel({ gameId }: { gameId: string }) {
 
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Cadastrando...</>
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Cadastrando...
+              </>
             ) : (
-              "Cadastrar e confirmar presença"
+              'Cadastrar e confirmar presença'
             )}
           </Button>
         </form>
@@ -549,14 +572,16 @@ export function GameDetailClient({
             </Button>
           )}
           {drawDone && (
-            <Button disabled variant="secondary">Sorteio realizado</Button>
+            <Button disabled variant="secondary">
+              Sorteio realizado
+            </Button>
           )}
           <CancelGameButton gameId={gameId} />
         </div>
         {!drawDone && drawInfo.message && (
           <p
             className={`text-sm ${
-              drawInfo.isWarning ? "text-yellow-600" : "text-destructive"
+              drawInfo.isWarning ? 'text-yellow-600' : 'text-destructive'
             }`}
           >
             {drawInfo.message}

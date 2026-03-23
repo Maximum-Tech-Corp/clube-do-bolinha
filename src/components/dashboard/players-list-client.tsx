@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { useState } from 'react';
+import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
 interface Player {
   id: string;
@@ -21,18 +21,18 @@ interface Props {
 }
 
 const staminaLabel: Record<string, string> = {
-  "1": "1 jogo",
-  "2": "2 jogos",
-  "3": "3 jogos",
-  "4plus": "4+ jogos",
+  '1': '1 jogo',
+  '2': '2 jogos',
+  '3': '3 jogos',
+  '4plus': '4+ jogos',
 };
 
 export function PlayersListClient({ players }: Props) {
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
 
   const filtered = search.trim()
-    ? players.filter((p) =>
-        p.name.toLowerCase().includes(search.trim().toLowerCase())
+    ? players.filter(p =>
+        p.name.toLowerCase().includes(search.trim().toLowerCase()),
       )
     : players;
 
@@ -41,16 +41,18 @@ export function PlayersListClient({ players }: Props) {
       <Input
         placeholder="Buscar por nome..."
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        onChange={e => setSearch(e.target.value)}
       />
 
       {filtered.length === 0 ? (
         <p className="text-muted-foreground text-sm text-center py-12">
-          {search.trim() ? "Nenhum jogador encontrado." : "Nenhum jogador cadastrado ainda."}
+          {search.trim()
+            ? 'Nenhum jogador encontrado.'
+            : 'Nenhum jogador cadastrado ainda.'}
         </p>
       ) : (
         <div className="space-y-2">
-          {filtered.map((player) => (
+          {filtered.map(player => (
             <Link
               key={player.id}
               href={`/dashboard/jogadores/${player.id}`}
@@ -61,7 +63,9 @@ export function PlayersListClient({ players }: Props) {
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium truncate">{player.name}</span>
+                        <span className="font-medium truncate">
+                          {player.name}
+                        </span>
                         {player.is_star && (
                           <Badge variant="secondary" className="shrink-0">
                             ⭐ Destaque
@@ -69,7 +73,7 @@ export function PlayersListClient({ players }: Props) {
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {player.phone} · {player.weight_kg} kg ·{" "}
+                        {player.phone} · {player.weight_kg} kg ·{' '}
                         {staminaLabel[player.stamina]}
                       </p>
                     </div>
@@ -77,9 +81,11 @@ export function PlayersListClient({ players }: Props) {
                       <p className="text-sm font-medium">
                         {player.attendanceRate !== null
                           ? `${player.attendanceRate}%`
-                          : "—"}
+                          : '—'}
                       </p>
-                      <p className="text-xs text-muted-foreground">participação</p>
+                      <p className="text-xs text-muted-foreground">
+                        participação
+                      </p>
                     </div>
                   </div>
                 </CardContent>

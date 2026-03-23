@@ -1,18 +1,24 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { createGame } from "@/actions/games-admin";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createGame } from '@/actions/games-admin';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Loader2 } from 'lucide-react';
 
 export function NewGameForm() {
-  const [dateTime, setDateTime] = useState("");
-  const [location, setLocation] = useState("");
+  const [dateTime, setDateTime] = useState('');
+  const [location, setLocation] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Minimum = now (for the datetime-local input), computed once on mount
+  const [minDateTime] = useState(() =>
+    new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 16),
+  );
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
@@ -22,7 +28,7 @@ export function NewGameForm() {
     setError(null);
     setLoading(true);
 
-    // Converte datetime-local (horário local do navegador) para ISO UTC
+    // Converts datetime-local (browser local time) to ISO UTC
     const isoUtc = new Date(dateTime).toISOString();
     const result = await createGame({ location, scheduled_at: isoUtc });
 
@@ -32,13 +38,8 @@ export function NewGameForm() {
       return;
     }
 
-    router.push("/dashboard/jogos");
+    router.push('/dashboard/jogos');
   }
-
-  // Mínimo = agora (para o input datetime-local)
-  const minDateTime = new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
-    .toISOString()
-    .slice(0, 16);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -49,7 +50,7 @@ export function NewGameForm() {
           type="datetime-local"
           min={minDateTime}
           value={dateTime}
-          onChange={(e) => setDateTime(e.target.value)}
+          onChange={e => setDateTime(e.target.value)}
           required
         />
       </div>
@@ -60,7 +61,7 @@ export function NewGameForm() {
           id="location"
           placeholder="Ex: Quadra do Parque, Ginásio Municipal"
           value={location}
-          onChange={(e) => setLocation(e.target.value)}
+          onChange={e => setLocation(e.target.value)}
         />
       </div>
 
@@ -73,7 +74,7 @@ export function NewGameForm() {
             Salvando...
           </>
         ) : (
-          "Criar jogo"
+          'Criar jogo'
         )}
       </Button>
     </form>

@@ -1,10 +1,10 @@
-import { redirect } from "next/navigation";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { logout } from "@/actions/auth";
-import { Button } from "@/components/ui/button";
-import { AccessCodeCard } from "@/components/dashboard/access-code-card";
-import { DashboardMenu } from "@/components/dashboard/dashboard-menu";
-import { AppLogo } from "@/components/app-logo";
+import { redirect } from 'next/navigation';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { logout } from '@/actions/auth';
+import { Button } from '@/components/ui/button';
+import { AccessCodeCard } from '@/components/dashboard/access-code-card';
+import { DashboardMenu } from '@/components/dashboard/dashboard-menu';
+import { AppLogo } from '@/components/app-logo';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -13,27 +13,27 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  if (!user) redirect('/login');
 
   const { data: admin } = await supabase
-    .from("admins")
-    .select("id, name")
-    .eq("user_id", user.id)
+    .from('admins')
+    .select('id, name')
+    .eq('user_id', user.id)
     .single();
 
-  if (!admin) redirect("/login");
+  if (!admin) redirect('/login');
 
   const service = createServiceClient();
 
   const { data: team } = await service
-    .from("teams")
-    .select("name, access_code, match_duration_minutes")
-    .eq("admin_id", admin.id)
+    .from('teams')
+    .select('name, access_code, match_duration_minutes')
+    .eq('admin_id', admin.id)
     .single();
 
-  if (!team) redirect("/login");
+  if (!team) redirect('/login');
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 
   return (
     <div className="max-w-md mx-auto p-4 pt-8 space-y-6">

@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useState } from "react";
-import Link from "next/link";
-import { login } from "@/actions/auth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useState } from 'react';
+import Link from 'next/link';
+import { login } from '@/actions/auth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Card,
   CardContent,
@@ -16,11 +16,11 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 
 const schema = z.object({
-  email: z.string().email("E-mail inválido"),
-  password: z.string().min(1, "Informe a senha"),
+  email: z.string().email('E-mail inválido'),
+  password: z.string().min(1, 'Informe a senha'),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -58,7 +58,7 @@ export function LoginForm() {
               type="email"
               autoComplete="email"
               placeholder="seu@email.com"
-              {...register("email")}
+              {...register('email')}
             />
             {errors.email && (
               <p className="text-sm text-destructive">{errors.email.message}</p>
@@ -71,7 +71,7 @@ export function LoginForm() {
               id="password"
               type="password"
               autoComplete="current-password"
-              {...register("password")}
+              {...register('password')}
             />
             {errors.password && (
               <p className="text-sm text-destructive">
@@ -87,15 +87,18 @@ export function LoginForm() {
 
         <CardFooter className="flex flex-col gap-3">
           <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? "Entrando..." : "Entrar"}
+            {isSubmitting ? 'Entrando...' : 'Entrar'}
           </Button>
           <p className="text-sm text-muted-foreground text-center">
-            Não tem conta?{" "}
+            Não tem conta?{' '}
             <Link href="/cadastro" className="underline">
               Cadastre-se
             </Link>
           </p>
-          <Link href="/" className="text-sm text-muted-foreground underline text-center">
+          <Link
+            href="/"
+            className="text-sm text-muted-foreground underline text-center"
+          >
             Voltar ao início
           </Link>
         </CardFooter>

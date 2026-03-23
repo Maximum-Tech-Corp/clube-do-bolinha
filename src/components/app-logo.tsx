@@ -1,14 +1,14 @@
 interface Props {
-  size?: "sm" | "md" | "lg";
+  size?: 'sm' | 'md' | 'lg';
 }
 
 const sizes = {
-  sm: { ball: "w-10 h-10 text-2xl", title: "text-lg", gap: "gap-2" },
-  md: { ball: "w-14 h-14 text-3xl", title: "text-2xl", gap: "gap-3" },
-  lg: { ball: "w-20 h-20 text-4xl", title: "text-3xl", gap: "gap-4" },
+  sm: { ball: 'w-10 h-10 text-2xl', title: 'text-lg', gap: 'gap-2' },
+  md: { ball: 'w-14 h-14 text-3xl', title: 'text-2xl', gap: 'gap-3' },
+  lg: { ball: 'w-20 h-20 text-4xl', title: 'text-3xl', gap: 'gap-4' },
 };
 
-export function AppLogo({ size = "md" }: Props) {
+export function AppLogo({ size = 'md' }: Props) {
   const s = sizes[size];
   return (
     <div className={`flex flex-col items-center ${s.gap}`}>

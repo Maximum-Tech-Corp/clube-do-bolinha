@@ -1,6 +1,6 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
-import type { Database } from "@/types/database.types";
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import type { Database } from '@/types/database.types';
 
 /** Cliente autenticado — usa anon key + RLS. Para operações do admin. */
 export async function createClient() {
@@ -17,14 +17,14 @@ export async function createClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+              cookieStore.set(name, value, options),
             );
           } catch {
             // Em Server Components o set é ignorado (sem impacto)
           }
         },
       },
-    }
+    },
   );
 }
 
@@ -40,6 +40,6 @@ export function createServiceClient() {
     {
       cookies: { getAll: () => [], setAll: () => {} },
       auth: { persistSession: false },
-    }
+    },
   );
 }

@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { NewPlayerForm } from "@/components/dashboard/new-player-form";
+import Link from 'next/link';
+import { NewPlayerForm } from '@/components/dashboard/new-player-form';
 
 export default function NovoJogadorPage() {
   return (

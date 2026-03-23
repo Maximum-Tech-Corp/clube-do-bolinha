@@ -1,28 +1,28 @@
-"use client";
+'use client';
 
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { createPlayer } from "@/actions/players-admin";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createPlayer } from '@/actions/players-admin';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import type { StaminaLevel } from "@/types/database.types";
+} from '@/components/ui/select';
+import type { StaminaLevel } from '@/types/database.types';
 
 const schema = z.object({
-  name: z.string().min(2, "Informe o nome"),
-  phone: z.string().min(10, "Informe um celular válido"),
+  name: z.string().min(2, 'Informe o nome'),
+  phone: z.string().min(10, 'Informe um celular válido'),
   weight_kg: z.number().min(30).max(250),
-  stamina: z.enum(["1", "2", "3", "4plus"] as const),
+  stamina: z.enum(['1', '2', '3', '4plus'] as const),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -54,14 +54,14 @@ export function NewPlayerForm() {
       return;
     }
 
-    router.push("/dashboard/jogadores");
+    router.push('/dashboard/jogadores');
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-1">
         <Label htmlFor="name">Nome</Label>
-        <Input id="name" placeholder="Nome ou apelido" {...register("name")} />
+        <Input id="name" placeholder="Nome ou apelido" {...register('name')} />
         {errors.name && (
           <p className="text-sm text-destructive">{errors.name.message}</p>
         )}
@@ -73,7 +73,7 @@ export function NewPlayerForm() {
           id="phone"
           type="tel"
           placeholder="(11) 99999-9999"
-          {...register("phone")}
+          {...register('phone')}
         />
         {errors.phone && (
           <p className="text-sm text-destructive">{errors.phone.message}</p>
@@ -86,7 +86,7 @@ export function NewPlayerForm() {
           id="weight_kg"
           type="number"
           placeholder="75"
-          {...register("weight_kg", { valueAsNumber: true })}
+          {...register('weight_kg', { valueAsNumber: true })}
         />
         {errors.weight_kg && (
           <p className="text-sm text-destructive">{errors.weight_kg.message}</p>
@@ -95,7 +95,7 @@ export function NewPlayerForm() {
 
       <div className="space-y-1">
         <Label>Resistência — quantos jogos aguenta seguidos?</Label>
-        <Select onValueChange={(v) => setValue("stamina", v as StaminaLevel)}>
+        <Select onValueChange={v => setValue('stamina', v as StaminaLevel)}>
           <SelectTrigger>
             <SelectValue placeholder="Selecione" />
           </SelectTrigger>
@@ -111,12 +111,10 @@ export function NewPlayerForm() {
         )}
       </div>
 
-      {serverError && (
-        <p className="text-sm text-destructive">{serverError}</p>
-      )}
+      {serverError && <p className="text-sm text-destructive">{serverError}</p>}
 
       <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? "Salvando..." : "Cadastrar jogador"}
+        {isSubmitting ? 'Salvando...' : 'Cadastrar jogador'}
       </Button>
     </form>
   );

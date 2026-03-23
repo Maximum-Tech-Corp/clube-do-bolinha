@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { addRetroactiveStat } from "@/actions/players-admin";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { addRetroactiveStat } from '@/actions/players-admin';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const schema = z.object({
   year: z.number().min(2000).max(2100),
@@ -62,7 +62,7 @@ export function RetroactiveStatForm({ playerId }: { playerId: string }) {
           <Input
             id="year"
             type="number"
-            {...register("year", { valueAsNumber: true })}
+            {...register('year', { valueAsNumber: true })}
           />
           {errors.year && (
             <p className="text-xs text-destructive">{errors.year.message}</p>
@@ -74,7 +74,7 @@ export function RetroactiveStatForm({ playerId }: { playerId: string }) {
             id="goals"
             type="number"
             min={0}
-            {...register("goals", { valueAsNumber: true })}
+            {...register('goals', { valueAsNumber: true })}
           />
           {errors.goals && (
             <p className="text-xs text-destructive">{errors.goals.message}</p>
@@ -86,7 +86,7 @@ export function RetroactiveStatForm({ playerId }: { playerId: string }) {
             id="assists"
             type="number"
             min={0}
-            {...register("assists", { valueAsNumber: true })}
+            {...register('assists', { valueAsNumber: true })}
           />
           {errors.assists && (
             <p className="text-xs text-destructive">{errors.assists.message}</p>
@@ -94,12 +94,10 @@ export function RetroactiveStatForm({ playerId }: { playerId: string }) {
         </div>
       </div>
 
-      {serverError && (
-        <p className="text-sm text-destructive">{serverError}</p>
-      )}
+      {serverError && <p className="text-sm text-destructive">{serverError}</p>}
 
       <Button type="submit" variant="outline" size="sm" disabled={isSubmitting}>
-        {isSubmitting ? "Salvando..." : "+ Adicionar lançamento"}
+        {isSubmitting ? 'Salvando...' : '+ Adicionar lançamento'}
       </Button>
     </form>
   );

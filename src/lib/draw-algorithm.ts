@@ -1,4 +1,4 @@
-import type { StaminaLevel } from "@/types/database.types";
+import type { StaminaLevel } from '@/types/database.types';
 
 export const TEAM_SIZE = 5;
 
@@ -19,7 +19,7 @@ export interface ScoredPlayer extends PlayerForDraw {
 export interface DrawInfo {
   nTeams: number;
   completeTeams: number;
-  leftover: number;       // 0 se não há time incompleto
+  leftover: number; // 0 se não há time incompleto
   hasPartialTeam: boolean;
   canDraw: boolean;
   isWarning: boolean;
@@ -120,10 +120,10 @@ export function getDrawInfo(count: number): DrawInfo {
 
 function staminaToScore(stamina: StaminaLevel): number {
   const map: Record<StaminaLevel, number> = {
-    "1": 1,
-    "2": 2,
-    "3": 3,
-    "4plus": 4,
+    '1': 1,
+    '2': 2,
+    '3': 3,
+    '4plus': 4,
   };
   return map[stamina];
 }
@@ -178,9 +178,9 @@ function shuffle<T>(arr: T[]): T[] {
  * estrela do time "rico" com o melhor não-estrela do time "pobre".
  * Repete até a diferença máxima entre quaisquer dois times ser ≤ 1.
  */
-function redistributeStars(teams: ScoredPlayer[][]): void {
+export function redistributeStars(teams: ScoredPlayer[][]): void {
   for (let iter = 0; iter < 50; iter++) {
-    const counts = teams.map((t) => t.filter((p) => p.is_star).length);
+    const counts = teams.map(t => t.filter(p => p.is_star).length);
     const maxStars = Math.max(...counts);
     const minStars = Math.min(...counts);
 
@@ -192,12 +192,12 @@ function redistributeStars(teams: ScoredPlayer[][]): void {
     // Escolhe a estrela de menor score no time rico para transferir
     // (minimiza o impacto no equilíbrio de scores)
     const starsInRich = teams[richIdx]
-      .filter((p) => p.is_star)
+      .filter(p => p.is_star)
       .sort((a, b) => a.drawScore - b.drawScore);
 
     // Escolhe o não-estrela de maior score no time pobre para receber a estrela
     const nonStarsInPoor = teams[poorIdx]
-      .filter((p) => !p.is_star)
+      .filter(p => !p.is_star)
       .sort((a, b) => b.drawScore - a.drawScore);
 
     if (starsInRich.length === 0 || nonStarsInPoor.length === 0) break;
@@ -225,11 +225,11 @@ function redistributeStars(teams: ScoredPlayer[][]): void {
 export function runDraw(players: PlayerForDraw[]): ScoredPlayer[][] {
   const { nTeams } = getDrawInfo(players.length);
 
-  const weights = players.map((p) => p.weight_kg);
+  const weights = players.map(p => p.weight_kg);
   const minWeight = Math.min(...weights);
   const maxWeight = Math.max(...weights);
 
-  const scored: ScoredPlayer[] = players.map((p) => ({
+  const scored: ScoredPlayer[] = players.map(p => ({
     ...p,
     drawScore: p.is_star
       ? 5.0
@@ -237,9 +237,9 @@ export function runDraw(players: PlayerForDraw[]): ScoredPlayer[][] {
         staminaToScore(p.stamina) * 0.5,
   }));
 
-  const stars = shuffle(scored.filter((p) => p.is_star));
+  const stars = shuffle(scored.filter(p => p.is_star));
   const nonStars = scored
-    .filter((p) => !p.is_star)
+    .filter(p => !p.is_star)
     .sort((a, b) => b.drawScore - a.drawScore);
 
   const sorted = [...stars, ...nonStars];

@@ -1,8 +1,8 @@
-"use server";
+'use server';
 
-import Stripe from "stripe";
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import Stripe from 'stripe';
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
 
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -16,18 +16,18 @@ export async function createCheckoutSession() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  if (!user) redirect('/login');
 
   const { data: admin } = await supabase
-    .from("admins")
-    .select("id, stripe_customer_id")
-    .eq("user_id", user.id)
+    .from('admins')
+    .select('id, stripe_customer_id')
+    .eq('user_id', user.id)
     .single();
 
-  if (!admin) redirect("/login");
+  if (!admin) redirect('/login');
 
   const params: Stripe.Checkout.SessionCreateParams = {
-    mode: "subscription",
+    mode: 'subscription',
     line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
     success_url: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/sucesso?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pagamento-pendente`,

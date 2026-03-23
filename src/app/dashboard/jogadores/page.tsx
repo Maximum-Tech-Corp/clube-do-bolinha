@@ -1,6 +1,6 @@
-import Link from "next/link";
-import { listPlayers } from "@/actions/players-admin";
-import { PlayersListClient } from "@/components/dashboard/players-list-client";
+import Link from 'next/link';
+import { listPlayers } from '@/actions/players-admin';
+import { PlayersListClient } from '@/components/dashboard/players-list-client';
 
 export default async function JogadoresPage() {
   const { players, error } = await listPlayers();
@@ -11,8 +11,9 @@ export default async function JogadoresPage() {
         <div>
           <h1 className="text-xl font-bold">Jogadores</h1>
           <p className="text-sm text-muted-foreground">
-            {players.length} jogador{players.length !== 1 ? "es" : ""} cadastrado
-            {players.length !== 1 ? "s" : ""}
+            {players.length} jogador{players.length !== 1 ? 'es' : ''}{' '}
+            cadastrado
+            {players.length !== 1 ? 's' : ''}
           </p>
         </div>
         <Link

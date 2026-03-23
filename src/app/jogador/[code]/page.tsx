@@ -1,10 +1,10 @@
-import { notFound } from "next/navigation";
-import { cookies } from "next/headers";
-import { createServiceClient } from "@/lib/supabase/server";
-import { GameCard } from "@/components/player/game-card";
-import { PlayerDataSection } from "@/components/player/player-data-section";
-import { PlayerBottomNav } from "@/components/player/player-bottom-nav";
-import { InstallBanner } from "@/components/player/install-banner";
+import { notFound } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { createServiceClient } from '@/lib/supabase/server';
+import { GameCard } from '@/components/player/game-card';
+import { PlayerDataSection } from '@/components/player/player-data-section';
+import { PlayerBottomNav } from '@/components/player/player-bottom-nav';
+import { InstallBanner } from '@/components/player/install-banner';
 
 interface Props {
   params: Promise<{ code: string }>;
@@ -15,9 +15,9 @@ export default async function TeamPage({ params }: Props) {
   const service = createServiceClient();
 
   const { data: team } = await service
-    .from("teams")
-    .select("id, name")
-    .eq("access_code", code.toUpperCase())
+    .from('teams')
+    .select('id, name')
+    .eq('access_code', code.toUpperCase())
     .maybeSingle();
 
   if (!team) notFound();
@@ -27,64 +27,67 @@ export default async function TeamPage({ params }: Props) {
   const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
   const { data: games } = await service
-    .from("games")
-    .select("id, location, scheduled_at, status, is_tournament, draw_done")
-    .eq("team_id", team.id)
-    .eq("status", "open")
-    .gte("scheduled_at", now.toISOString())
-    .lte("scheduled_at", sevenDaysLater.toISOString())
-    .order("scheduled_at", { ascending: true });
+    .from('games')
+    .select('id, location, scheduled_at, status, is_tournament, draw_done')
+    .eq('team_id', team.id)
+    .eq('status', 'open')
+    .gte('scheduled_at', now.toISOString())
+    .lte('scheduled_at', sevenDaysLater.toISOString())
+    .order('scheduled_at', { ascending: true });
 
   const gameList = games ?? [];
 
   // IDs de jogos com campeonato e sorteio feito para verificar se fase de grupos iniciou
   const openTournamentGameIds = gameList
-    .filter((g) => g.is_tournament && g.draw_done)
-    .map((g) => g.id);
+    .filter(g => g.is_tournament && g.draw_done)
+    .map(g => g.id);
 
   // Lê telefone do cookie (jogador que já confirmou antes)
   const cookieStore = await cookies();
   const playerPhone = cookieStore.get(`player_${team.id}`)?.value ?? undefined;
 
   // Busca dados do jogador, confirmações e partidas de grupo concluídas em paralelo
-  const [playerResult, confirmationsResult, startedMatchesResult] = await Promise.all([
-    playerPhone
-      ? service
-          .from("players")
-          .select("id, name, phone, weight_kg, stamina, is_star, is_banned, suspended_until, suspension_reason")
-          .eq("team_id", team.id)
-          .eq("phone", playerPhone)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
+  const [playerResult, confirmationsResult, startedMatchesResult] =
+    await Promise.all([
+      playerPhone
+        ? service
+            .from('players')
+            .select(
+              'id, name, phone, weight_kg, stamina, is_star, is_banned, suspended_until, suspension_reason',
+            )
+            .eq('team_id', team.id)
+            .eq('phone', playerPhone)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
 
-    gameList.length > 0
-      ? service
-          .from("game_confirmations")
-          .select("game_id, player_id, status")
-          .in(
-            "game_id",
-            gameList.map((g) => g.id)
-          )
-          .in("status", ["confirmed", "waitlist"])
-      : Promise.resolve({ data: [] }),
+      gameList.length > 0
+        ? service
+            .from('game_confirmations')
+            .select('game_id, player_id, status')
+            .in(
+              'game_id',
+              gameList.map(g => g.id),
+            )
+            .in('status', ['confirmed', 'waitlist'])
+        : Promise.resolve({ data: [] }),
 
-    openTournamentGameIds.length > 0
-      ? service
-          .from("tournament_matches")
-          .select("game_id")
-          .in("game_id", openTournamentGameIds)
-          .eq("phase", "group")
-          .eq("completed", true)
-          .limit(openTournamentGameIds.length)
-      : Promise.resolve({ data: [] }),
-  ]);
+      openTournamentGameIds.length > 0
+        ? service
+            .from('tournament_matches')
+            .select('game_id')
+            .in('game_id', openTournamentGameIds)
+            .eq('phase', 'group')
+            .eq('completed', true)
+            .limit(openTournamentGameIds.length)
+        : Promise.resolve({ data: [] }),
+    ]);
 
   const playerData = playerResult.data;
   const confirmations = confirmationsResult.data ?? [];
 
   // Set de game_ids onde a fase de grupos já começou (ao menos 1 partida concluída)
   const tournamentStartedGameIds = new Set(
-    (startedMatchesResult.data ?? []).map((m) => m.game_id)
+    (startedMatchesResult.data ?? []).map(m => m.game_id),
   );
 
   // Busca o último jogo finalizado em que o jogador participou
@@ -100,31 +103,31 @@ export default async function TeamPage({ params }: Props) {
 
   if (playerData) {
     const { data: playerConfirmedGames } = await service
-      .from("game_confirmations")
-      .select("game_id")
-      .eq("player_id", playerData.id)
-      .in("status", ["confirmed", "waitlist"]);
+      .from('game_confirmations')
+      .select('game_id')
+      .eq('player_id', playerData.id)
+      .in('status', ['confirmed', 'waitlist']);
 
-    const playerGameIds = (playerConfirmedGames ?? []).map((c) => c.game_id);
+    const playerGameIds = (playerConfirmedGames ?? []).map(c => c.game_id);
 
     if (playerGameIds.length > 0) {
       const { data: lastGameRaw } = await service
-        .from("games")
-        .select("id, location, scheduled_at, status, is_tournament, draw_done")
-        .eq("team_id", team.id)
-        .eq("status", "finished")
-        .in("id", playerGameIds)
-        .order("finished_at", { ascending: false, nullsFirst: false })
+        .from('games')
+        .select('id, location, scheduled_at, status, is_tournament, draw_done')
+        .eq('team_id', team.id)
+        .eq('status', 'finished')
+        .in('id', playerGameIds)
+        .order('finished_at', { ascending: false, nullsFirst: false })
         .limit(1)
         .maybeSingle();
 
       if (lastGameRaw) {
         lastGame = lastGameRaw;
         const { count } = await service
-          .from("game_confirmations")
-          .select("id", { count: "exact", head: true })
-          .eq("game_id", lastGameRaw.id)
-          .eq("status", "confirmed");
+          .from('game_confirmations')
+          .select('id', { count: 'exact', head: true })
+          .eq('game_id', lastGameRaw.id)
+          .eq('status', 'confirmed');
         lastGameConfirmedCount = count ?? 0;
       }
     }
@@ -137,14 +140,12 @@ export default async function TeamPage({ params }: Props) {
   > = {};
 
   for (const game of gameList) {
-    const gameConfirmations = confirmations.filter(
-      (c) => c.game_id === game.id
-    );
+    const gameConfirmations = confirmations.filter(c => c.game_id === game.id);
     const confirmedCount = gameConfirmations.filter(
-      (c) => c.status === "confirmed"
+      c => c.status === 'confirmed',
     ).length;
     const playerConfirmation = playerData
-      ? gameConfirmations.find((c) => c.player_id === playerData.id)
+      ? gameConfirmations.find(c => c.player_id === playerData.id)
       : null;
 
     gameStats[game.id] = {
@@ -179,10 +180,10 @@ export default async function TeamPage({ params }: Props) {
       {!isBanned && isActivelySuspended && (
         <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 text-sm space-y-1">
           <p className="font-semibold text-destructive">
-            Suspenso até{" "}
+            Suspenso até{' '}
             {new Date(playerData!.suspended_until!).toLocaleDateString(
-              "pt-BR",
-              { day: "2-digit", month: "2-digit", year: "numeric" }
+              'pt-BR',
+              { day: '2-digit', month: '2-digit', year: 'numeric' },
             )}
           </p>
           {playerData?.suspension_reason && (
@@ -202,7 +203,7 @@ export default async function TeamPage({ params }: Props) {
         </p>
       ) : (
         <div className="space-y-3">
-          {gameList.map((game) => (
+          {gameList.map(game => (
             <GameCard
               key={game.id}
               game={game}

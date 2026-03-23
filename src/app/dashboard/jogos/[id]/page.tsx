@@ -1,22 +1,22 @@
-import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { GameDetailClient } from "@/components/dashboard/game-detail-client";
-import { TournamentToggle } from "@/components/dashboard/tournament-toggle";
-import { Badge } from "@/components/ui/badge";
+import { notFound, redirect } from 'next/navigation';
+import Link from 'next/link';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { GameDetailClient } from '@/components/dashboard/game-detail-client';
+import { TournamentToggle } from '@/components/dashboard/tournament-toggle';
+import { Badge } from '@/components/ui/badge';
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString("pt-BR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+  return new Date(iso).toLocaleString('pt-BR', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
@@ -27,29 +27,29 @@ export default async function GameDetailPage({ params }: Props) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect('/login');
 
   const service = createServiceClient();
 
   const { data: admin } = await service
-    .from("admins")
-    .select("id")
-    .eq("user_id", user.id)
+    .from('admins')
+    .select('id')
+    .eq('user_id', user.id)
     .single();
-  if (!admin) redirect("/login");
+  if (!admin) redirect('/login');
 
   const { data: team } = await service
-    .from("teams")
-    .select("id")
-    .eq("admin_id", admin.id)
+    .from('teams')
+    .select('id')
+    .eq('admin_id', admin.id)
     .single();
-  if (!team) redirect("/login");
+  if (!team) redirect('/login');
 
   const { data: game } = await service
-    .from("games")
-    .select("id, location, scheduled_at, status, draw_done, is_tournament")
-    .eq("id", gameId)
-    .eq("team_id", team.id)
+    .from('games')
+    .select('id, location, scheduled_at, status, draw_done, is_tournament')
+    .eq('id', gameId)
+    .eq('team_id', team.id)
     .maybeSingle();
 
   if (!game) notFound();
@@ -58,68 +58,82 @@ export default async function GameDetailPage({ params }: Props) {
   let teamCount = 0;
   if (game.draw_done) {
     const { data: gameTeamsForCount } = await service
-      .from("game_teams")
-      .select("id")
-      .eq("game_id", gameId);
+      .from('game_teams')
+      .select('id')
+      .eq('game_id', gameId);
     teamCount = (gameTeamsForCount ?? []).length;
   }
 
   // Busca confirmações (confirmed + waitlist)
   const { data: confirmations } = await service
-    .from("game_confirmations")
-    .select("id, player_id, status, waitlist_position")
-    .eq("game_id", gameId)
-    .in("status", ["confirmed", "waitlist"])
-    .order("waitlist_position", { ascending: true });
+    .from('game_confirmations')
+    .select('id, player_id, status, waitlist_position')
+    .eq('game_id', gameId)
+    .in('status', ['confirmed', 'waitlist'])
+    .order('waitlist_position', { ascending: true });
 
-  const confirmedRows = (confirmations ?? []).filter((c) => c.status === "confirmed");
-  const waitlistRows = (confirmations ?? []).filter((c) => c.status === "waitlist");
+  const confirmedRows = (confirmations ?? []).filter(
+    c => c.status === 'confirmed',
+  );
+  const waitlistRows = (confirmations ?? []).filter(
+    c => c.status === 'waitlist',
+  );
 
-  const allPlayerIds = (confirmations ?? []).map((c) => c.player_id);
+  const allPlayerIds = (confirmations ?? []).map(c => c.player_id);
 
   // Busca detalhes dos jogadores já na lista
   const [playersInGameResult, availablePlayersResult] = await Promise.all([
     allPlayerIds.length > 0
-      ? service
-          .from("players")
-          .select("id, name, phone")
-          .in("id", allPlayerIds)
+      ? service.from('players').select('id, name, phone').in('id', allPlayerIds)
       : Promise.resolve({ data: [] }),
 
     // Jogadores da turma que ainda não estão no jogo
     service
-      .from("players")
-      .select("id, name")
-      .eq("team_id", team.id)
+      .from('players')
+      .select('id, name')
+      .eq('team_id', team.id)
       .not(
-        "id",
-        "in",
-        allPlayerIds.length > 0 ? `(${allPlayerIds.join(",")})` : "(00000000-0000-0000-0000-000000000000)"
+        'id',
+        'in',
+        allPlayerIds.length > 0
+          ? `(${allPlayerIds.join(',')})`
+          : '(00000000-0000-0000-0000-000000000000)',
       )
-      .order("name"),
+      .order('name'),
   ]);
 
   const playerMap = new Map(
-    (playersInGameResult.data ?? []).map((p) => [p.id, p])
+    (playersInGameResult.data ?? []).map(p => [p.id, p]),
   );
 
-  const confirmed = confirmedRows.map((c) => ({
+  const confirmed = confirmedRows.map(c => ({
     confirmationId: c.id,
-    player: playerMap.get(c.player_id) ?? { id: c.player_id, name: "—", phone: "" },
+    player: playerMap.get(c.player_id) ?? {
+      id: c.player_id,
+      name: '—',
+      phone: '',
+    },
   }));
 
-  const waitlist = waitlistRows.map((c) => ({
+  const waitlist = waitlistRows.map(c => ({
     confirmationId: c.id,
     position: c.waitlist_position ?? 0,
-    player: playerMap.get(c.player_id) ?? { id: c.player_id, name: "—", phone: "" },
+    player: playerMap.get(c.player_id) ?? {
+      id: c.player_id,
+      name: '—',
+      phone: '',
+    },
   }));
 
-  const availablePlayers = (availablePlayersResult.data ?? []) as { id: string; name: string }[];
+  const availablePlayers = (availablePlayersResult.data ?? []) as {
+    id: string;
+    name: string;
+  }[];
 
   const statusLabel = {
-    open: "Aberto",
-    cancelled: "Cancelado",
-    finished: "Finalizado",
+    open: 'Aberto',
+    cancelled: 'Cancelado',
+    finished: 'Finalizado',
   } as const;
 
   return (
@@ -132,23 +146,23 @@ export default async function GameDetailPage({ params }: Props) {
           </h1>
           <Badge
             variant={
-              game.status === "open"
-                ? "default"
-                : game.status === "cancelled"
-                ? "outline"
-                : "secondary"
+              game.status === 'open'
+                ? 'default'
+                : game.status === 'cancelled'
+                  ? 'outline'
+                  : 'secondary'
             }
           >
             {statusLabel[game.status]}
           </Badge>
         </div>
         <p className="text-sm text-muted-foreground">
-          {game.location ?? "Local não definido"}
-          {game.is_tournament && " · Campeonato"}
+          {game.location ?? 'Local não definido'}
+          {game.is_tournament && ' · Campeonato'}
         </p>
       </div>
 
-      {game.draw_done && game.status !== "cancelled" && (
+      {game.draw_done && game.status !== 'cancelled' && (
         <div className="rounded-lg border border-border p-3 space-y-3">
           <p className="text-sm text-muted-foreground">Sorteio realizado.</p>
           <div className="flex items-center gap-2">
@@ -167,13 +181,16 @@ export default async function GameDetailPage({ params }: Props) {
               </Link>
             )}
           </div>
-          {game.status === "open" && teamCount >= 4 && (
-            <TournamentToggle gameId={gameId} isTournament={game.is_tournament} />
+          {game.status === 'open' && teamCount >= 4 && (
+            <TournamentToggle
+              gameId={gameId}
+              isTournament={game.is_tournament}
+            />
           )}
         </div>
       )}
 
-      {game.status === "cancelled" && (
+      {game.status === 'cancelled' && (
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground rounded-lg border border-border p-3">
             Este jogo foi cancelado.
@@ -194,7 +211,9 @@ export default async function GameDetailPage({ params }: Props) {
                     className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm"
                   >
                     <span className="font-medium">{player.name}</span>
-                    <span className="text-muted-foreground text-xs">{player.phone}</span>
+                    <span className="text-muted-foreground text-xs">
+                      {player.phone}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -204,7 +223,7 @@ export default async function GameDetailPage({ params }: Props) {
       )}
 
       {/* Área interativa: apenas para jogos abertos */}
-      {game.status === "open" && (
+      {game.status === 'open' && (
         <GameDetailClient
           gameId={gameId}
           drawDone={game.draw_done}
@@ -213,7 +232,6 @@ export default async function GameDetailPage({ params }: Props) {
           availablePlayers={availablePlayers}
         />
       )}
-
     </div>
   );
 }

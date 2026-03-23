@@ -1,22 +1,22 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { validateTeamCode } from "@/actions/player";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { validateTeamCode } from '@/actions/player';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 
 export default function JogadorPage() {
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -32,7 +32,7 @@ export default function JogadorPage() {
     const { valid } = await validateTeamCode(normalized);
 
     if (!valid) {
-      setError("Código inválido. Verifique com o organizador da turma.");
+      setError('Código inválido. Verifique com o organizador da turma.');
       setLoading(false);
       return;
     }
@@ -57,7 +57,7 @@ export default function JogadorPage() {
                 id="code"
                 placeholder="XXXX-XXXXXX"
                 value={code}
-                onChange={(e) => {
+                onChange={e => {
                   setCode(e.target.value);
                   setError(null);
                 }}
@@ -71,7 +71,7 @@ export default function JogadorPage() {
               className="w-full"
               disabled={!code.trim() || loading}
             >
-              {loading ? "Verificando..." : "Entrar"}
+              {loading ? 'Verificando...' : 'Entrar'}
             </Button>
             <p className="text-sm text-muted-foreground text-center">
               <Link href="/" className="underline">

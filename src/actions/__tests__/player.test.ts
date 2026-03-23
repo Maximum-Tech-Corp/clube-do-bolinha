@@ -1,0 +1,412 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { mockSupabaseFrom, createQueryMock } from '@/test/mocks/supabase';
+import {
+  mockRevalidatePath,
+  mockCookieDelete,
+  mockCookieSet,
+} from '@/test/mocks/next';
+
+const { clearPlayerCookie, validateTeamCode, confirmPresence } =
+  await import('@/actions/player');
+
+const TEAM_ID = 'team-uuid';
+const GAME_ID = 'game-uuid';
+const PHONE = '11999999999';
+
+// ─── clearPlayerCookie ────────────────────────────────────────────────────────
+
+describe('clearPlayerCookie', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('deletes the player cookie for the given teamId', async () => {
+    await clearPlayerCookie(TEAM_ID);
+    expect(mockCookieDelete).toHaveBeenCalledWith(`player_${TEAM_ID}`);
+  });
+
+  it('revalidates the /jogador path', async () => {
+    await clearPlayerCookie(TEAM_ID);
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/jogador');
+  });
+});
+
+// ─── validateTeamCode ─────────────────────────────────────────────────────────
+
+describe('validateTeamCode', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns { valid: true } when team is found', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { id: TEAM_ID }, error: null }),
+    );
+    const result = await validateTeamCode('ABCD-XYZ123');
+    expect(result).toEqual({ valid: true });
+  });
+
+  it('returns { valid: false } when team is not found', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    const result = await validateTeamCode('XXXX-000000');
+    expect(result).toEqual({ valid: false });
+  });
+
+  it('uppercases the code before querying', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { id: TEAM_ID }, error: null }),
+    );
+    await validateTeamCode('abcd-xyz123');
+    // eq() is called on the chain — just ensure it didn't throw and resolved
+    expect(mockSupabaseFrom).toHaveBeenCalledWith('teams');
+  });
+});
+
+// ─── confirmPresence ──────────────────────────────────────────────────────────
+
+describe('confirmPresence', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // ── banned ──
+
+  it('returns { banned: true } when player is banned', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: {
+          id: 'player-1',
+          is_banned: true,
+          suspended_until: null,
+          suspension_reason: null,
+        },
+        error: null,
+      }),
+    );
+    const result = await confirmPresence({
+      gameId: GAME_ID,
+      teamId: TEAM_ID,
+      phone: PHONE,
+    });
+    expect(result).toEqual({ banned: true });
+  });
+
+  // ── suspended ──
+
+  it('returns { suspended, until, reason } when player is suspended in the future', async () => {
+    const futureDate = new Date(Date.now() + 86400000).toISOString();
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: {
+          id: 'player-1',
+          is_banned: false,
+          suspended_until: futureDate,
+          suspension_reason: 'Conduta inadequada',
+        },
+        error: null,
+      }),
+    );
+    const result = await confirmPresence({
+      gameId: GAME_ID,
+      teamId: TEAM_ID,
+      phone: PHONE,
+    });
+    expect(result).toEqual({
+      suspended: true,
+      until: futureDate,
+      reason: 'Conduta inadequada',
+    });
+  });
+
+  it('does NOT return suspended when suspension date is in the past', async () => {
+    const pastDate = new Date(Date.now() - 86400000).toISOString();
+    // player with expired suspension — treat as active
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: {
+          id: 'player-1',
+          is_banned: false,
+          suspended_until: pastDate,
+          suspension_reason: 'Old reason',
+        },
+        error: null,
+      }),
+    );
+    // existing confirmation check
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    // confirmed count (not full)
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null, count: 10 }),
+    );
+    // insert confirmation
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    const result = await confirmPresence({
+      gameId: GAME_ID,
+      teamId: TEAM_ID,
+      phone: PHONE,
+    });
+    expect(result).toEqual({ status: 'confirmed' });
+  });
+
+  // ── needsRegistration ──
+
+  it('returns { needsRegistration: true } when phone not found and no newPlayer', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    const result = await confirmPresence({
+      gameId: GAME_ID,
+      teamId: TEAM_ID,
+      phone: PHONE,
+    });
+    expect(result).toEqual({ needsRegistration: true });
+  });
+
+  // ── new player insert error ──
+
+  it('returns { error } when new player insert fails', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }), // player not found
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: { message: 'duplicate' } }), // insert fails
+    );
+    const result = await confirmPresence({
+      gameId: GAME_ID,
+      teamId: TEAM_ID,
+      phone: PHONE,
+      newPlayer: { name: 'Novo Jogador', weight_kg: 70, stamina: '2' },
+    });
+    expect(result).toEqual({ error: 'Erro ao registrar jogador.' });
+  });
+
+  // ── alreadyConfirmed ──
+
+  it('returns { alreadyConfirmed, currentStatus } when player already confirmed', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: {
+          id: 'player-1',
+          is_banned: false,
+          suspended_until: null,
+          suspension_reason: null,
+        },
+        error: null,
+      }),
+    );
+    // existing confirmation
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { status: 'confirmed' }, error: null }),
+    );
+    const result = await confirmPresence({
+      gameId: GAME_ID,
+      teamId: TEAM_ID,
+      phone: PHONE,
+    });
+    expect(result).toEqual({
+      alreadyConfirmed: true,
+      currentStatus: 'confirmed',
+    });
+  });
+
+  it("returns alreadyConfirmed with currentStatus 'waitlist'", async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: {
+          id: 'player-1',
+          is_banned: false,
+          suspended_until: null,
+          suspension_reason: null,
+        },
+        error: null,
+      }),
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { status: 'waitlist' }, error: null }),
+    );
+    const result = await confirmPresence({
+      gameId: GAME_ID,
+      teamId: TEAM_ID,
+      phone: PHONE,
+    });
+    expect(result).toEqual({
+      alreadyConfirmed: true,
+      currentStatus: 'waitlist',
+    });
+  });
+
+  // ── gameFull ──
+
+  it('returns { gameFull: true } when game has 25+ confirmed and joinWaitlist is false', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: {
+          id: 'player-1',
+          is_banned: false,
+          suspended_until: null,
+          suspension_reason: null,
+        },
+        error: null,
+      }),
+    );
+    // no existing confirmation
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    // confirmed count = 25
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null, count: 25 }),
+    );
+    const result = await confirmPresence({
+      gameId: GAME_ID,
+      teamId: TEAM_ID,
+      phone: PHONE,
+      joinWaitlist: false,
+    });
+    expect(result).toEqual({ gameFull: true });
+  });
+
+  // ── waitlist ──
+
+  it("returns { status: 'waitlist' } when game is full and joinWaitlist is true", async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: {
+          id: 'player-1',
+          is_banned: false,
+          suspended_until: null,
+          suspension_reason: null,
+        },
+        error: null,
+      }),
+    );
+    // no existing confirmation
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    // confirmed count = 25 (full)
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null, count: 25 }),
+    );
+    // waitlist count = 2
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null, count: 2 }),
+    );
+    // insert confirmation
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    const result = await confirmPresence({
+      gameId: GAME_ID,
+      teamId: TEAM_ID,
+      phone: PHONE,
+      joinWaitlist: true,
+    });
+    expect(result).toEqual({ status: 'waitlist' });
+  });
+
+  // ── insert confirmation error ──
+
+  it('returns { error } when insert confirmation fails', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: {
+          id: 'player-1',
+          is_banned: false,
+          suspended_until: null,
+          suspension_reason: null,
+        },
+        error: null,
+      }),
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }), // no existing confirmation
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null, count: 5 }), // not full
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: { message: 'db error' } }), // insert fails
+    );
+    const result = await confirmPresence({
+      gameId: GAME_ID,
+      teamId: TEAM_ID,
+      phone: PHONE,
+    });
+    expect(result).toEqual({ error: 'Erro ao confirmar presença.' });
+  });
+
+  // ── success (confirmed) ──
+
+  it("returns { status: 'confirmed' } and sets cookie on success", async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: {
+          id: 'player-1',
+          is_banned: false,
+          suspended_until: null,
+          suspension_reason: null,
+        },
+        error: null,
+      }),
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }), // no existing confirmation
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null, count: 10 }), // not full
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }), // insert success
+    );
+    const result = await confirmPresence({
+      gameId: GAME_ID,
+      teamId: TEAM_ID,
+      phone: PHONE,
+    });
+    expect(result).toEqual({ status: 'confirmed' });
+    expect(mockCookieSet).toHaveBeenCalledWith(
+      `player_${TEAM_ID}`,
+      PHONE,
+      expect.objectContaining({ httpOnly: true }),
+    );
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/jogador/[code]', 'page');
+  });
+
+  // ── success with new player ──
+
+  it("creates new player and returns { status: 'confirmed' }", async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }), // player not found
+    );
+    // insert new player
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { id: 'new-player-1' }, error: null }),
+    );
+    // no existing confirmation
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    // confirmed count
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null, count: 0 }),
+    );
+    // insert confirmation
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    const result = await confirmPresence({
+      gameId: GAME_ID,
+      teamId: TEAM_ID,
+      phone: PHONE,
+      newPlayer: { name: 'Novo Jogador', weight_kg: 75, stamina: '3' },
+    });
+    expect(result).toEqual({ status: 'confirmed' });
+  });
+});

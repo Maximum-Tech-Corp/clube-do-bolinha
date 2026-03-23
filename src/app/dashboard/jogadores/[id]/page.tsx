@@ -1,11 +1,10 @@
-import { notFound } from "next/navigation";
-import Link from "next/link";
-import { getPlayer, getPlayerStats } from "@/actions/players-admin";
-import { EditPlayerForm } from "@/components/dashboard/edit-player-form";
-import { RetroactiveStatForm } from "@/components/dashboard/retroactive-stat-form";
-import { PlayerSituationForm } from "@/components/dashboard/player-situation-form";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import { notFound } from 'next/navigation';
+import { getPlayer, getPlayerStats } from '@/actions/players-admin';
+import { EditPlayerForm } from '@/components/dashboard/edit-player-form';
+import { RetroactiveStatForm } from '@/components/dashboard/retroactive-stat-form';
+import { PlayerSituationForm } from '@/components/dashboard/player-situation-form';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -13,7 +12,10 @@ interface Props {
 
 export default async function EditPlayerPage({ params }: Props) {
   const { id } = await params;
-  const [player, stats] = await Promise.all([getPlayer(id), getPlayerStats(id)]);
+  const [player, stats] = await Promise.all([
+    getPlayer(id),
+    getPlayerStats(id),
+  ]);
 
   if (!player) notFound();
 
@@ -36,15 +38,19 @@ export default async function EditPlayerPage({ params }: Props) {
 
         {stats.length > 0 && (
           <div className="space-y-1">
-            {stats.map((s) => (
+            {stats.map(s => (
               <div
                 key={s.id}
                 className="flex items-center justify-between text-sm py-1"
               >
                 <span className="text-muted-foreground">{s.year}</span>
                 <div className="flex gap-2">
-                  <Badge variant="outline">{s.goals} gol{s.goals !== 1 ? "s" : ""}</Badge>
-                  <Badge variant="outline">{s.assists} assist{s.assists !== 1 ? "s" : ""}</Badge>
+                  <Badge variant="outline">
+                    {s.goals} gol{s.goals !== 1 ? 's' : ''}
+                  </Badge>
+                  <Badge variant="outline">
+                    {s.assists} assist{s.assists !== 1 ? 's' : ''}
+                  </Badge>
                 </div>
               </div>
             ))}
@@ -65,7 +71,6 @@ export default async function EditPlayerPage({ params }: Props) {
           suspensionReason={player.suspension_reason}
         />
       </div>
-
     </div>
   );
 }

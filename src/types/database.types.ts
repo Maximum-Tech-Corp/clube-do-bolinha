@@ -10,11 +10,11 @@ export type Json =
 // Enums
 // ============================================================
 
-export type SubscriptionStatus = "active" | "inactive" | "trialing";
-export type GameStatus = "open" | "cancelled" | "finished";
-export type ConfirmationStatus = "confirmed" | "waitlist" | "removed";
-export type TournamentPhase = "group" | "semi" | "final";
-export type StaminaLevel = "1" | "2" | "3" | "4plus";
+export type SubscriptionStatus = 'active' | 'inactive' | 'trialing';
+export type GameStatus = 'open' | 'cancelled' | 'finished';
+export type ConfirmationStatus = 'confirmed' | 'waitlist' | 'removed';
+export type TournamentPhase = 'group' | 'semi' | 'final';
+export type StaminaLevel = '1' | '2' | '3' | '4plus';
 
 // ============================================================
 // Database schema — formato compatível com @supabase/supabase-js 2.x
