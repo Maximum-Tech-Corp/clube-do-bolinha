@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { NewGameForm } from "../new-game-form";
-import { mockPush } from "@/test/mocks/next";
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { NewGameForm } from '../new-game-form';
+import { mockPush } from '@/test/mocks/next';
 
 const mockCreateGame = vi.fn();
 
-vi.mock("@/actions/games-admin", () => ({
+vi.mock('@/actions/games-admin', () => ({
   createGame: (...args: unknown[]) => mockCreateGame(...args),
   cancelGame: vi.fn(),
   toggleTournament: vi.fn(),
@@ -24,97 +24,106 @@ function futureDateTimeValue() {
   return d.toISOString().slice(0, 16);
 }
 
-describe("NewGameForm", () => {
+describe('NewGameForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockCreateGame.mockResolvedValue({});
   });
 
-  describe("rendering", () => {
-    it("renders date/time field", () => {
+  describe('rendering', () => {
+    it('renders date/time field', () => {
       render(<NewGameForm />);
-      expect(screen.getByLabelText("Data e horário")).toBeInTheDocument();
+      expect(screen.getByLabelText('Data e horário')).toBeInTheDocument();
     });
 
-    it("renders location field", () => {
+    it('renders location field', () => {
       render(<NewGameForm />);
-      expect(screen.getByLabelText("Local (opcional)")).toBeInTheDocument();
+      expect(screen.getByLabelText('Local (opcional)')).toBeInTheDocument();
     });
 
-    it("renders submit button", () => {
+    it('renders submit button', () => {
       render(<NewGameForm />);
-      expect(screen.getByRole("button", { name: "Criar jogo" })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Criar jogo' }),
+      ).toBeInTheDocument();
     });
 
-    it("submit button is disabled when date is empty", () => {
+    it('submit button is disabled when date is empty', () => {
       render(<NewGameForm />);
-      expect(screen.getByRole("button", { name: "Criar jogo" })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Criar jogo' })).toBeDisabled();
     });
   });
 
-  describe("submission", () => {
-    it("enables submit button after datetime is filled", async () => {
-      const user = userEvent.setup();
+  describe('submission', () => {
+    it('enables submit button after datetime is filled', async () => {
       render(<NewGameForm />);
 
-      fireEvent.change(screen.getByLabelText("Data e horário"), {
+      fireEvent.change(screen.getByLabelText('Data e horário'), {
         target: { value: futureDateTimeValue() },
       });
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: "Criar jogo" })).not.toBeDisabled();
+        expect(
+          screen.getByRole('button', { name: 'Criar jogo' }),
+        ).not.toBeDisabled();
       });
     });
 
-    it("calls createGame with ISO UTC string on submit", async () => {
+    it('calls createGame with ISO UTC string on submit', async () => {
       const user = userEvent.setup();
       render(<NewGameForm />);
 
       const futureVal = futureDateTimeValue();
-      fireEvent.change(screen.getByLabelText("Data e horário"), {
+      fireEvent.change(screen.getByLabelText('Data e horário'), {
         target: { value: futureVal },
       });
       await user.type(
-        screen.getByLabelText("Local (opcional)"),
-        "Quadra Municipal"
+        screen.getByLabelText('Local (opcional)'),
+        'Quadra Municipal',
       );
-      await user.click(screen.getByRole("button", { name: "Criar jogo" }));
+      await user.click(screen.getByRole('button', { name: 'Criar jogo' }));
 
       await waitFor(() => {
         expect(mockCreateGame).toHaveBeenCalledWith(
           expect.objectContaining({
-            location: "Quadra Municipal",
+            location: 'Quadra Municipal',
             scheduled_at: expect.stringMatching(/Z$/), // ISO UTC ends with Z
-          })
+          }),
         );
       });
     });
 
-    it("redirects to /dashboard/jogos on success", async () => {
+    it('redirects to /dashboard/jogos on success', async () => {
       render(<NewGameForm />);
 
-      fireEvent.change(screen.getByLabelText("Data e horário"), {
+      fireEvent.change(screen.getByLabelText('Data e horário'), {
         target: { value: futureDateTimeValue() },
       });
-      fireEvent.submit(screen.getByRole("button", { name: "Criar jogo" }).closest("form")!);
+      fireEvent.submit(
+        screen.getByRole('button', { name: 'Criar jogo' }).closest('form')!,
+      );
 
       await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith("/dashboard/jogos");
+        expect(mockPush).toHaveBeenCalledWith('/dashboard/jogos');
       });
     });
 
-    it("shows error message when action fails", async () => {
-      mockCreateGame.mockResolvedValue({ error: "A data e hora devem ser no futuro." });
+    it('shows error message when action fails', async () => {
+      mockCreateGame.mockResolvedValue({
+        error: 'A data e hora devem ser no futuro.',
+      });
       render(<NewGameForm />);
 
-      fireEvent.change(screen.getByLabelText("Data e horário"), {
+      fireEvent.change(screen.getByLabelText('Data e horário'), {
         target: { value: futureDateTimeValue() },
       });
-      fireEvent.submit(screen.getByRole("button", { name: "Criar jogo" }).closest("form")!);
+      fireEvent.submit(
+        screen.getByRole('button', { name: 'Criar jogo' }).closest('form')!,
+      );
 
       await waitFor(() => {
         expect(
-          screen.getByText("A data e hora devem ser no futuro.")
+          screen.getByText('A data e hora devem ser no futuro.'),
         ).toBeInTheDocument();
       });
       expect(mockPush).not.toHaveBeenCalled();
@@ -122,17 +131,19 @@ describe("NewGameForm", () => {
 
     it("shows 'Salvando...' loading state during submission", async () => {
       mockCreateGame.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve({}), 200))
+        () => new Promise(resolve => setTimeout(() => resolve({}), 200)),
       );
       render(<NewGameForm />);
 
-      fireEvent.change(screen.getByLabelText("Data e horário"), {
+      fireEvent.change(screen.getByLabelText('Data e horário'), {
         target: { value: futureDateTimeValue() },
       });
-      fireEvent.submit(screen.getByRole("button", { name: "Criar jogo" }).closest("form")!);
+      fireEvent.submit(
+        screen.getByRole('button', { name: 'Criar jogo' }).closest('form')!,
+      );
 
       // Button should show loading state immediately after submit
-      expect(screen.getByRole("button", { name: /salvando/i })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /salvando/i })).toBeDisabled();
     });
   });
 });

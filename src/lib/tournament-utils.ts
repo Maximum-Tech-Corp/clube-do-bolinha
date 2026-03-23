@@ -1,4 +1,4 @@
-import type { TournamentPhase } from "@/types/database.types";
+import type { TournamentPhase } from '@/types/database.types';
 
 /**
  * Retorna os pares de partidas da fase de grupos na ordem de exibição,
@@ -9,27 +9,35 @@ import type { TournamentPhase } from "@/types/database.types";
  *          T1×T2, T3×T4, T1×T5, T2×T3, T4×T5, T1×T3, T2×T4, T3×T5, T1×T4, T2×T5
  */
 export function buildGroupMatchOrder(
-  teamIds: string[] // ordenado por team_number ASC
+  teamIds: string[], // ordenado por team_number ASC
 ): [string, string][] {
   const n = teamIds.length;
 
   if (n === 4) {
     const [a, b, c, d] = teamIds;
     return [
-      [a, b], [c, d],
-      [a, c], [b, d],
-      [a, d], [b, c],
+      [a, b],
+      [c, d],
+      [a, c],
+      [b, d],
+      [a, d],
+      [b, c],
     ];
   }
 
   if (n === 5) {
     const [a, b, c, d, e] = teamIds;
     return [
-      [a, b], [c, d],
-      [a, e], [b, c],
-      [d, e], [a, c],
-      [b, d], [c, e],
-      [a, d], [b, e],
+      [a, b],
+      [c, d],
+      [a, e],
+      [b, c],
+      [d, e],
+      [a, c],
+      [b, d],
+      [c, e],
+      [a, d],
+      [b, e],
     ];
   }
 
@@ -73,12 +81,9 @@ export type StandingRow = {
  */
 export function computeStandings(
   matches: MatchRow[],
-  teamMap: Map<string, number> // teamId → teamNumber
+  teamMap: Map<string, number>, // teamId → teamNumber
 ): StandingRow[] {
-  const stats = new Map<
-    string,
-    Omit<StandingRow, "teamId" | "teamNumber">
-  >();
+  const stats = new Map<string, Omit<StandingRow, 'teamId' | 'teamNumber'>>();
 
   for (const [teamId] of teamMap) {
     stats.set(teamId, {
@@ -142,6 +147,6 @@ export function computeStandings(
         b.points - a.points ||
         b.wins - a.wins ||
         b.goalDiff - a.goalDiff ||
-        b.goalsFor - a.goalsFor
+        b.goalsFor - a.goalsFor,
     );
 }

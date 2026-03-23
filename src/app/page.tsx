@@ -1,7 +1,7 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { AppLogo } from "@/components/app-logo";
-import { ShareAppLink } from "@/components/share-app-link";
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { AppLogo } from '@/components/app-logo';
+import { ShareAppLink } from '@/components/share-app-link';
 
 export default function Home() {
   return (
@@ -39,7 +39,9 @@ export default function Home() {
           height={101}
           className="h-5 w-auto opacity-60"
         />
-        <span className="text-[10px] text-muted-foreground/60">v1.0.0 Beta</span>
+        <span className="text-[10px] text-muted-foreground/60">
+          v1.0.0 Beta
+        </span>
       </footer>
     </div>
   );

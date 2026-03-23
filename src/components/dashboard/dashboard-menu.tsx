@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useState, useRef, useEffect } from "react";
-import { MoreVertical, Share2, Settings } from "lucide-react";
+import { useState, useRef, useEffect } from 'react';
+import { MoreVertical, Share2, Settings } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { updateTeamSettings } from "@/actions/team";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { updateTeamSettings } from '@/actions/team';
 
 interface Props {
   appUrl: string;
@@ -19,7 +19,11 @@ interface Props {
   matchDurationMinutes: number;
 }
 
-export function DashboardMenu({ appUrl, teamName, matchDurationMinutes }: Props) {
+export function DashboardMenu({
+  appUrl,
+  teamName,
+  matchDurationMinutes,
+}: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [name, setName] = useState(teamName);
@@ -34,8 +38,8 @@ export function DashboardMenu({ appUrl, teamName, matchDurationMinutes }: Props)
         setMenuOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const shareText = encodeURIComponent(
@@ -50,7 +54,7 @@ Acesse: ${appUrl}
 
 *Para instalar como app:*
 Android: abra no Chrome, toque nos 3 pontos e selecione "Adicionar a tela inicial"
-iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de Inicio"`
+iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de Inicio"`,
   );
 
   async function handleSave() {
@@ -67,7 +71,7 @@ iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de I
     <div className="relative" ref={menuRef}>
       <button
         type="button"
-        onClick={() => setMenuOpen((o) => !o)}
+        onClick={() => setMenuOpen(o => !o)}
         className="p-2 rounded-lg hover:bg-muted transition-colors"
         aria-label="Menu"
       >
@@ -112,7 +116,7 @@ iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de I
                 id="team-name"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={e => setName(e.target.value)}
                 maxLength={60}
               />
             </div>
@@ -123,15 +127,11 @@ iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de I
                 type="number"
                 min={1}
                 value={duration}
-                onChange={(e) => setDuration(e.target.value)}
+                onChange={e => setDuration(e.target.value)}
               />
             </div>
-            <Button
-              onClick={handleSave}
-              disabled={saving}
-              className="w-full"
-            >
-              {saving ? "Salvando..." : saved ? "Salvo!" : "Atualizar"}
+            <Button onClick={handleSave} disabled={saving} className="w-full">
+              {saving ? 'Salvando...' : saved ? 'Salvo!' : 'Atualizar'}
             </Button>
           </div>
         </DialogContent>

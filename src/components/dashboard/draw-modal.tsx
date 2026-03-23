@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { executeDraw } from "@/actions/draw";
-import { getDrawInfo } from "@/lib/draw-algorithm";
-import { Button } from "@/components/ui/button";
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { executeDraw } from '@/actions/draw';
+import { getDrawInfo } from '@/lib/draw-algorithm';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 
 interface Props {
   gameId: string;
@@ -20,7 +20,12 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-export function DrawModal({ gameId, confirmedCount, open, onOpenChange }: Props) {
+export function DrawModal({
+  gameId,
+  confirmedCount,
+  open,
+  onOpenChange,
+}: Props) {
   const [isTournament, setIsTournament] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -55,7 +60,8 @@ export function DrawModal({ gameId, confirmedCount, open, onOpenChange }: Props)
         <DialogHeader>
           <DialogTitle>Confirmar sorteio</DialogTitle>
           <DialogDescription>
-            Revise as informações antes de sortear. Esta ação não pode ser desfeita.
+            Revise as informações antes de sortear. Esta ação não pode ser
+            desfeita.
           </DialogDescription>
         </DialogHeader>
 
@@ -91,7 +97,9 @@ export function DrawModal({ gameId, confirmedCount, open, onOpenChange }: Props)
         {/* Checkbox campeonato */}
         <label
           className={`flex items-start gap-3 rounded-lg border border-border p-3 ${
-            !info.canBeTournament ? "opacity-40 cursor-not-allowed" : "cursor-pointer"
+            !info.canBeTournament
+              ? 'opacity-40 cursor-not-allowed'
+              : 'cursor-pointer'
           }`}
         >
           <input
@@ -99,14 +107,14 @@ export function DrawModal({ gameId, confirmedCount, open, onOpenChange }: Props)
             className="mt-0.5 shrink-0"
             checked={isTournament}
             disabled={!info.canBeTournament}
-            onChange={(e) => setIsTournament(e.target.checked)}
+            onChange={e => setIsTournament(e.target.checked)}
           />
           <div>
             <p className="text-sm font-medium">Modo campeonato</p>
             <p className="text-xs text-muted-foreground">
               {info.canBeTournament
-                ? "Gera chaveamento entre os times após o sorteio."
-                : "Disponível apenas quando o sorteio resultar em 4 ou 5 times."}
+                ? 'Gera chaveamento entre os times após o sorteio.'
+                : 'Disponível apenas quando o sorteio resultar em 4 ou 5 times.'}
             </p>
           </div>
         </label>
@@ -114,12 +122,8 @@ export function DrawModal({ gameId, confirmedCount, open, onOpenChange }: Props)
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         <div className="flex gap-2">
-          <Button
-            className="flex-1"
-            onClick={handleConfirm}
-            disabled={pending}
-          >
-            {pending ? "Sorteando..." : "Confirmar e Sortear"}
+          <Button className="flex-1" onClick={handleConfirm} disabled={pending}>
+            {pending ? 'Sorteando...' : 'Confirmar e Sortear'}
           </Button>
           <Button
             variant="outline"

@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   saveMatchResult,
   reopenMatch,
   generateNextPhase,
-} from "@/actions/tournament";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import type { TournamentPhase } from "@/types/database.types";
+} from '@/actions/tournament';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import type { TournamentPhase } from '@/types/database.types';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -54,7 +54,7 @@ interface Props {
 // ── Standings table ───────────────────────────────────────────────────────────
 
 function StandingsTable({ standings }: { standings: StandingData[] }) {
-  if (standings.every((s) => s.played === 0)) return null;
+  if (standings.every(s => s.played === 0)) return null;
 
   return (
     <div className="overflow-x-auto">
@@ -111,14 +111,14 @@ function MatchCard({
   onReopen: (matchId: string) => void;
   saving: boolean;
 }) {
-  const homeNumber = teamMap.get(match.homeTeamId) ?? "?";
-  const awayNumber = teamMap.get(match.awayTeamId) ?? "?";
+  const homeNumber = teamMap.get(match.homeTeamId) ?? '?';
+  const awayNumber = teamMap.get(match.awayTeamId) ?? '?';
 
   const [homeInput, setHomeInput] = useState(
-    match.homeScore !== null ? String(match.homeScore) : ""
+    match.homeScore !== null ? String(match.homeScore) : '',
   );
   const [awayInput, setAwayInput] = useState(
-    match.awayScore !== null ? String(match.awayScore) : ""
+    match.awayScore !== null ? String(match.awayScore) : '',
   );
 
   function handleSubmit() {
@@ -162,7 +162,7 @@ function MatchCard({
             type="number"
             min={0}
             value={homeInput}
-            onChange={(e) => setHomeInput(e.target.value)}
+            onChange={e => setHomeInput(e.target.value)}
             placeholder="0"
             className="w-14 h-8 rounded border border-border text-center text-sm tabular-nums bg-background"
           />
@@ -171,14 +171,14 @@ function MatchCard({
             type="number"
             min={0}
             value={awayInput}
-            onChange={(e) => setAwayInput(e.target.value)}
+            onChange={e => setAwayInput(e.target.value)}
             placeholder="0"
             className="w-14 h-8 rounded border border-border text-center text-sm tabular-nums bg-background"
           />
           <Button
             size="sm"
             onClick={handleSubmit}
-            disabled={saving || homeInput === "" || awayInput === ""}
+            disabled={saving || homeInput === '' || awayInput === ''}
           >
             Confirmar
           </Button>
@@ -213,7 +213,7 @@ function PhaseSection({
         <h2 className="font-semibold text-sm">{title}</h2>
       </div>
       <ul className="divide-y divide-border">
-        {matches.map((m) => (
+        {matches.map(m => (
           <li key={m.id}>
             <MatchCard
               match={m}
@@ -244,22 +244,22 @@ export function TournamentClient({
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
-  const teamMap = new Map(teams.map((t) => [t.id, t.teamNumber]));
+  const teamMap = new Map(teams.map(t => [t.id, t.teamNumber]));
 
   const groupMatches = matches
-    .filter((m) => m.phase === "group")
+    .filter(m => m.phase === 'group')
     .sort((a, b) => a.matchOrder - b.matchOrder);
   const semiMatches = matches
-    .filter((m) => m.phase === "semi")
+    .filter(m => m.phase === 'semi')
     .sort((a, b) => a.matchOrder - b.matchOrder);
   const finalMatches = matches
-    .filter((m) => m.phase === "final")
+    .filter(m => m.phase === 'final')
     .sort((a, b) => a.matchOrder - b.matchOrder);
 
   const groupComplete =
-    groupMatches.length > 0 && groupMatches.every((m) => m.completed);
+    groupMatches.length > 0 && groupMatches.every(m => m.completed);
   const semiComplete =
-    semiMatches.length > 0 && semiMatches.every((m) => m.completed);
+    semiMatches.length > 0 && semiMatches.every(m => m.completed);
 
   // Quando gerar próxima fase:
   // 4 times: grupo done → gera semi | semi done → gera final
@@ -270,7 +270,9 @@ export function TournamentClient({
       (nTeams === 4 && semiComplete && finalMatches.length === 0));
 
   const generateLabel =
-    nTeams === 4 && semiMatches.length === 0 ? "Gerar Semifinais" : "Gerar Final";
+    nTeams === 4 && semiMatches.length === 0
+      ? 'Gerar Semifinais'
+      : 'Gerar Final';
 
   function handleSave(matchId: string, home: number, away: number) {
     setError(null);
@@ -376,7 +378,7 @@ export function TournamentClient({
             onClick={handleGenerateNext}
             disabled={pending}
           >
-            {pending ? "Gerando..." : generateLabel}
+            {pending ? 'Gerando...' : generateLabel}
           </Button>
         </>
       )}

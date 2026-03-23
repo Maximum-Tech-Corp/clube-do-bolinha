@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { BottomNav } from "@/components/dashboard/bottom-nav";
+import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
+import { BottomNav } from '@/components/dashboard/bottom-nav';
 
 export default async function DashboardLayout({
   children,
@@ -13,17 +13,17 @@ export default async function DashboardLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  if (!user) redirect('/login');
 
   const { data: admin } = await supabase
-    .from("admins")
-    .select("subscription_status")
-    .eq("user_id", user.id)
+    .from('admins')
+    .select('subscription_status')
+    .eq('user_id', user.id)
     .single();
 
-  const allowedStatuses = ["active", "trialing"];
+  const allowedStatuses = ['active', 'trialing'];
   if (!admin || !allowedStatuses.includes(admin.subscription_status)) {
-    redirect("/pagamento-pendente");
+    redirect('/pagamento-pendente');
   }
 
   return (

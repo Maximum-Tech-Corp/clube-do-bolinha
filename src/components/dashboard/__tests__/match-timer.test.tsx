@@ -1,36 +1,40 @@
-import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from "vitest";
-import { render, screen, act } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { MatchTimer } from "../match-timer";
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MatchTimer } from '../match-timer';
 
-const GAME_ID = "game-timer-test";
+const GAME_ID = 'game-timer-test';
 const STORAGE_KEY = `match_timer_${GAME_ID}`;
 
-describe("MatchTimer", () => {
-  describe("initial render", () => {
-    it("shows the configured time on first render", () => {
+describe('MatchTimer', () => {
+  describe('initial render', () => {
+    it('shows the configured time on first render', () => {
       render(<MatchTimer gameId={GAME_ID} defaultMinutes={20} />);
-      expect(screen.getByText("20:00")).toBeInTheDocument();
+      expect(screen.getByText('20:00')).toBeInTheDocument();
     });
 
     it("shows 'Iniciar' button when timer is not started", () => {
       render(<MatchTimer gameId={GAME_ID} defaultMinutes={20} />);
-      expect(screen.getByRole("button", { name: /iniciar/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /iniciar/i }),
+      ).toBeInTheDocument();
     });
 
     it("shows 'Reset' button always", () => {
       render(<MatchTimer gameId={GAME_ID} defaultMinutes={20} />);
-      expect(screen.getByRole("button", { name: /reset/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /reset/i }),
+      ).toBeInTheDocument();
     });
 
-    it("shows configured duration label", () => {
+    it('shows configured duration label', () => {
       render(<MatchTimer gameId={GAME_ID} defaultMinutes={30} />);
       expect(screen.getByText(/30 min/)).toBeInTheDocument();
     });
   });
 
-  describe("localStorage persistence", () => {
-    it("restores paused state from localStorage", () => {
+  describe('localStorage persistence', () => {
+    it('restores paused state from localStorage', () => {
       const durationMs = 20 * 60_000;
       const state = {
         startedAt: Date.now() - 5000,
@@ -42,7 +46,9 @@ describe("MatchTimer", () => {
       render(<MatchTimer gameId={GAME_ID} defaultMinutes={20} />);
 
       // Should show "Continuar" (not "Iniciar") because startedAt is set
-      expect(screen.getByRole("button", { name: /continuar/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /continuar/i }),
+      ).toBeInTheDocument();
     });
 
     it("shows 'Tempo encerrado!' when timer is finished", () => {
@@ -56,84 +62,92 @@ describe("MatchTimer", () => {
 
       render(<MatchTimer gameId={GAME_ID} defaultMinutes={20} />);
 
-      expect(screen.getByText("Tempo encerrado!")).toBeInTheDocument();
+      expect(screen.getByText('Tempo encerrado!')).toBeInTheDocument();
     });
 
-    it("saves state to localStorage when play is clicked", async () => {
+    it('saves state to localStorage when play is clicked', async () => {
       const user = userEvent.setup();
       render(<MatchTimer gameId={GAME_ID} defaultMinutes={20} />);
 
-      await user.click(screen.getByRole("button", { name: /iniciar/i }));
+      await user.click(screen.getByRole('button', { name: /iniciar/i }));
 
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null');
       expect(saved).not.toBeNull();
       expect(saved.startedAt).not.toBeNull();
       expect(saved.pausedAt).toBeNull();
     });
   });
 
-  describe("localStorage error recovery", () => {
-    it("falls back to default state when localStorage has invalid JSON", () => {
-      localStorage.setItem(STORAGE_KEY, "not-valid-json!!!");
+  describe('localStorage error recovery', () => {
+    it('falls back to default state when localStorage has invalid JSON', () => {
+      localStorage.setItem(STORAGE_KEY, 'not-valid-json!!!');
       render(<MatchTimer gameId={GAME_ID} defaultMinutes={20} />);
       // Should fall back to the default 20:00
-      expect(screen.getByText("20:00")).toBeInTheDocument();
+      expect(screen.getByText('20:00')).toBeInTheDocument();
     });
   });
 
-  describe("controls", () => {
+  describe('controls', () => {
     it("shows 'Pausar' after clicking Iniciar", async () => {
       const user = userEvent.setup();
       render(<MatchTimer gameId={GAME_ID} defaultMinutes={20} />);
 
-      await user.click(screen.getByRole("button", { name: /iniciar/i }));
+      await user.click(screen.getByRole('button', { name: /iniciar/i }));
 
-      expect(screen.getByRole("button", { name: /pausar/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /pausar/i }),
+      ).toBeInTheDocument();
     });
 
     it("shows 'Continuar' after Pausar is clicked", async () => {
       const user = userEvent.setup();
       render(<MatchTimer gameId={GAME_ID} defaultMinutes={20} />);
 
-      await user.click(screen.getByRole("button", { name: /iniciar/i }));
-      await user.click(screen.getByRole("button", { name: /pausar/i }));
+      await user.click(screen.getByRole('button', { name: /iniciar/i }));
+      await user.click(screen.getByRole('button', { name: /pausar/i }));
 
-      expect(screen.getByRole("button", { name: /continuar/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /continuar/i }),
+      ).toBeInTheDocument();
     });
 
     it("shows 'Iniciar' again after Reset", async () => {
       const user = userEvent.setup();
       render(<MatchTimer gameId={GAME_ID} defaultMinutes={20} />);
 
-      await user.click(screen.getByRole("button", { name: /iniciar/i }));
-      await user.click(screen.getByRole("button", { name: /reset/i }));
+      await user.click(screen.getByRole('button', { name: /iniciar/i }));
+      await user.click(screen.getByRole('button', { name: /reset/i }));
 
-      expect(screen.getByRole("button", { name: /iniciar/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /iniciar/i }),
+      ).toBeInTheDocument();
     });
 
-    it("restores full time after Reset", async () => {
+    it('restores full time after Reset', async () => {
       const user = userEvent.setup();
       render(<MatchTimer gameId={GAME_ID} defaultMinutes={20} />);
 
-      await user.click(screen.getByRole("button", { name: /iniciar/i }));
-      await user.click(screen.getByRole("button", { name: /reset/i }));
+      await user.click(screen.getByRole('button', { name: /iniciar/i }));
+      await user.click(screen.getByRole('button', { name: /reset/i }));
 
-      expect(screen.getByText("20:00")).toBeInTheDocument();
+      expect(screen.getByText('20:00')).toBeInTheDocument();
     });
 
-    it("resumes from pause (resume path in handlePlay)", async () => {
+    it('resumes from pause (resume path in handlePlay)', async () => {
       const user = userEvent.setup();
       render(<MatchTimer gameId={GAME_ID} defaultMinutes={20} />);
 
-      await user.click(screen.getByRole("button", { name: /iniciar/i }));
-      await user.click(screen.getByRole("button", { name: /pausar/i }));
+      await user.click(screen.getByRole('button', { name: /iniciar/i }));
+      await user.click(screen.getByRole('button', { name: /pausar/i }));
       // Now click "Continuar" — triggers the resume branch (lines 106-110)
-      await user.click(screen.getByRole("button", { name: /continuar/i }));
+      await user.click(screen.getByRole('button', { name: /continuar/i }));
 
-      expect(screen.getByRole("button", { name: /pausar/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /pausar/i }),
+      ).toBeInTheDocument();
     });
 
-    it("play button is disabled when timer is finished", () => {
+    it('play button is disabled when timer is finished', () => {
       const durationMs = 1000;
       const state = {
         startedAt: Date.now() - 3000,
@@ -144,7 +158,9 @@ describe("MatchTimer", () => {
 
       render(<MatchTimer gameId={GAME_ID} defaultMinutes={20} />);
 
-      const playBtn = screen.getByRole("button", { name: /iniciar|continuar/i });
+      const playBtn = screen.getByRole('button', {
+        name: /iniciar|continuar/i,
+      });
       expect(playBtn).toBeDisabled();
     });
 
@@ -161,14 +177,16 @@ describe("MatchTimer", () => {
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 
-        const { getByText } = render(<MatchTimer gameId={GAME_ID} defaultMinutes={20} />);
+        const { getByText } = render(
+          <MatchTimer gameId={GAME_ID} defaultMinutes={20} />,
+        );
 
         // Advance time past the duration
         await act(async () => {
           vi.advanceTimersByTime(600); // 3 ticks of 250ms
         });
 
-        expect(getByText("Tempo encerrado!")).toBeInTheDocument();
+        expect(getByText('Tempo encerrado!')).toBeInTheDocument();
       } finally {
         vi.useRealTimers();
       }

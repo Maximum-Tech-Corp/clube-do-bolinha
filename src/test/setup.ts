@@ -1,13 +1,13 @@
-import "@testing-library/jest-dom";
-import { vi, beforeEach, afterEach } from "vitest";
+import '@testing-library/jest-dom';
+import { vi, beforeEach, afterEach } from 'vitest';
 
 // ─── Global mocks ────────────────────────────────────────────────────────────
 
 // next/navigation, next/cache, next/headers, next/link
-import "./mocks/next";
+import './mocks/next';
 
 // @/lib/supabase/server
-import "./mocks/supabase";
+import './mocks/supabase';
 
 // ─── Browser APIs not in happy-dom ───────────────────────────────────────────
 
@@ -37,7 +37,7 @@ beforeEach(() => {
 
   // Re-define after vi.restoreAllMocks() (called in afterEach) clears these.
   // configurable: true allows repeated re-definition across tests.
-  Object.defineProperty(window, "matchMedia", {
+  Object.defineProperty(window, 'matchMedia', {
     configurable: true,
     writable: true,
     value: vi.fn().mockImplementation((query: string) => ({
@@ -52,12 +52,12 @@ beforeEach(() => {
     })),
   });
 
-  Object.defineProperty(navigator, "clipboard", {
+  Object.defineProperty(navigator, 'clipboard', {
     configurable: true,
     writable: true,
     value: {
       writeText: vi.fn(() => Promise.resolve()),
-      readText: vi.fn(() => Promise.resolve("")),
+      readText: vi.fn(() => Promise.resolve('')),
     },
   });
 });

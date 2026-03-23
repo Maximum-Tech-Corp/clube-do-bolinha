@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { vi } from 'vitest';
 
 /**
  * Creates a chainable Supabase query mock.
@@ -10,17 +10,36 @@ import { vi } from "vitest";
  *     createQueryMock({ data: [...], error: null })
  *   );
  */
-export function createQueryMock(result: { data: unknown; error: unknown } = { data: null, error: null }) {
+export function createQueryMock(
+  result: { data: unknown; error: unknown } = { data: null, error: null },
+) {
   const chain: Record<string, unknown> = {};
 
   const methods = [
-    "select", "insert", "update", "upsert", "delete",
-    "eq", "neq", "in", "gte", "lte", "gt", "lt",
-    "order", "limit", "filter", "match",
-    "is", "not", "or", "ilike", "like",
+    'select',
+    'insert',
+    'update',
+    'upsert',
+    'delete',
+    'eq',
+    'neq',
+    'in',
+    'gte',
+    'lte',
+    'gt',
+    'lt',
+    'order',
+    'limit',
+    'filter',
+    'match',
+    'is',
+    'not',
+    'or',
+    'ilike',
+    'like',
   ];
 
-  methods.forEach((m) => {
+  methods.forEach(m => {
     chain[m] = vi.fn(() => chain);
   });
 
@@ -30,7 +49,7 @@ export function createQueryMock(result: { data: unknown; error: unknown } = { da
     Promise.resolve(result).then(resolve);
 
   // Allow awaiting the chain directly (returns result)
-  Object.defineProperty(chain, Symbol.toStringTag, { value: "Promise" });
+  Object.defineProperty(chain, Symbol.toStringTag, { value: 'Promise' });
 
   return chain;
 }
@@ -49,7 +68,7 @@ export const mockSupabaseClient = {
   auth: mockSupabaseAuth,
 };
 
-vi.mock("@/lib/supabase/server", () => ({
+vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(() => Promise.resolve(mockSupabaseClient)),
   createServiceClient: vi.fn(() => mockSupabaseClient),
 }));

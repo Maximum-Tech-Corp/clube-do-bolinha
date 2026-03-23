@@ -1,30 +1,29 @@
-import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { Badge } from "@/components/ui/badge";
-import { computeStandings } from "@/lib/tournament-utils";
-import type { MatchRow } from "@/lib/tournament-utils";
-import type { TournamentPhase } from "@/types/database.types";
+import { notFound, redirect } from 'next/navigation';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { Badge } from '@/components/ui/badge';
+import { computeStandings } from '@/lib/tournament-utils';
+import type { MatchRow } from '@/lib/tournament-utils';
+import type { TournamentPhase } from '@/types/database.types';
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString("pt-BR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+  return new Date(iso).toLocaleString('pt-BR', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
 const phaseLabel: Record<TournamentPhase, string> = {
-  group: "Fase de Grupos",
-  semi: "Semifinais",
-  final: "Final",
+  group: 'Fase de Grupos',
+  semi: 'Semifinais',
+  final: 'Final',
 };
 
 export default async function HistoricoDetailPage({ params }: Props) {
@@ -34,83 +33,85 @@ export default async function HistoricoDetailPage({ params }: Props) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect('/login');
 
   const service = createServiceClient();
 
   const { data: admin } = await service
-    .from("admins")
-    .select("id")
-    .eq("user_id", user.id)
+    .from('admins')
+    .select('id')
+    .eq('user_id', user.id)
     .single();
-  if (!admin) redirect("/login");
+  if (!admin) redirect('/login');
 
   const { data: team } = await service
-    .from("teams")
-    .select("id")
-    .eq("admin_id", admin.id)
+    .from('teams')
+    .select('id')
+    .eq('admin_id', admin.id)
     .single();
-  if (!team) redirect("/login");
+  if (!team) redirect('/login');
 
   const { data: game } = await service
-    .from("games")
-    .select("id, location, scheduled_at, status, is_tournament, finished_at")
-    .eq("id", gameId)
-    .eq("team_id", team.id)
+    .from('games')
+    .select('id, location, scheduled_at, status, is_tournament, finished_at')
+    .eq('id', gameId)
+    .eq('team_id', team.id)
     .maybeSingle();
 
   if (!game) notFound();
-  if (game.status !== "finished") redirect(`/dashboard/jogos/${gameId}`);
+  if (game.status !== 'finished') redirect(`/dashboard/jogos/${gameId}`);
 
   // Busca times e partidas em paralelo
   const [{ data: gameTeamsRaw }, { data: matchesRaw }] = await Promise.all([
     service
-      .from("game_teams")
-      .select("id, team_number")
-      .eq("game_id", gameId)
-      .order("team_number"),
+      .from('game_teams')
+      .select('id, team_number')
+      .eq('game_id', gameId)
+      .order('team_number'),
     game.is_tournament
       ? service
-          .from("tournament_matches")
-          .select("*")
-          .eq("game_id", gameId)
-          .order("match_order")
+          .from('tournament_matches')
+          .select('*')
+          .eq('game_id', gameId)
+          .order('match_order')
       : Promise.resolve({ data: [] }),
   ]);
 
   const gameTeams = gameTeamsRaw ?? [];
-  const teamIds = gameTeams.map((t) => t.id);
+  const teamIds = gameTeams.map(t => t.id);
 
   // Busca players de cada time e seus stats
-  const { data: gtpRaw } = teamIds.length > 0
-    ? await service
-        .from("game_team_players")
-        .select("id, game_team_id, player_id, goals, assists")
-        .in("game_team_id", teamIds)
-    : { data: [] };
+  const { data: gtpRaw } =
+    teamIds.length > 0
+      ? await service
+          .from('game_team_players')
+          .select('id, game_team_id, player_id, goals, assists')
+          .in('game_team_id', teamIds)
+      : { data: [] };
 
   const gtp = gtpRaw ?? [];
-  const playerIds = gtp.map((p) => p.player_id);
+  const playerIds = gtp.map(p => p.player_id);
 
-  const { data: playersRaw } = playerIds.length > 0
-    ? await service
-        .from("players")
-        .select("id, name, is_star")
-        .in("id", playerIds)
-    : { data: [] };
+  const { data: playersRaw } =
+    playerIds.length > 0
+      ? await service
+          .from('players')
+          .select('id, name, is_star')
+          .in('id', playerIds)
+      : { data: [] };
 
-  const playerMap = new Map((playersRaw ?? []).map((p) => [p.id, p]));
-  const teamMap = new Map(gameTeams.map((t) => [t.id, t.team_number]));
+  const playerMap = new Map((playersRaw ?? []).map(p => [p.id, p]));
+  const teamMap = new Map(gameTeams.map(t => [t.id, t.team_number]));
 
   // Monta dados dos times
-  const teamsData = gameTeams.map((gt) => ({
+  const teamsData = gameTeams.map(gt => ({
     teamNumber: gt.team_number,
     players: gtp
-      .filter((p) => p.game_team_id === gt.id)
-      .map((p) => {
+      .filter(p => p.game_team_id === gt.id)
+      .map(p => {
         const player = playerMap.get(p.player_id);
         return {
-          name: player?.name ?? "—",
+          name: player?.name ?? '—',
           isStar: player?.is_star ?? false,
           goals: p.goals,
           assists: p.assists,
@@ -120,30 +121,32 @@ export default async function HistoricoDetailPage({ params }: Props) {
   }));
 
   // Destaques do jogo
-  const allPlayers = gtp.map((p) => {
+  const allPlayers = gtp.map(p => {
     const player = playerMap.get(p.player_id);
-    return { name: player?.name ?? "—", goals: p.goals, assists: p.assists };
+    return { name: player?.name ?? '—', goals: p.goals, assists: p.assists };
   });
 
-  const withGoals = allPlayers.filter((p) => p.goals > 0);
-  const withAssists = allPlayers.filter((p) => p.assists > 0);
-  const withContrib = allPlayers.filter((p) => p.goals + p.assists > 0);
+  const withGoals = allPlayers.filter(p => p.goals > 0);
+  const withAssists = allPlayers.filter(p => p.assists > 0);
+  const withContrib = allPlayers.filter(p => p.goals + p.assists > 0);
 
   const topScorer =
     withGoals.length > 0
       ? withGoals.reduce((best, p) =>
-          p.goals > best.goals || (p.goals === best.goals && p.assists > best.assists)
+          p.goals > best.goals ||
+          (p.goals === best.goals && p.assists > best.assists)
             ? p
-            : best
+            : best,
         )
       : null;
 
   const topAssister =
     withAssists.length > 0
       ? withAssists.reduce((best, p) =>
-          p.assists > best.assists || (p.assists === best.assists && p.goals > best.goals)
+          p.assists > best.assists ||
+          (p.assists === best.assists && p.goals > best.goals)
             ? p
-            : best
+            : best,
         )
       : null;
 
@@ -161,15 +164,15 @@ export default async function HistoricoDetailPage({ params }: Props) {
 
   // Dados do campeonato
   const matches = (matchesRaw ?? []) as MatchRow[];
-  const groupMatches = matches.filter((m) => m.phase === "group");
+  const groupMatches = matches.filter(m => m.phase === 'group');
   const standings = game.is_tournament
     ? computeStandings(groupMatches, teamMap)
     : [];
 
-  const matchesByPhase = (["group", "semi", "final"] as TournamentPhase[])
-    .map((phase) => ({
+  const matchesByPhase = (['group', 'semi', 'final'] as TournamentPhase[])
+    .map(phase => ({
       phase,
-      matches: matches.filter((m) => m.phase === phase),
+      matches: matches.filter(m => m.phase === phase),
     }))
     .filter(({ matches: ms }) => ms.length > 0);
 
@@ -220,7 +223,9 @@ export default async function HistoricoDetailPage({ params }: Props) {
           )}
           {topAssister && topAssister.name !== mvp?.name && (
             <div className="flex items-center justify-between px-4 py-2.5 text-sm">
-              <span className="text-muted-foreground">Líder em assistências</span>
+              <span className="text-muted-foreground">
+                Líder em assistências
+              </span>
               <span className="font-semibold">
                 {topAssister.name}
                 <span className="ml-1.5 text-xs font-normal text-muted-foreground">
@@ -237,7 +242,7 @@ export default async function HistoricoDetailPage({ params }: Props) {
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
           Times
         </h2>
-        {teamsData.map((team) => {
+        {teamsData.map(team => {
           const totalGoals = team.players.reduce((s, p) => s + p.goals, 0);
           return (
             <div
@@ -245,9 +250,11 @@ export default async function HistoricoDetailPage({ params }: Props) {
               className="rounded-lg border border-border overflow-hidden"
             >
               <div className="flex items-center justify-between px-4 py-2 bg-muted/50">
-                <h3 className="font-semibold text-sm">Time {team.teamNumber}</h3>
+                <h3 className="font-semibold text-sm">
+                  Time {team.teamNumber}
+                </h3>
                 <span className="text-xs text-muted-foreground">
-                  {totalGoals} gol{totalGoals !== 1 ? "s" : ""}
+                  {totalGoals} gol{totalGoals !== 1 ? 's' : ''}
                 </span>
               </div>
               <ul className="divide-y divide-border">
@@ -341,19 +348,19 @@ export default async function HistoricoDetailPage({ params }: Props) {
                 <h3 className="font-semibold text-sm">{phaseLabel[phase]}</h3>
               </div>
               <ul className="divide-y divide-border">
-                {phaseMatches.map((m) => (
+                {phaseMatches.map(m => (
                   <li
                     key={m.id}
                     className="flex items-center gap-3 px-4 py-3 text-sm"
                   >
                     <span className="font-medium">
-                      Time {teamMap.get(m.home_team_id) ?? "?"}
+                      Time {teamMap.get(m.home_team_id) ?? '?'}
                     </span>
                     <span className="tabular-nums font-bold text-base">
-                      {m.home_score ?? "—"} × {m.away_score ?? "—"}
+                      {m.home_score ?? '—'} × {m.away_score ?? '—'}
                     </span>
                     <span className="font-medium">
-                      Time {teamMap.get(m.away_team_id) ?? "?"}
+                      Time {teamMap.get(m.away_team_id) ?? '?'}
                     </span>
                   </li>
                 ))}
@@ -362,7 +369,6 @@ export default async function HistoricoDetailPage({ params }: Props) {
           ))}
         </section>
       )}
-
     </div>
   );
 }

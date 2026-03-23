@@ -1,11 +1,11 @@
-import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { TournamentClient } from "@/components/dashboard/tournament-client";
-import { MatchTimer } from "@/components/dashboard/match-timer";
-import { computeStandings, buildGroupMatchOrder } from "@/lib/tournament-utils";
-import type { MatchRow } from "@/lib/tournament-utils";
+import { notFound, redirect } from 'next/navigation';
+import Link from 'next/link';
+import { ChevronLeft } from 'lucide-react';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TournamentClient } from '@/components/dashboard/tournament-client';
+import { MatchTimer } from '@/components/dashboard/match-timer';
+import { computeStandings, buildGroupMatchOrder } from '@/lib/tournament-utils';
+import type { MatchRow } from '@/lib/tournament-utils';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -18,29 +18,29 @@ export default async function CampeonatoPage({ params }: Props) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect('/login');
 
   const service = createServiceClient();
 
   const { data: admin } = await service
-    .from("admins")
-    .select("id")
-    .eq("user_id", user.id)
+    .from('admins')
+    .select('id')
+    .eq('user_id', user.id)
     .single();
-  if (!admin) redirect("/login");
+  if (!admin) redirect('/login');
 
   const { data: team } = await service
-    .from("teams")
-    .select("id, match_duration_minutes")
-    .eq("admin_id", admin.id)
+    .from('teams')
+    .select('id, match_duration_minutes')
+    .eq('admin_id', admin.id)
     .single();
-  if (!team) redirect("/login");
+  if (!team) redirect('/login');
 
   const { data: game } = await service
-    .from("games")
-    .select("id, is_tournament, draw_done, status")
-    .eq("id", gameId)
-    .eq("team_id", team.id)
+    .from('games')
+    .select('id, is_tournament, draw_done, status')
+    .eq('id', gameId)
+    .eq('team_id', team.id)
     .maybeSingle();
 
   if (!game) notFound();
@@ -49,15 +49,15 @@ export default async function CampeonatoPage({ params }: Props) {
 
   const [{ data: gameTeamsRaw }, { data: matchesRaw }] = await Promise.all([
     service
-      .from("game_teams")
-      .select("id, team_number")
-      .eq("game_id", gameId)
-      .order("team_number"),
+      .from('game_teams')
+      .select('id, team_number')
+      .eq('game_id', gameId)
+      .order('team_number'),
     service
-      .from("tournament_matches")
-      .select("*")
-      .eq("game_id", gameId)
-      .order("match_order"),
+      .from('tournament_matches')
+      .select('*')
+      .eq('game_id', gameId)
+      .order('match_order'),
   ]);
 
   const gameTeams = gameTeamsRaw ?? [];
@@ -65,37 +65,37 @@ export default async function CampeonatoPage({ params }: Props) {
 
   // Gera partidas da fase de grupos se ainda não existem
   // (ocorre quando o modo campeonato é ativado após o sorteio via TournamentToggle)
-  const groupMatchesExist = matches.some((m) => m.phase === "group");
+  const groupMatchesExist = matches.some(m => m.phase === 'group');
   if (!groupMatchesExist && gameTeams.length >= 4) {
-    const ids = gameTeams.map((t) => t.id);
+    const ids = gameTeams.map(t => t.id);
     const pairs = buildGroupMatchOrder(ids);
     const inserts = pairs.map(([home, away], idx) => ({
       game_id: gameId,
-      phase: "group" as const,
+      phase: 'group' as const,
       home_team_id: home,
       away_team_id: away,
       match_order: idx + 1,
     }));
 
     const { data: inserted } = await service
-      .from("tournament_matches")
+      .from('tournament_matches')
       .insert(inserts)
-      .select("*");
+      .select('*');
 
     matches = [...((inserted ?? []) as MatchRow[]), ...matches];
   }
 
-  const teamMap = new Map(gameTeams.map((t) => [t.id, t.team_number]));
+  const teamMap = new Map(gameTeams.map(t => [t.id, t.team_number]));
 
-  const groupMatches = matches.filter((m) => m.phase === "group");
+  const groupMatches = matches.filter(m => m.phase === 'group');
   const standings = computeStandings(groupMatches, teamMap);
 
-  const teamsData = gameTeams.map((t) => ({
+  const teamsData = gameTeams.map(t => ({
     id: t.id,
     teamNumber: t.team_number,
   }));
 
-  const matchesData = matches.map((m) => ({
+  const matchesData = matches.map(m => ({
     id: m.id,
     phase: m.phase,
     homeTeamId: m.home_team_id,
@@ -106,7 +106,7 @@ export default async function CampeonatoPage({ params }: Props) {
     completed: m.completed,
   }));
 
-  const standingsData = standings.map((s) => ({
+  const standingsData = standings.map(s => ({
     teamId: s.teamId,
     teamNumber: s.teamNumber,
     played: s.played,
@@ -136,7 +136,7 @@ export default async function CampeonatoPage({ params }: Props) {
         </div>
       </div>
 
-      {game.status !== "finished" && (
+      {game.status !== 'finished' && (
         <MatchTimer
           gameId={`${gameId}_camp`}
           defaultMinutes={team.match_duration_minutes ?? 10}
@@ -149,7 +149,7 @@ export default async function CampeonatoPage({ params }: Props) {
         teams={teamsData}
         matches={matchesData}
         standings={standingsData}
-        isFinished={game.status === "finished"}
+        isFinished={game.status === 'finished'}
       />
     </div>
   );

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { GameDetailClient } from "../game-detail-client";
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { GameDetailClient } from '../game-detail-client';
 
 const mockCancelGame = vi.fn();
 const mockRemoveConfirmedPlayer = vi.fn();
@@ -9,10 +9,12 @@ const mockPromoteWaitlistPlayer = vi.fn();
 const mockAddPlayerToGame = vi.fn();
 const mockCreateAndAddPlayer = vi.fn();
 
-vi.mock("@/actions/games-admin", () => ({
+vi.mock('@/actions/games-admin', () => ({
   cancelGame: (...args: unknown[]) => mockCancelGame(...args),
-  removeConfirmedPlayer: (...args: unknown[]) => mockRemoveConfirmedPlayer(...args),
-  promoteWaitlistPlayer: (...args: unknown[]) => mockPromoteWaitlistPlayer(...args),
+  removeConfirmedPlayer: (...args: unknown[]) =>
+    mockRemoveConfirmedPlayer(...args),
+  promoteWaitlistPlayer: (...args: unknown[]) =>
+    mockPromoteWaitlistPlayer(...args),
   addPlayerToGame: (...args: unknown[]) => mockAddPlayerToGame(...args),
   createAndAddPlayer: (...args: unknown[]) => mockCreateAndAddPlayer(...args),
   createGame: vi.fn(),
@@ -21,9 +23,9 @@ vi.mock("@/actions/games-admin", () => ({
 }));
 
 // Mock DrawModal to avoid deep rendering
-vi.mock("@/components/dashboard/draw-modal", () => {
+vi.mock('@/components/dashboard/draw-modal', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const React = require("react");
+  const React = require('react');
   return {
     DrawModal: ({
       open,
@@ -34,45 +36,40 @@ vi.mock("@/components/dashboard/draw-modal", () => {
     }) =>
       open
         ? React.createElement(
-            "div",
-            { "data-testid": "draw-modal" },
+            'div',
+            { 'data-testid': 'draw-modal' },
             React.createElement(
-              "button",
+              'button',
               { onClick: () => onOpenChange(false) },
-              "Fechar modal"
-            )
+              'Fechar modal',
+            ),
           )
         : null,
   };
 });
 
 // Mock Radix Dialog
-vi.mock("@/components/ui/dialog", () => {
+vi.mock('@/components/ui/dialog', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const React = require("react");
+  const React = require('react');
   return {
-    Dialog: ({
-      children,
-      open,
-    }: {
-      children: unknown;
-      open: boolean;
-    }) => (open ? React.createElement(React.Fragment, null, children) : null),
+    Dialog: ({ children, open }: { children: unknown; open: boolean }) =>
+      open ? React.createElement(React.Fragment, null, children) : null,
     DialogContent: ({ children }: { children: unknown }) =>
-      React.createElement("div", { "data-testid": "dialog-content" }, children),
+      React.createElement('div', { 'data-testid': 'dialog-content' }, children),
     DialogHeader: ({ children }: { children: unknown }) =>
-      React.createElement("div", null, children),
+      React.createElement('div', null, children),
     DialogTitle: ({ children }: { children: unknown }) =>
-      React.createElement("h2", null, children),
+      React.createElement('h2', null, children),
     DialogDescription: ({ children }: { children: unknown }) =>
-      React.createElement("p", null, children),
+      React.createElement('p', null, children),
   };
 });
 
 // Mock Radix Select (used in CreateAndAddPlayerPanel)
-vi.mock("@/components/ui/select", () => {
+vi.mock('@/components/ui/select', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const React = require("react");
+  const React = require('react');
   return {
     Select: ({
       children,
@@ -82,55 +79,50 @@ vi.mock("@/components/ui/select", () => {
       onValueChange?: (v: string) => void;
     }) =>
       React.createElement(
-        "select",
+        'select',
         {
-          "data-testid": "stamina-select",
+          'data-testid': 'stamina-select',
           onChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
             onValueChange?.(e.target.value),
         },
-        children
+        children,
       ),
     SelectTrigger: ({ children }: { children: unknown }) =>
       React.createElement(React.Fragment, null, children),
     SelectValue: ({ placeholder }: { placeholder?: string }) =>
-      React.createElement("option", { value: "" }, placeholder),
+      React.createElement('option', { value: '' }, placeholder),
     SelectContent: ({ children }: { children: unknown }) =>
       React.createElement(React.Fragment, null, children),
-    SelectItem: ({
-      value,
-      children,
-    }: {
-      value: string;
-      children: unknown;
-    }) => React.createElement("option", { value }, children),
+    SelectItem: ({ value, children }: { value: string; children: unknown }) =>
+      React.createElement('option', { value }, children),
   };
 });
 
 const CONFIRMED = [
   {
-    confirmationId: "c1",
-    player: { id: "p1", name: "Carlos Ramos", phone: "(11) 98888-7777" },
+    confirmationId: 'c1',
+    player: { id: 'p1', name: 'Carlos Ramos', phone: '(11) 98888-7777' },
   },
   {
-    confirmationId: "c2",
-    player: { id: "p2", name: "Bruno Lima", phone: "(11) 97777-6666" },
+    confirmationId: 'c2',
+    player: { id: 'p2', name: 'Bruno Lima', phone: '(11) 97777-6666' },
   },
 ];
 
 const WAITLIST = [
   {
-    confirmationId: "w1",
+    confirmationId: 'w1',
     position: 1,
-    player: { id: "p3", name: "André Costa", phone: "(11) 96666-5555" },
+    player: { id: 'p3', name: 'André Costa', phone: '(11) 96666-5555' },
   },
 ];
 
 const AVAILABLE_PLAYERS = [
-  { id: "p4", name: "Diego Santos" },
-  { id: "p5", name: "Felipe Souza" },
+  { id: 'p4', name: 'Diego Santos' },
+  { id: 'p5', name: 'Felipe Souza' },
 ];
 
-describe("GameDetailClient", () => {
+describe('GameDetailClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockCancelGame.mockResolvedValue({});
@@ -140,8 +132,8 @@ describe("GameDetailClient", () => {
     mockCreateAndAddPlayer.mockResolvedValue({});
   });
 
-  describe("confirmed list", () => {
-    it("shows confirmed players count", () => {
+  describe('confirmed list', () => {
+    it('shows confirmed players count', () => {
       render(
         <GameDetailClient
           gameId="game-1"
@@ -149,12 +141,12 @@ describe("GameDetailClient", () => {
           confirmed={CONFIRMED}
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
       expect(screen.getByText(/2\/25/)).toBeInTheDocument();
     });
 
-    it("renders all confirmed player names", () => {
+    it('renders all confirmed player names', () => {
       render(
         <GameDetailClient
           gameId="game-1"
@@ -162,13 +154,13 @@ describe("GameDetailClient", () => {
           confirmed={CONFIRMED}
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
-      expect(screen.getByText("Carlos Ramos")).toBeInTheDocument();
-      expect(screen.getByText("Bruno Lima")).toBeInTheDocument();
+      expect(screen.getByText('Carlos Ramos')).toBeInTheDocument();
+      expect(screen.getByText('Bruno Lima')).toBeInTheDocument();
     });
 
-    it("shows empty message when no one confirmed", () => {
+    it('shows empty message when no one confirmed', () => {
       render(
         <GameDetailClient
           gameId="game-1"
@@ -176,12 +168,12 @@ describe("GameDetailClient", () => {
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
-      expect(screen.getByText("Nenhum confirmado ainda.")).toBeInTheDocument();
+      expect(screen.getByText('Nenhum confirmado ainda.')).toBeInTheDocument();
     });
 
-    it("calls removeConfirmedPlayer when Remover is clicked", async () => {
+    it('calls removeConfirmedPlayer when Remover is clicked', async () => {
       const user = userEvent.setup();
       render(
         <GameDetailClient
@@ -190,20 +182,20 @@ describe("GameDetailClient", () => {
           confirmed={CONFIRMED}
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
 
-      const removeButtons = screen.getAllByRole("button", { name: "Remover" });
+      const removeButtons = screen.getAllByRole('button', { name: 'Remover' });
       await user.click(removeButtons[0]);
 
       await waitFor(() => {
-        expect(mockRemoveConfirmedPlayer).toHaveBeenCalledWith("game-1", "p1");
+        expect(mockRemoveConfirmedPlayer).toHaveBeenCalledWith('game-1', 'p1');
       });
     });
   });
 
-  describe("waitlist", () => {
-    it("shows waitlist section when there are entries", () => {
+  describe('waitlist', () => {
+    it('shows waitlist section when there are entries', () => {
       render(
         <GameDetailClient
           gameId="game-1"
@@ -211,13 +203,13 @@ describe("GameDetailClient", () => {
           confirmed={CONFIRMED}
           waitlist={WAITLIST}
           availablePlayers={[]}
-        />
+        />,
       );
       expect(screen.getByText(/lista de espera/i)).toBeInTheDocument();
-      expect(screen.getByText("André Costa")).toBeInTheDocument();
+      expect(screen.getByText('André Costa')).toBeInTheDocument();
     });
 
-    it("does not show waitlist section when empty", () => {
+    it('does not show waitlist section when empty', () => {
       render(
         <GameDetailClient
           gameId="game-1"
@@ -225,12 +217,12 @@ describe("GameDetailClient", () => {
           confirmed={CONFIRMED}
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
       expect(screen.queryByText(/lista de espera/i)).not.toBeInTheDocument();
     });
 
-    it("calls promoteWaitlistPlayer when Promover is clicked", async () => {
+    it('calls promoteWaitlistPlayer when Promover is clicked', async () => {
       const user = userEvent.setup();
       render(
         <GameDetailClient
@@ -239,18 +231,18 @@ describe("GameDetailClient", () => {
           confirmed={CONFIRMED}
           waitlist={WAITLIST}
           availablePlayers={[]}
-        />
+        />,
       );
 
-      await user.click(screen.getByRole("button", { name: "Promover" }));
+      await user.click(screen.getByRole('button', { name: 'Promover' }));
 
       await waitFor(() => {
-        expect(mockPromoteWaitlistPlayer).toHaveBeenCalledWith("w1", "game-1");
+        expect(mockPromoteWaitlistPlayer).toHaveBeenCalledWith('w1', 'game-1');
       });
     });
   });
 
-  describe("draw button", () => {
+  describe('draw button', () => {
     it("shows 'Rodar sorteio' when draw not done and enough players", () => {
       // Need 15+ players for canDraw=true — use 15 confirmed entries
       const confirmed15 = Array.from({ length: 15 }, (_, i) => ({
@@ -264,10 +256,10 @@ describe("GameDetailClient", () => {
           confirmed={confirmed15}
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
       expect(
-        screen.getByRole("button", { name: "Rodar sorteio" })
+        screen.getByRole('button', { name: 'Rodar sorteio' }),
       ).toBeInTheDocument();
     });
 
@@ -279,10 +271,10 @@ describe("GameDetailClient", () => {
           confirmed={CONFIRMED} // only 2 players — cannot draw
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
       expect(
-        screen.getByRole("button", { name: "Rodar sorteio" })
+        screen.getByRole('button', { name: 'Rodar sorteio' }),
       ).toBeDisabled();
     });
 
@@ -294,10 +286,10 @@ describe("GameDetailClient", () => {
           confirmed={CONFIRMED}
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
       expect(
-        screen.getByRole("button", { name: "Sorteio realizado" })
+        screen.getByRole('button', { name: 'Sorteio realizado' }),
       ).toBeInTheDocument();
     });
 
@@ -314,16 +306,16 @@ describe("GameDetailClient", () => {
           confirmed={confirmed15}
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
 
-      await user.click(screen.getByRole("button", { name: "Rodar sorteio" }));
+      await user.click(screen.getByRole('button', { name: 'Rodar sorteio' }));
 
-      expect(screen.getByTestId("draw-modal")).toBeInTheDocument();
+      expect(screen.getByTestId('draw-modal')).toBeInTheDocument();
     });
   });
 
-  describe("cancel game button", () => {
+  describe('cancel game button', () => {
     it("shows 'Cancelar jogo' button", () => {
       render(
         <GameDetailClient
@@ -332,14 +324,14 @@ describe("GameDetailClient", () => {
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
       expect(
-        screen.getByRole("button", { name: "Cancelar jogo" })
+        screen.getByRole('button', { name: 'Cancelar jogo' }),
       ).toBeInTheDocument();
     });
 
-    it("opens confirmation dialog when Cancelar jogo is clicked", async () => {
+    it('opens confirmation dialog when Cancelar jogo is clicked', async () => {
       const user = userEvent.setup();
       render(
         <GameDetailClient
@@ -348,15 +340,15 @@ describe("GameDetailClient", () => {
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
 
-      await user.click(screen.getByRole("button", { name: "Cancelar jogo" }));
+      await user.click(screen.getByRole('button', { name: 'Cancelar jogo' }));
 
-      expect(screen.getByText("Cancelar jogo?")).toBeInTheDocument();
+      expect(screen.getByText('Cancelar jogo?')).toBeInTheDocument();
     });
 
-    it("calls cancelGame on confirmation", async () => {
+    it('calls cancelGame on confirmation', async () => {
       const user = userEvent.setup();
       render(
         <GameDetailClient
@@ -365,22 +357,22 @@ describe("GameDetailClient", () => {
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
 
-      await user.click(screen.getByRole("button", { name: "Cancelar jogo" }));
+      await user.click(screen.getByRole('button', { name: 'Cancelar jogo' }));
       await user.click(
-        screen.getByRole("button", { name: "Confirmar cancelamento" })
+        screen.getByRole('button', { name: 'Confirmar cancelamento' }),
       );
 
       await waitFor(() => {
-        expect(mockCancelGame).toHaveBeenCalledWith("game-1");
+        expect(mockCancelGame).toHaveBeenCalledWith('game-1');
       });
     });
   });
 
-  describe("add existing player", () => {
-    it("shows available players section when availablePlayers is non-empty", () => {
+  describe('add existing player', () => {
+    it('shows available players section when availablePlayers is non-empty', () => {
       render(
         <GameDetailClient
           gameId="game-1"
@@ -388,14 +380,14 @@ describe("GameDetailClient", () => {
           confirmed={[]}
           waitlist={[]}
           availablePlayers={AVAILABLE_PLAYERS}
-        />
+        />,
       );
       expect(
-        screen.getByText("Adicionar jogador da turma")
+        screen.getByText('Adicionar jogador da turma'),
       ).toBeInTheDocument();
     });
 
-    it("does not show add existing player section when availablePlayers is empty", () => {
+    it('does not show add existing player section when availablePlayers is empty', () => {
       render(
         <GameDetailClient
           gameId="game-1"
@@ -403,14 +395,14 @@ describe("GameDetailClient", () => {
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
       expect(
-        screen.queryByText("Adicionar jogador da turma")
+        screen.queryByText('Adicionar jogador da turma'),
       ).not.toBeInTheDocument();
     });
 
-    it("shows searchable player select and Adicionar button", () => {
+    it('shows searchable player select and Adicionar button', () => {
       render(
         <GameDetailClient
           gameId="game-1"
@@ -418,13 +410,15 @@ describe("GameDetailClient", () => {
           confirmed={[]}
           waitlist={[]}
           availablePlayers={AVAILABLE_PLAYERS}
-        />
+        />,
       );
-      expect(screen.getByText("Selecionar jogador")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Adicionar" })).toBeInTheDocument();
+      expect(screen.getByText('Selecionar jogador')).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Adicionar' }),
+      ).toBeInTheDocument();
     });
 
-    it("opens SearchablePlayerSelect on click and allows player selection", async () => {
+    it('opens SearchablePlayerSelect on click and allows player selection', async () => {
       const user = userEvent.setup();
       render(
         <GameDetailClient
@@ -433,20 +427,20 @@ describe("GameDetailClient", () => {
           confirmed={[]}
           waitlist={[]}
           availablePlayers={AVAILABLE_PLAYERS}
-        />
+        />,
       );
 
       // Click the select trigger to open
-      await user.click(screen.getByText("Selecionar jogador"));
+      await user.click(screen.getByText('Selecionar jogador'));
       // Player names should appear in the dropdown
-      expect(screen.getByText("Diego Santos")).toBeInTheDocument();
+      expect(screen.getByText('Diego Santos')).toBeInTheDocument();
 
       // Click a player to select
-      await user.click(screen.getByText("Diego Santos"));
-      expect(screen.getByText("Diego Santos")).toBeInTheDocument();
+      await user.click(screen.getByText('Diego Santos'));
+      expect(screen.getByText('Diego Santos')).toBeInTheDocument();
     });
 
-    it("calls addPlayerToGame when Adicionar is clicked after selection", async () => {
+    it('calls addPlayerToGame when Adicionar is clicked after selection', async () => {
       const user = userEvent.setup();
       render(
         <GameDetailClient
@@ -455,23 +449,23 @@ describe("GameDetailClient", () => {
           confirmed={[]}
           waitlist={[]}
           availablePlayers={AVAILABLE_PLAYERS}
-        />
+        />,
       );
 
       // Open select and click Diego Santos
-      await user.click(screen.getByText("Selecionar jogador"));
-      await user.click(screen.getByText("Diego Santos"));
+      await user.click(screen.getByText('Selecionar jogador'));
+      await user.click(screen.getByText('Diego Santos'));
 
       // Now Adicionar should be enabled
-      await user.click(screen.getByRole("button", { name: "Adicionar" }));
+      await user.click(screen.getByRole('button', { name: 'Adicionar' }));
 
       await waitFor(() => {
-        expect(mockAddPlayerToGame).toHaveBeenCalledWith("game-1", "p4");
+        expect(mockAddPlayerToGame).toHaveBeenCalledWith('game-1', 'p4');
       });
     });
 
-    it("shows error when addPlayerToGame fails", async () => {
-      mockAddPlayerToGame.mockResolvedValue({ error: "Erro ao adicionar." });
+    it('shows error when addPlayerToGame fails', async () => {
+      mockAddPlayerToGame.mockResolvedValue({ error: 'Erro ao adicionar.' });
       const user = userEvent.setup();
       render(
         <GameDetailClient
@@ -480,19 +474,19 @@ describe("GameDetailClient", () => {
           confirmed={[]}
           waitlist={[]}
           availablePlayers={AVAILABLE_PLAYERS}
-        />
+        />,
       );
 
-      await user.click(screen.getByText("Selecionar jogador"));
-      await user.click(screen.getByText("Diego Santos"));
-      await user.click(screen.getByRole("button", { name: "Adicionar" }));
+      await user.click(screen.getByText('Selecionar jogador'));
+      await user.click(screen.getByText('Diego Santos'));
+      await user.click(screen.getByRole('button', { name: 'Adicionar' }));
 
       await waitFor(() => {
-        expect(screen.getByText("Erro ao adicionar.")).toBeInTheDocument();
+        expect(screen.getByText('Erro ao adicionar.')).toBeInTheDocument();
       });
     });
 
-    it("Adicionar button is disabled when no player selected", () => {
+    it('Adicionar button is disabled when no player selected', () => {
       render(
         <GameDetailClient
           gameId="game-1"
@@ -500,13 +494,13 @@ describe("GameDetailClient", () => {
           confirmed={[]}
           waitlist={[]}
           availablePlayers={AVAILABLE_PLAYERS}
-        />
+        />,
       );
-      expect(screen.getByRole("button", { name: "Adicionar" })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Adicionar' })).toBeDisabled();
     });
   });
 
-  describe("create and add new player", () => {
+  describe('create and add new player', () => {
     it("shows 'Cadastrar novo jogador' button", () => {
       render(
         <GameDetailClient
@@ -515,10 +509,10 @@ describe("GameDetailClient", () => {
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
       expect(
-        screen.getByRole("button", { name: /Cadastrar novo jogador/ })
+        screen.getByRole('button', { name: /Cadastrar novo jogador/ }),
       ).toBeInTheDocument();
     });
 
@@ -531,13 +525,15 @@ describe("GameDetailClient", () => {
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
 
-      await user.click(screen.getByRole("button", { name: /Cadastrar novo jogador/ }));
+      await user.click(
+        screen.getByRole('button', { name: /Cadastrar novo jogador/ }),
+      );
 
-      expect(screen.getByLabelText("Nome")).toBeInTheDocument();
-      expect(screen.getByLabelText("Celular")).toBeInTheDocument();
+      expect(screen.getByLabelText('Nome')).toBeInTheDocument();
+      expect(screen.getByLabelText('Celular')).toBeInTheDocument();
     });
 
     it("closes form when 'Não Cadastrar' is clicked", async () => {
@@ -549,16 +545,18 @@ describe("GameDetailClient", () => {
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
 
-      await user.click(screen.getByRole("button", { name: /Cadastrar novo jogador/ }));
-      await user.click(screen.getByRole("button", { name: /Não Cadastrar/ }));
+      await user.click(
+        screen.getByRole('button', { name: /Cadastrar novo jogador/ }),
+      );
+      await user.click(screen.getByRole('button', { name: /Não Cadastrar/ }));
 
-      expect(screen.queryByLabelText("Nome")).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Nome')).not.toBeInTheDocument();
     });
 
-    it("submits new player form with valid data and calls createAndAddPlayer", async () => {
+    it('submits new player form with valid data and calls createAndAddPlayer', async () => {
       const user = userEvent.setup();
       render(
         <GameDetailClient
@@ -567,33 +565,40 @@ describe("GameDetailClient", () => {
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
 
-      await user.click(screen.getByRole("button", { name: /Cadastrar novo jogador/ }));
+      await user.click(
+        screen.getByRole('button', { name: /Cadastrar novo jogador/ }),
+      );
 
-      await user.type(screen.getByLabelText("Nome"), "Novo Jogador");
-      await user.type(screen.getByLabelText("Celular"), "11999999999");
-      await user.type(screen.getByLabelText("Peso (kg)"), "75");
+      await user.type(screen.getByLabelText('Nome'), 'Novo Jogador');
+      await user.type(screen.getByLabelText('Celular'), '11999999999');
+      await user.type(screen.getByLabelText('Peso (kg)'), '75');
 
       // Select stamina via mocked native select
-      const staminaSelect = screen.getByTestId("stamina-select");
-      await user.selectOptions(staminaSelect, "3");
+      const staminaSelect = screen.getByTestId('stamina-select');
+      await user.selectOptions(staminaSelect, '3');
 
       await user.click(
-        screen.getByRole("button", { name: /Cadastrar e confirmar presença/ })
+        screen.getByRole('button', { name: /Cadastrar e confirmar presença/ }),
       );
 
       await waitFor(() => {
         expect(mockCreateAndAddPlayer).toHaveBeenCalledWith(
-          "game-1",
-          expect.objectContaining({ name: "Novo Jogador", phone: "11999999999" })
+          'game-1',
+          expect.objectContaining({
+            name: 'Novo Jogador',
+            phone: '11999999999',
+          }),
         );
       });
     });
 
-    it("shows server error when createAndAddPlayer fails", async () => {
-      mockCreateAndAddPlayer.mockResolvedValue({ error: "Telefone já cadastrado." });
+    it('shows server error when createAndAddPlayer fails', async () => {
+      mockCreateAndAddPlayer.mockResolvedValue({
+        error: 'Telefone já cadastrado.',
+      });
       const user = userEvent.setup();
       render(
         <GameDetailClient
@@ -602,30 +607,32 @@ describe("GameDetailClient", () => {
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
 
-      await user.click(screen.getByRole("button", { name: /Cadastrar novo jogador/ }));
+      await user.click(
+        screen.getByRole('button', { name: /Cadastrar novo jogador/ }),
+      );
 
-      await user.type(screen.getByLabelText("Nome"), "Novo Jogador");
-      await user.type(screen.getByLabelText("Celular"), "11999999999");
-      await user.type(screen.getByLabelText("Peso (kg)"), "75");
-      const staminaSelect = screen.getByTestId("stamina-select");
-      await user.selectOptions(staminaSelect, "3");
+      await user.type(screen.getByLabelText('Nome'), 'Novo Jogador');
+      await user.type(screen.getByLabelText('Celular'), '11999999999');
+      await user.type(screen.getByLabelText('Peso (kg)'), '75');
+      const staminaSelect = screen.getByTestId('stamina-select');
+      await user.selectOptions(staminaSelect, '3');
 
       await user.click(
-        screen.getByRole("button", { name: /Cadastrar e confirmar presença/ })
+        screen.getByRole('button', { name: /Cadastrar e confirmar presença/ }),
       );
 
       await waitFor(() => {
-        expect(screen.getByText("Telefone já cadastrado.")).toBeInTheDocument();
+        expect(screen.getByText('Telefone já cadastrado.')).toBeInTheDocument();
       });
     });
   });
 
-  describe("cancel game error handling", () => {
-    it("shows error when cancelGame fails", async () => {
-      mockCancelGame.mockResolvedValue({ error: "Erro ao cancelar." });
+  describe('cancel game error handling', () => {
+    it('shows error when cancelGame fails', async () => {
+      mockCancelGame.mockResolvedValue({ error: 'Erro ao cancelar.' });
       const user = userEvent.setup();
       render(
         <GameDetailClient
@@ -634,23 +641,25 @@ describe("GameDetailClient", () => {
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
 
-      await user.click(screen.getByRole("button", { name: "Cancelar jogo" }));
+      await user.click(screen.getByRole('button', { name: 'Cancelar jogo' }));
       await user.click(
-        screen.getByRole("button", { name: "Confirmar cancelamento" })
+        screen.getByRole('button', { name: 'Confirmar cancelamento' }),
       );
 
       await waitFor(() => {
-        expect(screen.getByText("Erro ao cancelar.")).toBeInTheDocument();
+        expect(screen.getByText('Erro ao cancelar.')).toBeInTheDocument();
       });
     });
   });
 
-  describe("remove confirmed player error", () => {
-    it("shows error when removeConfirmedPlayer fails", async () => {
-      mockRemoveConfirmedPlayer.mockResolvedValue({ error: "Erro ao remover." });
+  describe('remove confirmed player error', () => {
+    it('shows error when removeConfirmedPlayer fails', async () => {
+      mockRemoveConfirmedPlayer.mockResolvedValue({
+        error: 'Erro ao remover.',
+      });
       const user = userEvent.setup();
       render(
         <GameDetailClient
@@ -659,19 +668,19 @@ describe("GameDetailClient", () => {
           confirmed={CONFIRMED}
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
 
-      const removeButtons = screen.getAllByRole("button", { name: "Remover" });
+      const removeButtons = screen.getAllByRole('button', { name: 'Remover' });
       await user.click(removeButtons[0]);
 
       await waitFor(() => {
-        expect(screen.getByText("Erro ao remover.")).toBeInTheDocument();
+        expect(screen.getByText('Erro ao remover.')).toBeInTheDocument();
       });
     });
   });
 
-  describe("searchable player select — empty results (line 328)", () => {
+  describe('searchable player select — empty results (line 328)', () => {
     it("shows 'Nenhum jogador encontrado' when search matches no players", async () => {
       const user = userEvent.setup();
       render(
@@ -681,18 +690,18 @@ describe("GameDetailClient", () => {
           confirmed={[]}
           waitlist={[]}
           availablePlayers={AVAILABLE_PLAYERS}
-        />
+        />,
       );
 
-      await user.click(screen.getByText("Selecionar jogador"));
-      await user.type(screen.getByPlaceholderText("Buscar jogador..."), "ZZZ");
+      await user.click(screen.getByText('Selecionar jogador'));
+      await user.type(screen.getByPlaceholderText('Buscar jogador...'), 'ZZZ');
 
-      expect(screen.getByText("Nenhum jogador encontrado")).toBeInTheDocument();
+      expect(screen.getByText('Nenhum jogador encontrado')).toBeInTheDocument();
     });
   });
 
-  describe("create and add player — validation errors", () => {
-    it("shows name and phone validation errors on empty submit (lines 464, 472)", async () => {
+  describe('create and add player — validation errors', () => {
+    it('shows name and phone validation errors on empty submit (lines 464, 472)', async () => {
       const user = userEvent.setup();
       render(
         <GameDetailClient
@@ -701,20 +710,26 @@ describe("GameDetailClient", () => {
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
 
-      await user.click(screen.getByRole("button", { name: /Cadastrar novo jogador/ }));
-      await user.click(screen.getByRole("button", { name: /Cadastrar e confirmar presença/ }));
+      await user.click(
+        screen.getByRole('button', { name: /Cadastrar novo jogador/ }),
+      );
+      await user.click(
+        screen.getByRole('button', { name: /Cadastrar e confirmar presença/ }),
+      );
 
       await waitFor(() => {
-        expect(screen.getByText("Informe o nome")).toBeInTheDocument();
-        expect(screen.getByText("Informe um celular válido")).toBeInTheDocument();
+        expect(screen.getByText('Informe o nome')).toBeInTheDocument();
+        expect(
+          screen.getByText('Informe um celular válido'),
+        ).toBeInTheDocument();
       });
       expect(mockCreateAndAddPlayer).not.toHaveBeenCalled();
     });
 
-    it("shows weight and stamina validation errors (lines 486, 504)", async () => {
+    it('shows weight and stamina validation errors (lines 486, 504)', async () => {
       const user = userEvent.setup();
       render(
         <GameDetailClient
@@ -723,16 +738,20 @@ describe("GameDetailClient", () => {
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
-        />
+        />,
       );
 
-      await user.click(screen.getByRole("button", { name: /Cadastrar novo jogador/ }));
-      await user.type(screen.getByLabelText("Nome"), "Diego Santos");
-      await user.type(screen.getByLabelText("Celular"), "11999999999");
+      await user.click(
+        screen.getByRole('button', { name: /Cadastrar novo jogador/ }),
+      );
+      await user.type(screen.getByLabelText('Nome'), 'Diego Santos');
+      await user.type(screen.getByLabelText('Celular'), '11999999999');
       // Enter weight below minimum (30) to trigger line 486
-      await user.type(screen.getByLabelText("Peso (kg)"), "10");
+      await user.type(screen.getByLabelText('Peso (kg)'), '10');
       // Don't select stamina → triggers line 504
-      await user.click(screen.getByRole("button", { name: /Cadastrar e confirmar presença/ }));
+      await user.click(
+        screen.getByRole('button', { name: /Cadastrar e confirmar presença/ }),
+      );
 
       await waitFor(() => {
         expect(screen.getByText(/>=30/)).toBeInTheDocument();
@@ -741,8 +760,8 @@ describe("GameDetailClient", () => {
     });
   });
 
-  describe("searchable player select search and click-outside", () => {
-    it("filters players by search input", async () => {
+  describe('searchable player select search and click-outside', () => {
+    it('filters players by search input', async () => {
       const user = userEvent.setup();
       render(
         <GameDetailClient
@@ -751,16 +770,19 @@ describe("GameDetailClient", () => {
           confirmed={[]}
           waitlist={[]}
           availablePlayers={AVAILABLE_PLAYERS}
-        />
+        />,
       );
 
       // Open the select
-      await user.click(screen.getByText("Selecionar jogador"));
+      await user.click(screen.getByText('Selecionar jogador'));
       // Type search
-      await user.type(screen.getByPlaceholderText("Buscar jogador..."), "Diego");
+      await user.type(
+        screen.getByPlaceholderText('Buscar jogador...'),
+        'Diego',
+      );
 
-      expect(screen.getByText("Diego Santos")).toBeInTheDocument();
-      expect(screen.queryByText("Felipe Souza")).not.toBeInTheDocument();
+      expect(screen.getByText('Diego Santos')).toBeInTheDocument();
+      expect(screen.queryByText('Felipe Souza')).not.toBeInTheDocument();
     });
   });
 });

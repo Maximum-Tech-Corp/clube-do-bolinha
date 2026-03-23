@@ -1,4 +1,4 @@
-import { PageSpinner } from "@/components/ui/spinner";
+import { PageSpinner } from '@/components/ui/spinner';
 
 export default function JogadorLoading() {
   return (

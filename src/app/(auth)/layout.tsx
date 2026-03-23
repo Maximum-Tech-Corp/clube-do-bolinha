@@ -1,4 +1,4 @@
-import { AppLogo } from "@/components/app-logo";
+import { AppLogo } from '@/components/app-logo';
 
 export default function AuthLayout({
   children,

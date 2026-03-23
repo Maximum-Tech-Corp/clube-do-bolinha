@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useState } from "react";
-import Link from "next/link";
-import { signup } from "@/actions/auth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useState } from 'react';
+import Link from 'next/link';
+import { signup } from '@/actions/auth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Card,
   CardContent,
@@ -16,20 +16,20 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 
 const schema = z
   .object({
-    name: z.string().min(2, "Informe seu nome completo"),
-    email: z.string().email("E-mail inválido"),
-    phone: z.string().min(10, "Informe um celular válido"),
-    teamName: z.string().min(2, "Informe o nome da turma"),
-    password: z.string().min(6, "Mínimo 6 caracteres"),
+    name: z.string().min(2, 'Informe seu nome completo'),
+    email: z.string().email('E-mail inválido'),
+    phone: z.string().min(10, 'Informe um celular válido'),
+    teamName: z.string().min(2, 'Informe o nome da turma'),
+    password: z.string().min(6, 'Mínimo 6 caracteres'),
     confirmPassword: z.string(),
   })
-  .refine((d) => d.password === d.confirmPassword, {
-    message: "As senhas não coincidem",
-    path: ["confirmPassword"],
+  .refine(d => d.password === d.confirmPassword, {
+    message: 'As senhas não coincidem',
+    path: ['confirmPassword'],
   });
 
 type FormData = z.infer<typeof schema>;
@@ -64,7 +64,7 @@ export function CadastroForm() {
         <CardContent className="space-y-4">
           <div className="space-y-1">
             <Label htmlFor="name">Nome completo</Label>
-            <Input id="name" placeholder="João Silva" {...register("name")} />
+            <Input id="name" placeholder="João Silva" {...register('name')} />
             {errors.name && (
               <p className="text-sm text-destructive">{errors.name.message}</p>
             )}
@@ -77,7 +77,7 @@ export function CadastroForm() {
               type="email"
               autoComplete="email"
               placeholder="seu@email.com"
-              {...register("email")}
+              {...register('email')}
             />
             {errors.email && (
               <p className="text-sm text-destructive">{errors.email.message}</p>
@@ -90,7 +90,7 @@ export function CadastroForm() {
               id="phone"
               type="tel"
               placeholder="(11) 99999-9999"
-              {...register("phone")}
+              {...register('phone')}
             />
             {errors.phone && (
               <p className="text-sm text-destructive">{errors.phone.message}</p>
@@ -102,7 +102,7 @@ export function CadastroForm() {
             <Input
               id="teamName"
               placeholder="Os Cracks do Bairro"
-              {...register("teamName")}
+              {...register('teamName')}
             />
             {errors.teamName && (
               <p className="text-sm text-destructive">
@@ -117,7 +117,7 @@ export function CadastroForm() {
               id="password"
               type="password"
               autoComplete="new-password"
-              {...register("password")}
+              {...register('password')}
             />
             {errors.password && (
               <p className="text-sm text-destructive">
@@ -132,7 +132,7 @@ export function CadastroForm() {
               id="confirmPassword"
               type="password"
               autoComplete="new-password"
-              {...register("confirmPassword")}
+              {...register('confirmPassword')}
             />
             {errors.confirmPassword && (
               <p className="text-sm text-destructive">
@@ -148,10 +148,10 @@ export function CadastroForm() {
 
         <CardFooter className="flex flex-col gap-3">
           <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? "Criando conta..." : "Criar conta"}
+            {isSubmitting ? 'Criando conta...' : 'Criar conta'}
           </Button>
           <p className="text-sm text-muted-foreground text-center">
-            Já tem conta?{" "}
+            Já tem conta?{' '}
             <Link href="/login" className="underline">
               Entrar
             </Link>

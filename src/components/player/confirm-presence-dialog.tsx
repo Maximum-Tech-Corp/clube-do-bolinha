@@ -1,47 +1,47 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { confirmPresence } from "@/actions/player";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { confirmPresence } from '@/actions/player';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import type { StaminaLevel } from "@/types/database.types";
+} from '@/components/ui/select';
+import type { StaminaLevel } from '@/types/database.types';
 
 type Step =
-  | "phone"
-  | "register"
-  | "waitlist_offer"
-  | "confirmed"
-  | "waitlisted"
-  | "already_confirmed"
-  | "banned"
-  | "suspended";
+  | 'phone'
+  | 'register'
+  | 'waitlist_offer'
+  | 'confirmed'
+  | 'waitlisted'
+  | 'already_confirmed'
+  | 'banned'
+  | 'suspended';
 
 const phoneSchema = z.object({
-  phone: z.string().min(10, "Informe um celular válido"),
+  phone: z.string().min(10, 'Informe um celular válido'),
 });
 
 const registerSchema = z.object({
-  name: z.string().min(2, "Informe seu nome"),
+  name: z.string().min(2, 'Informe seu nome'),
   weight_kg: z.number().min(30).max(250),
-  stamina: z.enum(["1", "2", "3", "4plus"] as const),
+  stamina: z.enum(['1', '2', '3', '4plus'] as const),
 });
 
 type PhoneData = z.infer<typeof phoneSchema>;
@@ -62,10 +62,11 @@ export function ConfirmPresenceDialog({
   open,
   onOpenChange,
 }: Props) {
-  const [step, setStep] = useState<Step>("phone");
-  const [phone, setPhone] = useState(defaultPhone ?? "");
-  const [pendingNewPlayer, setPendingNewPlayer] =
-    useState<RegisterData | null>(null);
+  const [step, setStep] = useState<Step>('phone');
+  const [phone, setPhone] = useState(defaultPhone ?? '');
+  const [pendingNewPlayer, setPendingNewPlayer] = useState<RegisterData | null>(
+    null,
+  );
   const [serverError, setServerError] = useState<string | null>(null);
   const [suspensionInfo, setSuspensionInfo] = useState<{
     until: string;
@@ -74,7 +75,7 @@ export function ConfirmPresenceDialog({
 
   const phoneForm = useForm<PhoneData>({
     resolver: zodResolver(phoneSchema),
-    defaultValues: { phone: defaultPhone ?? "" },
+    defaultValues: { phone: defaultPhone ?? '' },
   });
 
   const registerForm = useForm<RegisterData>({
@@ -83,9 +84,9 @@ export function ConfirmPresenceDialog({
 
   function handleClose(open: boolean) {
     if (!open) {
-      setStep("phone");
+      setStep('phone');
       setServerError(null);
-      phoneForm.reset({ phone: defaultPhone ?? "" });
+      phoneForm.reset({ phone: defaultPhone ?? '' });
       registerForm.reset();
     }
     onOpenChange(open);
@@ -96,16 +97,16 @@ export function ConfirmPresenceDialog({
     setPhone(data.phone);
     const result = await confirmPresence({ gameId, teamId, phone: data.phone });
 
-    if ("error" in result) return setServerError(result.error);
-    if ("banned" in result) return setStep("banned");
-    if ("suspended" in result) {
+    if ('error' in result) return setServerError(result.error);
+    if ('banned' in result) return setStep('banned');
+    if ('suspended' in result) {
       setSuspensionInfo({ until: result.until, reason: result.reason });
-      return setStep("suspended");
+      return setStep('suspended');
     }
-    if ("needsRegistration" in result) return setStep("register");
-    if ("gameFull" in result) return setStep("waitlist_offer");
-    if ("alreadyConfirmed" in result) return setStep("already_confirmed");
-    setStep(result.status === "confirmed" ? "confirmed" : "waitlisted");
+    if ('needsRegistration' in result) return setStep('register');
+    if ('gameFull' in result) return setStep('waitlist_offer');
+    if ('alreadyConfirmed' in result) return setStep('already_confirmed');
+    setStep(result.status === 'confirmed' ? 'confirmed' : 'waitlisted');
   }
 
   async function onRegisterSubmit(data: RegisterData) {
@@ -122,16 +123,16 @@ export function ConfirmPresenceDialog({
       },
     });
 
-    if ("error" in result) return setServerError(result.error);
-    if ("banned" in result) return setStep("banned");
-    if ("suspended" in result) {
+    if ('error' in result) return setServerError(result.error);
+    if ('banned' in result) return setStep('banned');
+    if ('suspended' in result) {
       setSuspensionInfo({ until: result.until, reason: result.reason });
-      return setStep("suspended");
+      return setStep('suspended');
     }
-    if ("needsRegistration" in result) return;
-    if ("gameFull" in result) return setStep("waitlist_offer");
-    if ("alreadyConfirmed" in result) return setStep("already_confirmed");
-    setStep(result.status === "confirmed" ? "confirmed" : "waitlisted");
+    if ('needsRegistration' in result) return;
+    if ('gameFull' in result) return setStep('waitlist_offer');
+    if ('alreadyConfirmed' in result) return setStep('already_confirmed');
+    setStep(result.status === 'confirmed' ? 'confirmed' : 'waitlisted');
   }
 
   async function onJoinWaitlist() {
@@ -150,22 +151,22 @@ export function ConfirmPresenceDialog({
       joinWaitlist: true,
     });
 
-    if ("error" in result) return setServerError(result.error);
-    if ("banned" in result) return setStep("banned");
-    if ("suspended" in result) {
+    if ('error' in result) return setServerError(result.error);
+    if ('banned' in result) return setStep('banned');
+    if ('suspended' in result) {
       setSuspensionInfo({ until: result.until, reason: result.reason });
-      return setStep("suspended");
+      return setStep('suspended');
     }
-    if ("needsRegistration" in result) return;
-    if ("gameFull" in result) return;
-    if ("alreadyConfirmed" in result) return setStep("already_confirmed");
-    setStep("waitlisted");
+    if ('needsRegistration' in result) return;
+    if ('gameFull' in result) return;
+    if ('alreadyConfirmed' in result) return setStep('already_confirmed');
+    setStep('waitlisted');
   }
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-sm">
-        {step === "phone" && (
+        {step === 'phone' && (
           <>
             <DialogHeader>
               <DialogTitle>Confirmar presença</DialogTitle>
@@ -183,7 +184,7 @@ export function ConfirmPresenceDialog({
                   id="phone"
                   type="tel"
                   placeholder="(11) 99999-9999"
-                  {...phoneForm.register("phone")}
+                  {...phoneForm.register('phone')}
                 />
                 {phoneForm.formState.errors.phone && (
                   <p className="text-sm text-destructive">
@@ -200,14 +201,14 @@ export function ConfirmPresenceDialog({
                 disabled={phoneForm.formState.isSubmitting}
               >
                 {phoneForm.formState.isSubmitting
-                  ? "Verificando..."
-                  : "Confirmar"}
+                  ? 'Verificando...'
+                  : 'Confirmar'}
               </Button>
             </form>
           </>
         )}
 
-        {step === "register" && (
+        {step === 'register' && (
           <>
             <DialogHeader>
               <DialogTitle>Primeiro acesso</DialogTitle>
@@ -224,7 +225,7 @@ export function ConfirmPresenceDialog({
                 <Input
                   id="name"
                   placeholder="Seu nome ou apelido"
-                  {...registerForm.register("name")}
+                  {...registerForm.register('name')}
                 />
                 {registerForm.formState.errors.name && (
                   <p className="text-sm text-destructive">
@@ -239,7 +240,7 @@ export function ConfirmPresenceDialog({
                   id="weight_kg"
                   type="number"
                   placeholder="75"
-                  {...registerForm.register("weight_kg", {
+                  {...registerForm.register('weight_kg', {
                     valueAsNumber: true,
                   })}
                 />
@@ -251,10 +252,12 @@ export function ConfirmPresenceDialog({
               </div>
 
               <div className="space-y-1">
-                <Label>Resistência — quantos jogos você aguenta seguidos?</Label>
+                <Label>
+                  Resistência — quantos jogos você aguenta seguidos?
+                </Label>
                 <Select
-                  onValueChange={(v) =>
-                    registerForm.setValue("stamina", v as StaminaLevel)
+                  onValueChange={v =>
+                    registerForm.setValue('stamina', v as StaminaLevel)
                   }
                 >
                   <SelectTrigger>
@@ -283,14 +286,14 @@ export function ConfirmPresenceDialog({
                 disabled={registerForm.formState.isSubmitting}
               >
                 {registerForm.formState.isSubmitting
-                  ? "Salvando..."
-                  : "Confirmar presença"}
+                  ? 'Salvando...'
+                  : 'Confirmar presença'}
               </Button>
             </form>
           </>
         )}
 
-        {step === "waitlist_offer" && (
+        {step === 'waitlist_offer' && (
           <>
             <DialogHeader>
               <DialogTitle>Jogo lotado</DialogTitle>
@@ -303,7 +306,9 @@ export function ConfirmPresenceDialog({
               <p className="text-sm text-destructive">{serverError}</p>
             )}
             <div className="flex flex-col gap-2">
-              <Button onClick={onJoinWaitlist}>Entrar na lista de espera</Button>
+              <Button onClick={onJoinWaitlist}>
+                Entrar na lista de espera
+              </Button>
               <Button variant="outline" onClick={() => handleClose(false)}>
                 Cancelar
               </Button>
@@ -311,7 +316,7 @@ export function ConfirmPresenceDialog({
           </>
         )}
 
-        {step === "confirmed" && (
+        {step === 'confirmed' && (
           <>
             <DialogHeader>
               <DialogTitle>Presença confirmada!</DialogTitle>
@@ -323,7 +328,7 @@ export function ConfirmPresenceDialog({
           </>
         )}
 
-        {step === "waitlisted" && (
+        {step === 'waitlisted' && (
           <>
             <DialogHeader>
               <DialogTitle>Na lista de espera</DialogTitle>
@@ -335,7 +340,7 @@ export function ConfirmPresenceDialog({
           </>
         )}
 
-        {step === "already_confirmed" && (
+        {step === 'already_confirmed' && (
           <>
             <DialogHeader>
               <DialogTitle>Você já confirmou!</DialogTitle>
@@ -347,7 +352,7 @@ export function ConfirmPresenceDialog({
           </>
         )}
 
-        {step === "banned" && (
+        {step === 'banned' && (
           <>
             <DialogHeader>
               <DialogTitle>Acesso bloqueado</DialogTitle>
@@ -360,16 +365,16 @@ export function ConfirmPresenceDialog({
           </>
         )}
 
-        {step === "suspended" && suspensionInfo && (
+        {step === 'suspended' && suspensionInfo && (
           <>
             <DialogHeader>
               <DialogTitle>Jogador suspenso</DialogTitle>
               <DialogDescription>
-                Você está suspenso até{" "}
-                {new Date(suspensionInfo.until).toLocaleDateString("pt-BR", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
+                Você está suspenso até{' '}
+                {new Date(suspensionInfo.until).toLocaleDateString('pt-BR', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
                 })}
                 {suspensionInfo.reason && `: ${suspensionInfo.reason}`}.
               </DialogDescription>

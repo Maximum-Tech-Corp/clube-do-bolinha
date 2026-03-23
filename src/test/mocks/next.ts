@@ -1,9 +1,9 @@
-import { vi } from "vitest";
+import { vi } from 'vitest';
 
 // next/link — renders a plain <a> to avoid Next.js prefetching / IntersectionObserver
-vi.mock("next/link", () => {
+vi.mock('next/link', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const React = require("react");
+  const React = require('react');
   return {
     default: ({
       children,
@@ -15,7 +15,7 @@ vi.mock("next/link", () => {
       href: string;
       className?: string;
       [key: string]: unknown;
-    }) => React.createElement("a", { href, className, ...rest }, children),
+    }) => React.createElement('a', { href, className, ...rest }, children),
   };
 });
 
@@ -24,11 +24,11 @@ export const mockPush = vi.fn();
 export const mockReplace = vi.fn();
 export const mockRedirect = vi.fn();
 export const mockNotFound = vi.fn();
-export const mockUsePathname = vi.fn(() => "/");
+export const mockUsePathname = vi.fn(() => '/');
 export const mockUseSearchParams = vi.fn(() => new URLSearchParams());
 export const mockUseParams = vi.fn(() => ({}));
 
-vi.mock("next/navigation", () => ({
+vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
     replace: mockReplace,
@@ -48,7 +48,7 @@ vi.mock("next/navigation", () => ({
 export const mockRevalidatePath = vi.fn();
 export const mockRevalidateTag = vi.fn();
 
-vi.mock("next/cache", () => ({
+vi.mock('next/cache', () => ({
   revalidatePath: mockRevalidatePath,
   revalidateTag: mockRevalidateTag,
 }));
@@ -59,14 +59,14 @@ export const mockCookieSet = vi.fn();
 export const mockCookieDelete = vi.fn();
 export const mockCookieGetAll = vi.fn(() => []);
 
-vi.mock("next/headers", () => ({
+vi.mock('next/headers', () => ({
   cookies: vi.fn(() =>
     Promise.resolve({
       get: mockCookieGet,
       set: mockCookieSet,
       delete: mockCookieDelete,
       getAll: mockCookieGetAll,
-    })
+    }),
   ),
   headers: vi.fn(() => Promise.resolve(new Headers())),
 }));

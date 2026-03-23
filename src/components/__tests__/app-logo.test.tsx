@@ -1,30 +1,32 @@
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
-import { AppLogo } from "../app-logo";
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { AppLogo } from '../app-logo';
 
-describe("AppLogo", () => {
-  it("renders the soccer ball emoji", () => {
+describe('AppLogo', () => {
+  it('renders the soccer ball emoji', () => {
     render(<AppLogo />);
-    expect(screen.getByRole("img", { name: "bola de futebol" })).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', { name: 'bola de futebol' }),
+    ).toBeInTheDocument();
   });
 
-  it("renders the app name", () => {
+  it('renders the app name', () => {
     render(<AppLogo />);
-    expect(screen.getByText("Clube do Bolinha")).toBeInTheDocument();
+    expect(screen.getByText('Clube do Bolinha')).toBeInTheDocument();
   });
 
-  it("defaults to md size", () => {
+  it('defaults to md size', () => {
     const { container } = render(<AppLogo />);
-    expect(container.firstChild).toHaveClass("gap-3");
+    expect(container.firstChild).toHaveClass('gap-3');
   });
 
-  it("applies sm size classes", () => {
+  it('applies sm size classes', () => {
     const { container } = render(<AppLogo size="sm" />);
-    expect(container.firstChild).toHaveClass("gap-2");
+    expect(container.firstChild).toHaveClass('gap-2');
   });
 
-  it("applies lg size classes", () => {
+  it('applies lg size classes', () => {
     const { container } = render(<AppLogo size="lg" />);
-    expect(container.firstChild).toHaveClass("gap-4");
+    expect(container.firstChild).toHaveClass('gap-4');
   });
 });

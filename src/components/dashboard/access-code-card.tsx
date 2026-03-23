@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { updateAccessCodePrefix } from "@/actions/team";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useState } from 'react';
+import { updateAccessCodePrefix } from '@/actions/team';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 
 interface Props {
   teamName: string;
@@ -20,7 +20,7 @@ interface Props {
 
 export function AccessCodeCard({ teamName, accessCode, appUrl }: Props) {
   const [editing, setEditing] = useState(false);
-  const [prefix, setPrefix] = useState(accessCode.split("-")[0]);
+  const [prefix, setPrefix] = useState(accessCode.split('-')[0]);
   const [currentCode, setCurrentCode] = useState(accessCode);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -33,7 +33,7 @@ export function AccessCodeCard({ teamName, accessCode, appUrl }: Props) {
     });
   }
 
-  const suffix = currentCode.split("-")[1];
+  const suffix = currentCode.split('-')[1];
 
   const whatsappText = encodeURIComponent(
     `Ola! Acesse a turma *${teamName}* no Clube do Bolinha.
@@ -43,7 +43,7 @@ Link: ${appUrl}/jogador
 
 *Para instalar como app:*
 Android: abra no Chrome, toque nos 3 pontos e selecione "Adicionar a tela inicial"
-iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de Inicio"`
+iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de Inicio"`,
   );
 
   async function handleSave() {
@@ -60,7 +60,7 @@ iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de I
   }
 
   function handleCancel() {
-    setPrefix(currentCode.split("-")[0]);
+    setPrefix(currentCode.split('-')[0]);
     setError(null);
     setEditing(false);
   }
@@ -118,12 +118,12 @@ iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de I
             <div className="flex items-center justify-center gap-2">
               <Input
                 value={prefix}
-                onChange={(e) =>
+                onChange={e =>
                   setPrefix(
                     e.target.value
                       .toUpperCase()
-                      .replace(/[^A-Z0-9]/g, "")
-                      .slice(0, 4)
+                      .replace(/[^A-Z0-9]/g, '')
+                      .slice(0, 4),
                   )
                 }
                 className="font-mono text-center w-24"
@@ -155,7 +155,7 @@ iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de I
                 onClick={handleSave}
                 disabled={saving || prefix.length !== 4}
               >
-                {saving ? "Salvando..." : "Salvar"}
+                {saving ? 'Salvando...' : 'Salvar'}
               </Button>
             </div>
           </>

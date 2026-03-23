@@ -1,27 +1,27 @@
-"use client";
+'use client';
 
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useState } from "react";
-import { updatePlayer } from "@/actions/players-admin";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { useForm, useWatch } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useState } from 'react';
+import { updatePlayer } from '@/actions/players-admin';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import type { StaminaLevel } from "@/types/database.types";
+} from '@/components/ui/select';
+import type { StaminaLevel } from '@/types/database.types';
 
 const schema = z.object({
-  name: z.string().min(2, "Informe o nome"),
+  name: z.string().min(2, 'Informe o nome'),
   weight_kg: z.number().min(30).max(250),
-  stamina: z.enum(["1", "2", "3", "4plus"] as const),
+  stamina: z.enum(['1', '2', '3', '4plus'] as const),
   is_star: z.boolean(),
 });
 
@@ -44,7 +44,7 @@ export function EditPlayerForm({ player }: { player: Player }) {
     register,
     handleSubmit,
     setValue,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -56,7 +56,7 @@ export function EditPlayerForm({ player }: { player: Player }) {
     },
   });
 
-  const isStar = watch("is_star");
+  const isStar = useWatch({ control, name: 'is_star' });
 
   async function onSubmit(data: FormData) {
     setServerError(null);
@@ -80,7 +80,7 @@ export function EditPlayerForm({ player }: { player: Player }) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-1">
         <Label htmlFor="name">Nome</Label>
-        <Input id="name" {...register("name")} />
+        <Input id="name" {...register('name')} />
         {errors.name && (
           <p className="text-sm text-destructive">{errors.name.message}</p>
         )}
@@ -99,7 +99,7 @@ export function EditPlayerForm({ player }: { player: Player }) {
         <Input
           id="weight_kg"
           type="number"
-          {...register("weight_kg", { valueAsNumber: true })}
+          {...register('weight_kg', { valueAsNumber: true })}
         />
         {errors.weight_kg && (
           <p className="text-sm text-destructive">{errors.weight_kg.message}</p>
@@ -110,7 +110,7 @@ export function EditPlayerForm({ player }: { player: Player }) {
         <Label>Resistência</Label>
         <Select
           defaultValue={player.stamina}
-          onValueChange={(v) => setValue("stamina", v as StaminaLevel)}
+          onValueChange={v => setValue('stamina', v as StaminaLevel)}
         >
           <SelectTrigger>
             <SelectValue />
@@ -128,20 +128,18 @@ export function EditPlayerForm({ player }: { player: Player }) {
         <Switch
           id="is_star"
           checked={isStar}
-          onCheckedChange={(v) => setValue("is_star", v)}
+          onCheckedChange={v => setValue('is_star', v)}
         />
         <Label htmlFor="is_star">Jogador destaque ⭐</Label>
       </div>
 
-      {serverError && (
-        <p className="text-sm text-destructive">{serverError}</p>
-      )}
+      {serverError && <p className="text-sm text-destructive">{serverError}</p>}
       {saved && (
         <p className="text-sm text-green-600">Dados salvos com sucesso!</p>
       )}
 
       <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? "Salvando..." : "Salvar alterações"}
+        {isSubmitting ? 'Salvando...' : 'Salvar alterações'}
       </Button>
     </form>
   );
