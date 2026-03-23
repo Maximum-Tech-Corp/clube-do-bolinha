@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { createServiceClient } from '@/lib/supabase/server';
@@ -37,8 +37,13 @@ export default async function PlayerListaPage({ params }: Props) {
     .eq('team_id', team.id)
     .maybeSingle();
 
-  // Só disponível para jogos abertos sem sorteio
-  if (!game || game.draw_done || game.status !== 'open') notFound();
+  if (!game) notFound();
+
+  // Se o sorteio já foi feito, redireciona para a página de times
+  if (game.draw_done) redirect(`/jogador/${upperCode}/times/${gameId}`);
+
+  // Se o jogo não está mais aberto, volta para a turma
+  if (game.status !== 'open') redirect(`/jogador/${upperCode}`);
 
   const { data: confirmationsRaw } = await service
     .from('game_confirmations')

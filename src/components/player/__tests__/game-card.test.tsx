@@ -159,6 +159,15 @@ describe('GameCard', () => {
     expect(link).toHaveAttribute('href', '/jogador/BOLA-ABC123/lista/game-1');
   });
 
+  it("does not show 'Ver lista' when draw is already done", () => {
+    render(
+      <GameCard {...BASE_PROPS} game={{ ...BASE_GAME, draw_done: true }} />,
+    );
+    expect(
+      screen.queryByRole('link', { name: /Ver lista/ }),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows 'Ver times sorteados' when open, draw_done, not tournament", () => {
     render(
       <GameCard
