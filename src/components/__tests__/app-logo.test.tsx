@@ -3,30 +3,28 @@ import { render, screen } from '@testing-library/react';
 import { AppLogo } from '../app-logo';
 
 describe('AppLogo', () => {
-  it('renders the soccer ball emoji', () => {
+  it('renders image with correct alt text', () => {
     render(<AppLogo />);
     expect(
-      screen.getByRole('img', { name: 'bola de futebol' }),
+      screen.getByRole('img', { name: 'Clube do Bolinha' }),
     ).toBeInTheDocument();
   });
 
-  it('renders the app name', () => {
+  it('defaults to md size (120px wide)', () => {
     render(<AppLogo />);
-    expect(screen.getByText('Clube do Bolinha')).toBeInTheDocument();
+    const img = screen.getByRole('img', { name: 'Clube do Bolinha' });
+    expect(img).toHaveAttribute('width', '120');
   });
 
-  it('defaults to md size', () => {
-    const { container } = render(<AppLogo />);
-    expect(container.firstChild).toHaveClass('gap-3');
+  it('applies sm size (80px wide)', () => {
+    render(<AppLogo size="sm" />);
+    const img = screen.getByRole('img', { name: 'Clube do Bolinha' });
+    expect(img).toHaveAttribute('width', '80');
   });
 
-  it('applies sm size classes', () => {
-    const { container } = render(<AppLogo size="sm" />);
-    expect(container.firstChild).toHaveClass('gap-2');
-  });
-
-  it('applies lg size classes', () => {
-    const { container } = render(<AppLogo size="lg" />);
-    expect(container.firstChild).toHaveClass('gap-4');
+  it('applies lg size (160px wide)', () => {
+    render(<AppLogo size="lg" />);
+    const img = screen.getByRole('img', { name: 'Clube do Bolinha' });
+    expect(img).toHaveAttribute('width', '160');
   });
 });

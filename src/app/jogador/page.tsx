@@ -14,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { AppLogo } from '@/components/app-logo';
 
 export default function JogadorPage() {
   const [code, setCode] = useState('');
@@ -41,7 +42,8 @@ export default function JogadorPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-muted/40 p-4 gap-6">
+      <AppLogo size="md" />
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Acesso do jogador</CardTitle>
