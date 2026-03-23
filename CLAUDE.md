@@ -22,10 +22,17 @@ PWA for organizing amateur football (futsal/soccer) groups. Admins manage teams,
 
 **Tests:** Vitest + Testing Library. Run `npm test` in watch mode, `npm run test:run` for single run, `npm run test:coverage` for coverage report. Test files go in `__tests__/` folders alongside the code or in `src/test/`.
 
+When a test breaks:
+- Fix carefully, preserving the intent of the functionality and the business rules the test validates
+- **Never modify files outside the test suite** (production code, actions, components, libs) without first consulting the user, explaining the reason, and waiting for explicit confirmation
+
 **Code**
 - Clean code, self-explanatory names
-- No unnecessary comments — only comment complex algorithms or non-obvious business logic
+- No unnecessary comments — only comment complex algorithms or non-obvious business logic; comments must be in English
 - Avoid N+1 queries and unnecessary re-renders
+
+**Language**
+- This file (CLAUDE.md) and all code comments must always be written and updated in English
 
 **TypeScript**
 - Always typed — no `any`
