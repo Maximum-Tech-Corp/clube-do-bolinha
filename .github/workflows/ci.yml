@@ -1,0 +1,53 @@
+name: CI
+
+# Runs on every push to main and on any Pull Request commit
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  test:
+    name: Tests and Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Set up Node.js 24 (active LTS) with npm cache for faster builds
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      # 3. Install dependencies from package-lock.json (no version changes)
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. TypeScript type check — fast failure before running tests
+      - name: Type check
+        run: npx tsc --noEmit
+
+      # 5. Lint — enforce ESLint + Prettier compliance
+      - name: Lint
+        run: npm run lint
+
+      # 6. Run tests with coverage report
+      #    95% threshold (statements, branches, functions, lines) is configured in vitest.config.ts —
+      #    if coverage drops below, this step fails automatically
+      - name: Tests with coverage
+        run: npm run test:coverage
+
+      # 7. Publish the HTML coverage report as a workflow artifact
+      #    Available for 7 days in the GitHub Actions "Artifacts" tab
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always() # upload even when tests fail, for diagnosis
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7

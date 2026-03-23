@@ -448,6 +448,141 @@ describe("ConfirmPresenceDialog", () => {
     });
   });
 
+  describe("close buttons in terminal steps", () => {
+    it("closes from waitlisted step", async () => {
+      mockConfirmPresence.mockResolvedValue({ status: "waitlist" });
+      const onOpenChange = vi.fn();
+      const user = userEvent.setup();
+      render(<ConfirmPresenceDialog {...BASE_PROPS} onOpenChange={onOpenChange} />);
+
+      await user.type(screen.getByLabelText("Celular"), "11999999999");
+      await user.click(screen.getByRole("button", { name: "Confirmar" }));
+      await waitFor(() => expect(screen.getByText("Na lista de espera")).toBeInTheDocument());
+
+      await user.click(screen.getByRole("button", { name: "Fechar" }));
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+
+    it("closes from already_confirmed step", async () => {
+      mockConfirmPresence.mockResolvedValue({ alreadyConfirmed: true });
+      const onOpenChange = vi.fn();
+      const user = userEvent.setup();
+      render(<ConfirmPresenceDialog {...BASE_PROPS} onOpenChange={onOpenChange} />);
+
+      await user.type(screen.getByLabelText("Celular"), "11999999999");
+      await user.click(screen.getByRole("button", { name: "Confirmar" }));
+      await waitFor(() => expect(screen.getByText("Você já confirmou!")).toBeInTheDocument());
+
+      await user.click(screen.getByRole("button", { name: "Fechar" }));
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+
+    it("closes from banned step", async () => {
+      mockConfirmPresence.mockResolvedValue({ banned: true });
+      const onOpenChange = vi.fn();
+      const user = userEvent.setup();
+      render(<ConfirmPresenceDialog {...BASE_PROPS} onOpenChange={onOpenChange} />);
+
+      await user.type(screen.getByLabelText("Celular"), "11999999999");
+      await user.click(screen.getByRole("button", { name: "Confirmar" }));
+      await waitFor(() => expect(screen.getByText("Acesso bloqueado")).toBeInTheDocument());
+
+      await user.click(screen.getByRole("button", { name: "Fechar" }));
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+
+    it("closes from suspended step", async () => {
+      mockConfirmPresence.mockResolvedValue({ suspended: true, until: "2026-05-01T00:00:00Z", reason: null });
+      const onOpenChange = vi.fn();
+      const user = userEvent.setup();
+      render(<ConfirmPresenceDialog {...BASE_PROPS} onOpenChange={onOpenChange} />);
+
+      await user.type(screen.getByLabelText("Celular"), "11999999999");
+      await user.click(screen.getByRole("button", { name: "Confirmar" }));
+      await waitFor(() => expect(screen.getByText("Jogador suspenso")).toBeInTheDocument());
+
+      await user.click(screen.getByRole("button", { name: "Fechar" }));
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+
+    it("closes via Cancelar button in waitlist_offer step", async () => {
+      mockConfirmPresence.mockResolvedValue({ gameFull: true });
+      const onOpenChange = vi.fn();
+      const user = userEvent.setup();
+      render(<ConfirmPresenceDialog {...BASE_PROPS} onOpenChange={onOpenChange} />);
+
+      await user.type(screen.getByLabelText("Celular"), "11999999999");
+      await user.click(screen.getByRole("button", { name: "Confirmar" }));
+      await waitFor(() => expect(screen.getByText("Jogo lotado")).toBeInTheDocument());
+
+      await user.click(screen.getByRole("button", { name: "Cancelar" }));
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+  });
+
+  describe("onJoinWaitlist branch coverage", () => {
+    async function openWaitlistOffer() {
+      mockConfirmPresence.mockResolvedValueOnce({ gameFull: true });
+      const user = userEvent.setup();
+      render(<ConfirmPresenceDialog {...BASE_PROPS} />);
+      await user.type(screen.getByLabelText("Celular"), "11999999999");
+      await user.click(screen.getByRole("button", { name: "Confirmar" }));
+      await waitFor(() => expect(screen.getByText("Jogo lotado")).toBeInTheDocument());
+      return user;
+    }
+
+    it("transitions to banned when onJoinWaitlist returns banned (line 154)", async () => {
+      const user = await openWaitlistOffer();
+      mockConfirmPresence.mockResolvedValue({ banned: true });
+      await user.click(screen.getByRole("button", { name: /Entrar na lista de espera/ }));
+      await waitFor(() => expect(screen.getByText("Acesso bloqueado")).toBeInTheDocument());
+    });
+
+    it("stays when onJoinWaitlist returns needsRegistration (line 159)", async () => {
+      const user = await openWaitlistOffer();
+      mockConfirmPresence.mockResolvedValue({ needsRegistration: true });
+      await user.click(screen.getByRole("button", { name: /Entrar na lista de espera/ }));
+      await waitFor(() => expect(mockConfirmPresence).toHaveBeenCalledTimes(2));
+      expect(screen.getByText("Jogo lotado")).toBeInTheDocument();
+    });
+
+    it("stays when onJoinWaitlist returns gameFull (line 160)", async () => {
+      const user = await openWaitlistOffer();
+      mockConfirmPresence.mockResolvedValue({ gameFull: true });
+      await user.click(screen.getByRole("button", { name: /Entrar na lista de espera/ }));
+      await waitFor(() => expect(mockConfirmPresence).toHaveBeenCalledTimes(2));
+      expect(screen.getByText("Jogo lotado")).toBeInTheDocument();
+    });
+
+    it("transitions to already_confirmed when onJoinWaitlist returns alreadyConfirmed (line 161)", async () => {
+      const user = await openWaitlistOffer();
+      mockConfirmPresence.mockResolvedValue({ alreadyConfirmed: true });
+      await user.click(screen.getByRole("button", { name: /Entrar na lista de espera/ }));
+      await waitFor(() => expect(screen.getByText("Você já confirmou!")).toBeInTheDocument());
+    });
+  });
+
+  describe("onRegisterSubmit branch coverage", () => {
+    it("stays on register step when needsRegistration returned (line 131)", async () => {
+      mockConfirmPresence.mockResolvedValueOnce({ needsRegistration: true });
+      const user = userEvent.setup();
+      render(<ConfirmPresenceDialog {...BASE_PROPS} />);
+      await user.type(screen.getByLabelText("Celular"), "11999999999");
+      await user.click(screen.getByRole("button", { name: "Confirmar" }));
+      await waitFor(() => expect(screen.getByText("Primeiro acesso")).toBeInTheDocument());
+
+      mockConfirmPresence.mockResolvedValue({ needsRegistration: true });
+      await user.type(screen.getByLabelText("Nome"), "João");
+      await user.clear(screen.getByLabelText(/Peso/));
+      await user.type(screen.getByLabelText(/Peso/), "80");
+      await user.selectOptions(screen.getByTestId("stamina-select"), "3");
+      await user.click(screen.getByRole("button", { name: /Confirmar presença/ }));
+
+      await waitFor(() => expect(mockConfirmPresence).toHaveBeenCalledTimes(2));
+      expect(screen.getByText("Primeiro acesso")).toBeInTheDocument();
+    });
+  });
+
   describe("handleClose reset", () => {
     it("resets to phone step when dialog is closed", async () => {
       mockConfirmPresence.mockResolvedValueOnce({ status: "confirmed" });

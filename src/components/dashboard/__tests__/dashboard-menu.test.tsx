@@ -176,6 +176,7 @@ describe("DashboardMenu", () => {
       });
     });
 
+
     it("shows 'Salvando...' during save", async () => {
       mockUpdateTeamSettings.mockImplementation(
         () => new Promise((resolve) => setTimeout(() => resolve({}), 200))
