@@ -299,6 +299,36 @@ export async function getPlayerStats(playerId: string) {
   return data ?? [];
 }
 
+export async function deleteRetroactiveStat(
+  statId: string,
+): Promise<{ error?: string }> {
+  const teamId = await getAdminTeamId();
+  if (!teamId) return { error: 'Não autorizado.' };
+
+  const service = createServiceClient();
+
+  const { data: stat } = await service
+    .from('player_stat_adjustments')
+    .select('id, player_id')
+    .eq('id', statId)
+    .maybeSingle();
+
+  if (!stat) return { error: 'Lançamento não encontrado.' };
+
+  if (!(await assertPlayerOwnership(stat.player_id, teamId)))
+    return { error: 'Não autorizado.' };
+
+  const { error } = await service
+    .from('player_stat_adjustments')
+    .delete()
+    .eq('id', statId);
+
+  if (error) return { error: 'Erro ao remover lançamento.' };
+
+  revalidatePath(`/dashboard/jogadores/${stat.player_id}`);
+  return {};
+}
+
 export async function addRetroactiveStat(params: {
   playerId: string;
   goals: number;
