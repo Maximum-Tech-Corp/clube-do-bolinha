@@ -44,6 +44,9 @@ export default async function PagamentoPendentePage() {
             <Button type="submit" className="w-full">
               Assinar agora
             </Button>
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              Cobrança mensal recorrente. Cancele quando quiser.
+            </p>
           </form>
           <form action={logout}>
             <Button type="submit" variant="ghost" className="w-full">

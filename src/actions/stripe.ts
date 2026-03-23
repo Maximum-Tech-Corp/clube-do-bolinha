@@ -45,3 +45,29 @@ export async function createCheckoutSession() {
 
   redirect(session.url!);
 }
+
+export async function createBillingPortalSession() {
+  const stripe = getStripe();
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect('/login');
+
+  const { data: admin } = await supabase
+    .from('admins')
+    .select('stripe_customer_id')
+    .eq('user_id', user.id)
+    .single();
+
+  if (!admin?.stripe_customer_id) redirect('/pagamento-pendente');
+
+  const portalSession = await stripe.billingPortal.sessions.create({
+    customer: admin.stripe_customer_id,
+    return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
+  });
+
+  redirect(portalSession.url);
+}

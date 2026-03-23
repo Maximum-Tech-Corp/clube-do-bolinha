@@ -4,10 +4,21 @@ import userEvent from '@testing-library/user-event';
 import { DashboardMenu } from '../dashboard-menu';
 
 const mockUpdateTeamSettings = vi.fn();
+const mockCreateBillingPortalSession = vi.fn();
+const mockLogout = vi.fn();
 
 vi.mock('@/actions/team', () => ({
   updateTeamSettings: (...args: unknown[]) => mockUpdateTeamSettings(...args),
   updateAccessCodePrefix: vi.fn(),
+}));
+
+vi.mock('@/actions/stripe', () => ({
+  createBillingPortalSession: (...args: unknown[]) =>
+    mockCreateBillingPortalSession(...args),
+}));
+
+vi.mock('@/actions/auth', () => ({
+  logout: (...args: unknown[]) => mockLogout(...args),
 }));
 
 // Mock Radix Dialog
@@ -38,6 +49,8 @@ describe('DashboardMenu', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUpdateTeamSettings.mockResolvedValue({});
+    mockCreateBillingPortalSession.mockResolvedValue(undefined);
+    mockLogout.mockResolvedValue(undefined);
   });
 
   describe('menu button', () => {
@@ -74,6 +87,70 @@ describe('DashboardMenu', () => {
       await waitFor(() => {
         expect(screen.queryByText('Compartilhar')).not.toBeInTheDocument();
       });
+    });
+  });
+
+  describe('minha assinatura', () => {
+    it('shows Minha Assinatura button in menu', async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await user.click(screen.getByRole('button', { name: 'Menu' }));
+
+      expect(
+        screen.getByRole('button', { name: /minha assinatura/i }),
+      ).toBeInTheDocument();
+    });
+
+    it('calls createBillingPortalSession when clicked', async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await user.click(screen.getByRole('button', { name: 'Menu' }));
+      await user.click(
+        screen.getByRole('button', { name: /minha assinatura/i }),
+      );
+
+      await waitFor(() => {
+        expect(mockCreateBillingPortalSession).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it('closes menu when Minha Assinatura is clicked', async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await user.click(screen.getByRole('button', { name: 'Menu' }));
+      await user.click(
+        screen.getByRole('button', { name: /minha assinatura/i }),
+      );
+
+      await waitFor(() => {
+        expect(
+          screen.queryByRole('link', { name: /compartilhar/i }),
+        ).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('logout', () => {
+    it('shows Sair button in menu', async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await user.click(screen.getByRole('button', { name: 'Menu' }));
+
+      expect(screen.getByRole('button', { name: /sair/i })).toBeInTheDocument();
+    });
+
+    it('calls logout when Sair is clicked', async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await user.click(screen.getByRole('button', { name: 'Menu' }));
+      await user.click(screen.getByRole('button', { name: /sair/i }));
+
+      expect(mockLogout).toHaveBeenCalledTimes(1);
     });
   });
 

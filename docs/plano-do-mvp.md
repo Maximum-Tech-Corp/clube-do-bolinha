@@ -625,6 +625,10 @@ TRUNCATE TABLE admins                 CASCADE;
 - Trocar chaves Stripe de teste (`sk_test_*`, `pk_test_*`) pelas chaves de produção (`sk_live_*`, `pk_live_*`) nas variáveis da Vercel
 - Criar produto e preço no Stripe em modo live (mesma configuração do teste)
 - Atualizar `STRIPE_PRICE_ID` nas variáveis de ambiente
+- **Configurar o Customer Portal em modo live** (o botão "Gerenciar assinatura" já está implementado no app):
+  - Acessar `https://dashboard.stripe.com/settings/billing/portal` (sem `/test/`)
+  - Ativar e configurar as mesmas permissões do modo teste (cancelamento, atualização de cartão, histórico de faturas)
+  - O código não muda — apenas as chaves de ambiente
 - Criar novo webhook no Stripe Dashboard (modo live) apontando para `https://sua-url.vercel.app/api/webhooks/stripe`
 - Eventos: `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_succeeded`, `invoice.payment_failed`
 - Copiar o Signing Secret do webhook live e atualizar `STRIPE_WEBHOOK_SECRET` na Vercel

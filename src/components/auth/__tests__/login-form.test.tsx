@@ -36,7 +36,7 @@ describe('LoginForm', () => {
 
   it('renders link back to /', () => {
     render(<LoginForm />);
-    const link = screen.getByRole('link', { name: /Voltar ao início/ });
+    const link = screen.getByRole('link', { name: /Troque de Perfil/ });
     expect(link).toHaveAttribute('href', '/');
   });
 

@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { MoreVertical, Share2, Settings } from 'lucide-react';
+import {
+  MoreVertical,
+  Share2,
+  Settings,
+  CreditCard,
+  LogOut,
+} from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -12,6 +18,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updateTeamSettings } from '@/actions/team';
+import { createBillingPortalSession } from '@/actions/stripe';
+import { logout } from '@/actions/auth';
 
 interface Props {
   appUrl: string;
@@ -30,6 +38,7 @@ export function DashboardMenu({
   const [duration, setDuration] = useState(String(matchDurationMinutes));
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [loadingPortal, setLoadingPortal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -80,6 +89,19 @@ iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de I
 
       {menuOpen && (
         <div className="absolute right-0 top-10 z-50 min-w-45 rounded-lg border border-border bg-card shadow-lg py-1">
+          <button
+            type="button"
+            disabled={loadingPortal}
+            onClick={async () => {
+              setMenuOpen(false);
+              setLoadingPortal(true);
+              await createBillingPortalSession();
+            }}
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-muted transition-colors disabled:opacity-50"
+          >
+            <CreditCard className="w-4 h-4 text-muted-foreground" />
+            {loadingPortal ? 'Redirecionando...' : 'Minha Assinatura'}
+          </button>
           <a
             href={`https://wa.me/?text=${shareText}`}
             target="_blank"
@@ -100,6 +122,14 @@ iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de I
           >
             <Settings className="w-4 h-4 text-muted-foreground" />
             Configurações
+          </button>
+          <button
+            type="button"
+            onClick={() => logout()}
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-muted transition-colors text-destructive"
+          >
+            <LogOut className="w-4 h-4" />
+            Sair
           </button>
         </div>
       )}

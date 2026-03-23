@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { useState } from 'react';
 import Link from 'next/link';
 import { login } from '@/actions/auth';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -97,9 +97,9 @@ export function LoginForm() {
           </p>
           <Link
             href="/"
-            className="text-sm text-muted-foreground underline text-center"
+            className={buttonVariants({ variant: 'outline', size: 'sm' })}
           >
-            Voltar ao início
+            Troque de Perfil
           </Link>
         </CardFooter>
       </form>

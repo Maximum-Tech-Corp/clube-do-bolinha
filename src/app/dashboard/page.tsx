@@ -1,7 +1,5 @@
 import { redirect } from 'next/navigation';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { logout } from '@/actions/auth';
-import { Button } from '@/components/ui/button';
 import { AccessCodeCard } from '@/components/dashboard/access-code-card';
 import { DashboardMenu } from '@/components/dashboard/dashboard-menu';
 import { AppLogo } from '@/components/app-logo';
@@ -57,12 +55,6 @@ export default async function DashboardPage() {
         accessCode={team.access_code}
         appUrl={appUrl}
       />
-
-      <form action={logout}>
-        <Button variant="outline" className="w-full" type="submit">
-          Sair
-        </Button>
-      </form>
     </div>
   );
 }
