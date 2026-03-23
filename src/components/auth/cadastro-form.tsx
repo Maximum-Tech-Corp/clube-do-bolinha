@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { signup } from '@/actions/auth';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const schema = z
   .object({
@@ -36,6 +45,8 @@ type FormData = z.infer<typeof schema>;
 
 export function CadastroForm() {
   const [serverError, setServerError] = useState<string | null>(null);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const router = useRouter();
 
   const {
     register,
@@ -48,10 +59,35 @@ export function CadastroForm() {
   async function onSubmit(data: FormData) {
     setServerError(null);
     const result = await signup(data);
-    if (result?.error) setServerError(result.error);
+    if ('error' in result) {
+      setServerError(result.error);
+    } else {
+      setShowEmailModal(true);
+    }
+  }
+
+  function handleEmailModalConfirm() {
+    setShowEmailModal(false);
+    router.push('/pagamento-pendente');
   }
 
   return (
+    <>
+    <Dialog open={showEmailModal} onOpenChange={() => {}}>
+      <DialogContent onInteractOutside={e => e.preventDefault()}>
+        <DialogHeader>
+          <DialogTitle>Verifique seu e-mail</DialogTitle>
+          <DialogDescription>
+            Enviamos um link de confirmação para o seu e-mail. Confirme seu
+            cadastro antes de fazer login.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button onClick={handleEmailModalConfirm}>Ok</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     <Card className="w-full max-w-sm">
       <CardHeader>
         <CardTitle>Criar conta</CardTitle>
@@ -159,5 +195,6 @@ export function CadastroForm() {
         </CardFooter>
       </form>
     </Card>
+    </>
   );
 }

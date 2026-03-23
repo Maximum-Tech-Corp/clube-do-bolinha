@@ -10,7 +10,7 @@ export async function signup(data: {
   phone: string;
   teamName: string;
   password: string;
-}): Promise<{ error: string } | never> {
+}): Promise<{ error: string } | { success: true }> {
   const supabase = await createClient();
 
   const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -57,7 +57,7 @@ export async function signup(data: {
     return { error: 'Erro ao criar turma. Tente novamente.' };
   }
 
-  redirect('/pagamento-pendente');
+  return { success: true };
 }
 
 export async function login(data: {
