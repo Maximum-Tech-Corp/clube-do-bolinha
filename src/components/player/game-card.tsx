@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ConfirmPresenceDialog } from './confirm-presence-dialog';
+import { cancelPresence } from '@/actions/player';
 
 interface GameData {
   id: string;
@@ -37,6 +39,8 @@ export function GameCard({
   tournamentStarted,
 }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const router = useRouter();
 
   const date = new Date(game.scheduled_at);
   const dateStr = date.toLocaleDateString('pt-BR', {
@@ -60,6 +64,17 @@ export function GameCard({
   }
 
   const playerStatusLabel = getPlayerStatusLabel();
+  const canCancel =
+    isOpen &&
+    !game.draw_done &&
+    (playerStatus === 'confirmed' || playerStatus === 'waitlist');
+
+  async function handleCancel() {
+    setCancelling(true);
+    await cancelPresence({ gameId: game.id, teamId });
+    router.refresh();
+    setCancelling(false);
+  }
 
   return (
     <>
@@ -103,9 +118,22 @@ export function GameCard({
                 {confirmedCount} confirmado{confirmedCount !== 1 ? 's' : ''}
               </p>
               {playerStatusLabel ? (
-                <span className="text-sm font-medium text-primary">
-                  {playerStatusLabel}
-                </span>
+                <div className="space-y-2">
+                  <span className="text-sm font-medium text-primary">
+                    {playerStatusLabel}
+                  </span>
+                  {canCancel && (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="w-full"
+                      disabled={cancelling}
+                      onClick={handleCancel}
+                    >
+                      {cancelling ? 'Cancelando...' : 'Não irei mais'}
+                    </Button>
+                  )}
+                </div>
               ) : (
                 isOpen && (
                   <Button

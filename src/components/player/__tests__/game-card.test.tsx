@@ -3,9 +3,12 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { GameCard } from '../game-card';
 
+const mockCancelPresence = vi.fn();
+
 vi.mock('@/actions/player', () => ({
   confirmPresence: vi.fn().mockResolvedValue({ status: 'confirmed' }),
   clearPlayerCookie: vi.fn().mockResolvedValue(undefined),
+  cancelPresence: (...args: unknown[]) => mockCancelPresence(...args),
 }));
 
 // Mock the dialog to isolate GameCard rendering
@@ -44,6 +47,7 @@ const BASE_PROPS = {
 describe('GameCard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCancelPresence.mockResolvedValue({ success: true });
   });
 
   it('renders date and time', () => {
@@ -119,12 +123,15 @@ describe('GameCard', () => {
     ).toBeInTheDocument();
   });
 
-  it("shows '✓ Confirmado' when playerStatus is confirmed", () => {
+  it("shows '✓ Confirmado' and 'Não irei mais' when playerStatus is confirmed and game is open", () => {
     render(<GameCard {...BASE_PROPS} playerStatus="confirmed" />);
     expect(screen.getByText('✓ Confirmado')).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: /Confirmar presença/ }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Não irei mais' }),
+    ).toBeInTheDocument();
   });
 
   it("shows 'Na fila de espera' when playerStatus is waitlist", () => {
@@ -216,6 +223,65 @@ describe('GameCard', () => {
     expect(
       screen.queryByRole('link', { name: /Ver detalhes/ }),
     ).not.toBeInTheDocument();
+  });
+
+  it("shows 'Não irei mais' when playerStatus is waitlist and game is open", () => {
+    render(<GameCard {...BASE_PROPS} playerStatus="waitlist" />);
+    expect(
+      screen.getByRole('button', { name: 'Não irei mais' }),
+    ).toBeInTheDocument();
+  });
+
+  it("does not show 'Não irei mais' when draw is already done", () => {
+    render(
+      <GameCard
+        {...BASE_PROPS}
+        playerStatus="confirmed"
+        game={{ ...BASE_GAME, draw_done: true }}
+      />,
+    );
+    expect(
+      screen.queryByRole('button', { name: 'Não irei mais' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not show 'Não irei mais' when game is finished", () => {
+    render(
+      <GameCard
+        {...BASE_PROPS}
+        playerStatus="confirmed"
+        game={{ ...BASE_GAME, status: 'finished' }}
+      />,
+    );
+    expect(
+      screen.queryByRole('button', { name: 'Não irei mais' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("clicking 'Não irei mais' calls cancelPresence and refreshes", async () => {
+    const user = userEvent.setup();
+    render(<GameCard {...BASE_PROPS} playerStatus="confirmed" />);
+
+    await user.click(screen.getByRole('button', { name: 'Não irei mais' }));
+
+    expect(mockCancelPresence).toHaveBeenCalledWith({
+      gameId: 'game-1',
+      teamId: 'team-1',
+    });
+  });
+
+  it("shows 'Cancelando...' and disables button during cancel", async () => {
+    mockCancelPresence.mockImplementation(
+      () => new Promise(resolve => setTimeout(() => resolve({ success: true }), 200)),
+    );
+    const user = userEvent.setup();
+    render(<GameCard {...BASE_PROPS} playerStatus="confirmed" />);
+
+    await user.click(screen.getByRole('button', { name: 'Não irei mais' }));
+
+    expect(
+      screen.getByRole('button', { name: 'Cancelando...' }),
+    ).toBeDisabled();
   });
 
   it('does not show confirmed count for cancelled game', () => {

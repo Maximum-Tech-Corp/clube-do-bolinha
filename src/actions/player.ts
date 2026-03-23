@@ -5,6 +5,39 @@ import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import type { StaminaLevel } from '@/types/database.types';
 
+export async function cancelPresence(params: {
+  gameId: string;
+  teamId: string;
+}): Promise<{ success: true } | { error: string }> {
+  const { gameId, teamId } = params;
+  const cookieStore = await cookies();
+  const phone = cookieStore.get(`player_${teamId}`)?.value;
+
+  if (!phone) return { error: 'Jogador não identificado.' };
+
+  const service = createServiceClient();
+
+  const { data: player } = await service
+    .from('players')
+    .select('id')
+    .eq('team_id', teamId)
+    .eq('phone', phone)
+    .maybeSingle();
+
+  if (!player) return { error: 'Jogador não encontrado.' };
+
+  const { error } = await service
+    .from('game_confirmations')
+    .delete()
+    .eq('game_id', gameId)
+    .eq('player_id', player.id);
+
+  if (error) return { error: 'Erro ao cancelar presença.' };
+
+  revalidatePath(`/jogador/[code]`, 'page');
+  return { success: true };
+}
+
 export async function clearPlayerCookie(teamId: string): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(`player_${teamId}`);

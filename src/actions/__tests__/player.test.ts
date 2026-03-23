@@ -4,9 +4,10 @@ import {
   mockRevalidatePath,
   mockCookieDelete,
   mockCookieSet,
+  mockCookieGet,
 } from '@/test/mocks/next';
 
-const { clearPlayerCookie, validateTeamCode, confirmPresence } =
+const { clearPlayerCookie, validateTeamCode, confirmPresence, cancelPresence } =
   await import('@/actions/player');
 
 const TEAM_ID = 'team-uuid';
@@ -408,5 +409,60 @@ describe('confirmPresence', () => {
       newPlayer: { name: 'Novo Jogador', weight_kg: 75, stamina: '3' },
     });
     expect(result).toEqual({ status: 'confirmed' });
+  });
+});
+
+// ─── cancelPresence ───────────────────────────────────────────────────────────
+
+describe('cancelPresence', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockCookieGet.mockReturnValue({ value: PHONE });
+  });
+
+  it('returns error when no player cookie exists', async () => {
+    mockCookieGet.mockReturnValue(undefined);
+
+    const result = await cancelPresence({ gameId: GAME_ID, teamId: TEAM_ID });
+
+    expect(result).toEqual({ error: 'Jogador não identificado.' });
+    expect(mockSupabaseFrom).not.toHaveBeenCalled();
+  });
+
+  it('returns error when player is not found in the team', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+
+    const result = await cancelPresence({ gameId: GAME_ID, teamId: TEAM_ID });
+
+    expect(result).toEqual({ error: 'Jogador não encontrado.' });
+  });
+
+  it('returns error when delete fails', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { id: 'player-1' }, error: null }),
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: { message: 'db error' } }),
+    );
+
+    const result = await cancelPresence({ gameId: GAME_ID, teamId: TEAM_ID });
+
+    expect(result).toEqual({ error: 'Erro ao cancelar presença.' });
+  });
+
+  it('returns { success: true } and revalidates on success', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { id: 'player-1' }, error: null }),
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+
+    const result = await cancelPresence({ gameId: GAME_ID, teamId: TEAM_ID });
+
+    expect(result).toEqual({ success: true });
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/jogador/[code]', 'page');
   });
 });
