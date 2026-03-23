@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useState, useTransition } from "react";
+import { useState, useTransition } from 'react';
 import {
   banPlayer,
   unbanPlayer,
   suspendPlayer,
   removeSuspension,
-} from "@/actions/players-admin";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/actions/players-admin';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface Props {
   playerId: string;
@@ -19,10 +19,10 @@ interface Props {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
+  return new Date(iso).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
   });
 }
 
@@ -41,8 +41,8 @@ export function PlayerSituationForm({
 
   // Form de nova suspensão
   const [showSuspendForm, setShowSuspendForm] = useState(false);
-  const [suspendDate, setSuspendDate] = useState("");
-  const [suspendReason, setSuspendReason] = useState("");
+  const [suspendDate, setSuspendDate] = useState('');
+  const [suspendReason, setSuspendReason] = useState('');
 
   function handleBanToggle() {
     setError(null);
@@ -70,19 +70,19 @@ export function PlayerSituationForm({
       const result = await suspendPlayer(
         playerId,
         `${suspendDate}T23:59:59.999Z`,
-        suspendReason
+        suspendReason,
       );
       if (result.error) {
         setError(result.error);
         return;
       }
       setShowSuspendForm(false);
-      setSuspendDate("");
-      setSuspendReason("");
+      setSuspendDate('');
+      setSuspendReason('');
     });
   }
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString().split('T')[0];
 
   return (
     <div className="space-y-4">
@@ -114,12 +114,12 @@ export function PlayerSituationForm({
           </p>
         </div>
         <Button
-          variant={isBanned ? "outline" : "destructive"}
+          variant={isBanned ? 'outline' : 'destructive'}
           size="sm"
           onClick={handleBanToggle}
           disabled={pending}
         >
-          {isBanned ? "Remover banimento" : "Banir"}
+          {isBanned ? 'Remover banimento' : 'Banir'}
         </Button>
       </div>
 
@@ -145,10 +145,10 @@ export function PlayerSituationForm({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowSuspendForm((v) => !v)}
+              onClick={() => setShowSuspendForm(v => !v)}
               disabled={pending}
             >
-              {showSuspendForm ? "Cancelar" : "Suspender"}
+              {showSuspendForm ? 'Cancelar' : 'Suspender'}
             </Button>
           )}
         </div>
@@ -162,12 +162,12 @@ export function PlayerSituationForm({
                 type="date"
                 min={today}
                 value={suspendDate}
-                onChange={(e) => setSuspendDate(e.target.value)}
+                onChange={e => setSuspendDate(e.target.value)}
               />
             </div>
             <div className="space-y-1">
               <Label htmlFor="suspend-reason">
-                Motivo{" "}
+                Motivo{' '}
                 <span className="text-muted-foreground font-normal">
                   (opcional, até 100 caracteres)
                 </span>
@@ -176,7 +176,7 @@ export function PlayerSituationForm({
                 id="suspend-reason"
                 maxLength={100}
                 value={suspendReason}
-                onChange={(e) => setSuspendReason(e.target.value)}
+                onChange={e => setSuspendReason(e.target.value)}
                 placeholder="ex: conduta inadequada"
               />
             </div>
@@ -185,7 +185,7 @@ export function PlayerSituationForm({
               onClick={handleSuspend}
               disabled={pending || !suspendDate}
             >
-              {pending ? "Salvando..." : "Confirmar suspensão"}
+              {pending ? 'Salvando...' : 'Confirmar suspensão'}
             </Button>
           </div>
         )}

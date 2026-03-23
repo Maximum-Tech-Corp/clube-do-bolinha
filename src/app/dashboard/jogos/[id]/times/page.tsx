@@ -1,22 +1,22 @@
-import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { TeamsClient } from "@/components/dashboard/teams-client";
-import { MatchTimer } from "@/components/dashboard/match-timer";
-import { Badge } from "@/components/ui/badge";
+import { notFound, redirect } from 'next/navigation';
+import Link from 'next/link';
+import { ChevronLeft } from 'lucide-react';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TeamsClient } from '@/components/dashboard/teams-client';
+import { MatchTimer } from '@/components/dashboard/match-timer';
+import { Badge } from '@/components/ui/badge';
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString("pt-BR", {
-    weekday: "short",
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
+  return new Date(iso).toLocaleString('pt-BR', {
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
@@ -27,29 +27,29 @@ export default async function TimesPage({ params }: Props) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect('/login');
 
   const service = createServiceClient();
 
   const { data: admin } = await service
-    .from("admins")
-    .select("id")
-    .eq("user_id", user.id)
+    .from('admins')
+    .select('id')
+    .eq('user_id', user.id)
     .single();
-  if (!admin) redirect("/login");
+  if (!admin) redirect('/login');
 
   const { data: team } = await service
-    .from("teams")
-    .select("id, match_duration_minutes")
-    .eq("admin_id", admin.id)
+    .from('teams')
+    .select('id, match_duration_minutes')
+    .eq('admin_id', admin.id)
     .single();
-  if (!team) redirect("/login");
+  if (!team) redirect('/login');
 
   const { data: game } = await service
-    .from("games")
-    .select("id, location, scheduled_at, status, is_tournament, draw_done")
-    .eq("id", gameId)
-    .eq("team_id", team.id)
+    .from('games')
+    .select('id, location, scheduled_at, status, is_tournament, draw_done')
+    .eq('id', gameId)
+    .eq('team_id', team.id)
     .maybeSingle();
 
   if (!game) notFound();
@@ -57,49 +57,50 @@ export default async function TimesPage({ params }: Props) {
 
   // Busca times ordenados
   const { data: gameTeams } = await service
-    .from("game_teams")
-    .select("id, team_number")
-    .eq("game_id", gameId)
-    .order("team_number");
+    .from('game_teams')
+    .select('id, team_number')
+    .eq('game_id', gameId)
+    .order('team_number');
 
-  const teamIds = (gameTeams ?? []).map((t) => t.id);
+  const teamIds = (gameTeams ?? []).map(t => t.id);
 
   // Busca jogadores de cada time com stats
   const [teamPlayersResult, tournamentResult] = await Promise.all([
     teamIds.length > 0
       ? service
-          .from("game_team_players")
-          .select("id, game_team_id, player_id, goals, assists")
-          .in("game_team_id", teamIds)
+          .from('game_team_players')
+          .select('id, game_team_id, player_id, goals, assists')
+          .in('game_team_id', teamIds)
       : Promise.resolve({ data: [] }),
 
     // Verifica se campeonato está completo (para habilitar "Finalizar")
     game.is_tournament
       ? Promise.all([
           service
-            .from("tournament_matches")
-            .select("*", { count: "exact", head: true })
-            .eq("game_id", gameId),
+            .from('tournament_matches')
+            .select('*', { count: 'exact', head: true })
+            .eq('game_id', gameId),
           service
-            .from("tournament_matches")
-            .select("*", { count: "exact", head: true })
-            .eq("game_id", gameId)
-            .eq("completed", true),
+            .from('tournament_matches')
+            .select('*', { count: 'exact', head: true })
+            .eq('game_id', gameId)
+            .eq('completed', true),
         ])
       : Promise.resolve(null),
   ]);
 
   const teamPlayers = teamPlayersResult.data ?? [];
-  const playerIds = teamPlayers.map((tp) => tp.player_id);
+  const playerIds = teamPlayers.map(tp => tp.player_id);
 
-  const { data: players } = playerIds.length > 0
-    ? await service
-        .from("players")
-        .select("id, name, is_star")
-        .in("id", playerIds)
-    : { data: [] };
+  const { data: players } =
+    playerIds.length > 0
+      ? await service
+          .from('players')
+          .select('id, name, is_star')
+          .in('id', playerIds)
+      : { data: [] };
 
-  const playerMap = new Map((players ?? []).map((p) => [p.id, p]));
+  const playerMap = new Map((players ?? []).map(p => [p.id, p]));
 
   // Verifica se campeonato está completo
   let tournamentCompleted = false;
@@ -111,17 +112,17 @@ export default async function TimesPage({ params }: Props) {
   }
 
   // Monta estrutura de times para o cliente
-  const teamsData = (gameTeams ?? []).map((gt) => ({
+  const teamsData = (gameTeams ?? []).map(gt => ({
     id: gt.id,
     teamNumber: gt.team_number,
     players: teamPlayers
-      .filter((tp) => tp.game_team_id === gt.id)
-      .map((tp) => {
+      .filter(tp => tp.game_team_id === gt.id)
+      .map(tp => {
         const player = playerMap.get(tp.player_id);
         return {
           gameTeamPlayerId: tp.id,
           playerId: tp.player_id,
-          name: player?.name ?? "—",
+          name: player?.name ?? '—',
           isStar: player?.is_star ?? false,
           goals: tp.goals,
           assists: tp.assists,
@@ -129,7 +130,7 @@ export default async function TimesPage({ params }: Props) {
       }),
   }));
 
-  const isFinished = game.status === "finished";
+  const isFinished = game.status === 'finished';
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-4">
@@ -146,7 +147,7 @@ export default async function TimesPage({ params }: Props) {
             <h1 className="text-xl font-bold">Times</h1>
             <p className="text-sm text-muted-foreground">
               {formatDate(game.scheduled_at)}
-              {game.location ? ` · ${game.location}` : ""}
+              {game.location ? ` · ${game.location}` : ''}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -182,7 +183,6 @@ export default async function TimesPage({ params }: Props) {
         isTournament={game.is_tournament}
         tournamentCompleted={tournamentCompleted}
       />
-
     </div>
   );
 }

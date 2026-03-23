@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { clearPlayerCookie } from "@/actions/player";
+import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { clearPlayerCookie } from '@/actions/player';
 
 const STAMINA_LABEL: Record<string, string> = {
-  "1": "1 jogo",
-  "2": "2 jogos",
-  "3": "3 jogos",
-  "4plus": "4 ou mais jogos",
+  '1': '1 jogo',
+  '2': '2 jogos',
+  '3': '3 jogos',
+  '4plus': '4 ou mais jogos',
 };
 
 interface Props {

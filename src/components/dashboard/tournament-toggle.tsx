@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState, useTransition } from "react";
-import { toggleTournament } from "@/actions/games-admin";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { useState, useTransition } from 'react';
+import { toggleTournament } from '@/actions/games-admin';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface Props {
   gameId: string;

@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Play, Pause, RotateCcw } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Play, Pause, RotateCcw } from 'lucide-react';
 
 interface TimerState {
   /** Timestamp (ms) de quando o timer foi iniciado, já ajustado por pausas. */
@@ -26,7 +26,11 @@ function loadState(gameId: string, defaultMinutes: number): TimerState {
   } catch {
     // ignora erros de parse
   }
-  return { startedAt: null, pausedAt: null, durationMs: defaultMinutes * 60_000 };
+  return {
+    startedAt: null,
+    pausedAt: null,
+    durationMs: defaultMinutes * 60_000,
+  };
 }
 
 function saveState(gameId: string, state: TimerState) {
@@ -44,20 +48,21 @@ function formatTime(ms: number): string {
   const totalSec = Math.ceil(ms / 1000);
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
 export function MatchTimer({ gameId, defaultMinutes }: Props) {
   const [timerState, setTimerState] = useState<TimerState>(() =>
-    loadState(gameId, defaultMinutes)
+    loadState(gameId, defaultMinutes),
   );
   const [remaining, setRemaining] = useState(() =>
-    computeRemaining(loadState(gameId, defaultMinutes))
+    computeRemaining(loadState(gameId, defaultMinutes)),
   );
   const [blink, setBlink] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const isRunning = timerState.startedAt !== null && timerState.pausedAt === null;
+  const isRunning =
+    timerState.startedAt !== null && timerState.pausedAt === null;
   const isFinished = remaining === 0 && timerState.startedAt !== null;
 
   // Atualiza o display a cada 250ms quando rodando
@@ -80,10 +85,11 @@ export function MatchTimer({ gameId, defaultMinutes }: Props) {
   // Piscar quando zerar
   useEffect(() => {
     if (!isFinished) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBlink(false);
       return;
     }
-    const blinkInterval = setInterval(() => setBlink((b) => !b), 600);
+    const blinkInterval = setInterval(() => setBlink(b => !b), 600);
     return () => clearInterval(blinkInterval);
   }, [isFinished]);
 
@@ -93,7 +99,7 @@ export function MatchTimer({ gameId, defaultMinutes }: Props) {
       setRemaining(computeRemaining(next));
       saveState(gameId, next);
     },
-    [gameId]
+    [gameId],
   );
 
   function handlePlay() {
@@ -105,7 +111,9 @@ export function MatchTimer({ gameId, defaultMinutes }: Props) {
         : // Resume de pausa: ajusta startedAt para descontar o tempo pausado
           {
             ...timerState,
-            startedAt: Date.now() - (timerState.durationMs - computeRemaining(timerState)),
+            startedAt:
+              Date.now() -
+              (timerState.durationMs - computeRemaining(timerState)),
             pausedAt: null,
           };
     update(next);
@@ -134,10 +142,12 @@ export function MatchTimer({ gameId, defaultMinutes }: Props) {
       <div className="flex items-center justify-center">
         <span
           className={[
-            "font-mono font-bold tabular-nums transition-opacity",
-            isFinished ? "text-destructive text-5xl" : "text-foreground text-5xl",
-            isFinished && blink ? "opacity-0" : "opacity-100",
-          ].join(" ")}
+            'font-mono font-bold tabular-nums transition-opacity',
+            isFinished
+              ? 'text-destructive text-5xl'
+              : 'text-foreground text-5xl',
+            isFinished && blink ? 'opacity-0' : 'opacity-100',
+          ].join(' ')}
         >
           {displayTime}
         </span>
@@ -168,7 +178,7 @@ export function MatchTimer({ gameId, defaultMinutes }: Props) {
             className="flex items-center gap-2 px-5 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Play className="w-4 h-4" />
-            {isZeroed ? "Iniciar" : "Continuar"}
+            {isZeroed ? 'Iniciar' : 'Continuar'}
           </button>
         )}
 

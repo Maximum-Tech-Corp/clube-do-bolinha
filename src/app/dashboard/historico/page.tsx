@@ -1,16 +1,16 @@
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { Badge } from "@/components/ui/badge";
+import { redirect } from 'next/navigation';
+import Link from 'next/link';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { Badge } from '@/components/ui/badge';
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString("pt-BR", {
-    weekday: "short",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+  return new Date(iso).toLocaleString('pt-BR', {
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
@@ -19,30 +19,30 @@ export default async function HistoricoPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect('/login');
 
   const service = createServiceClient();
 
   const { data: admin } = await service
-    .from("admins")
-    .select("id")
-    .eq("user_id", user.id)
+    .from('admins')
+    .select('id')
+    .eq('user_id', user.id)
     .single();
-  if (!admin) redirect("/login");
+  if (!admin) redirect('/login');
 
   const { data: team } = await service
-    .from("teams")
-    .select("id")
-    .eq("admin_id", admin.id)
+    .from('teams')
+    .select('id')
+    .eq('admin_id', admin.id)
     .single();
-  if (!team) redirect("/login");
+  if (!team) redirect('/login');
 
   const { data: games } = await service
-    .from("games")
-    .select("id, location, scheduled_at, is_tournament, finished_at")
-    .eq("team_id", team.id)
-    .eq("status", "finished")
-    .order("finished_at", { ascending: false, nullsFirst: false });
+    .from('games')
+    .select('id, location, scheduled_at, is_tournament, finished_at')
+    .eq('team_id', team.id)
+    .eq('status', 'finished')
+    .order('finished_at', { ascending: false, nullsFirst: false });
 
   const finishedGames = games ?? [];
 
@@ -56,7 +56,7 @@ export default async function HistoricoPage() {
         </p>
       ) : (
         <ul className="space-y-2">
-          {finishedGames.map((game) => (
+          {finishedGames.map(game => (
             <li key={game.id}>
               <Link
                 href={`/dashboard/historico/${game.id}`}
@@ -67,7 +67,7 @@ export default async function HistoricoPage() {
                     {formatDate(game.scheduled_at)}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {game.location ?? "Local não definido"}
+                    {game.location ?? 'Local não definido'}
                   </p>
                 </div>
                 {game.is_tournament && (
@@ -80,7 +80,6 @@ export default async function HistoricoPage() {
           ))}
         </ul>
       )}
-
     </div>
   );
 }

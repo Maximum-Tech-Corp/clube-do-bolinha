@@ -1,17 +1,16 @@
-"use client";
+'use client';
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { updateStat, finishGame } from "@/actions/game-stats";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { updateStat, finishGame } from '@/actions/game-stats';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 
 interface PlayerStat {
   gameTeamPlayerId: string;
@@ -86,11 +85,11 @@ function TeamCard({
   team: TeamData;
   stats: Map<string, { goals: number; assists: number }>;
   isFinished: boolean;
-  onUpdate: (gtpId: string, field: "goals" | "assists", delta: 1 | -1) => void;
+  onUpdate: (gtpId: string, field: 'goals' | 'assists', delta: 1 | -1) => void;
 }) {
   const totalGoals = team.players.reduce(
     (sum, p) => sum + (stats.get(p.gameTeamPlayerId)?.goals ?? p.goals),
-    0
+    0,
   );
 
   return (
@@ -98,12 +97,12 @@ function TeamCard({
       <div className="flex items-center justify-between px-4 py-2 bg-muted/50">
         <h2 className="font-semibold text-sm">Time {team.teamNumber}</h2>
         <span className="text-xs text-muted-foreground">
-          {totalGoals} gol{totalGoals !== 1 ? "s" : ""}
+          {totalGoals} gol{totalGoals !== 1 ? 's' : ''}
         </span>
       </div>
 
       <ul className="divide-y divide-border">
-        {team.players.map((player) => {
+        {team.players.map(player => {
           const current = stats.get(player.gameTeamPlayerId) ?? {
             goals: player.goals,
             assists: player.assists,
@@ -120,10 +119,10 @@ function TeamCard({
                   label="Gols"
                   value={current.goals}
                   onIncrement={() =>
-                    onUpdate(player.gameTeamPlayerId, "goals", 1)
+                    onUpdate(player.gameTeamPlayerId, 'goals', 1)
                   }
                   onDecrement={() =>
-                    onUpdate(player.gameTeamPlayerId, "goals", -1)
+                    onUpdate(player.gameTeamPlayerId, 'goals', -1)
                   }
                   disabled={isFinished}
                 />
@@ -131,10 +130,10 @@ function TeamCard({
                   label="Assists"
                   value={current.assists}
                   onIncrement={() =>
-                    onUpdate(player.gameTeamPlayerId, "assists", 1)
+                    onUpdate(player.gameTeamPlayerId, 'assists', 1)
                   }
                   onDecrement={() =>
-                    onUpdate(player.gameTeamPlayerId, "assists", -1)
+                    onUpdate(player.gameTeamPlayerId, 'assists', -1)
                   }
                   disabled={isFinished}
                 />
@@ -168,24 +167,25 @@ export function TeamsClient({
 
   function handleUpdate(
     gtpId: string,
-    field: "goals" | "assists",
-    delta: 1 | -1
+    field: 'goals' | 'assists',
+    delta: 1 | -1,
   ) {
     // Busca valor atual (local ou original)
     const player = teams
-      .flatMap((t) => t.players)
-      .find((p) => p.gameTeamPlayerId === gtpId);
+      .flatMap(t => t.players)
+      .find(p => p.gameTeamPlayerId === gtpId);
+    /* v8 ignore next */
     if (!player) return;
 
     const current = localStats.get(gtpId) ?? {
       goals: player.goals,
       assists: player.assists,
     };
-    const currentValue = field === "goals" ? current.goals : current.assists;
+    const currentValue = field === 'goals' ? current.goals : current.assists;
     const newValue = Math.max(0, currentValue + delta);
 
     // Atualização otimista
-    setLocalStats((prev) => {
+    setLocalStats(prev => {
       const next = new Map(prev);
       next.set(gtpId, { ...current, [field]: newValue });
       return next;
@@ -193,10 +193,10 @@ export function TeamsClient({
 
     // Persiste no banco (fire and forget — erros são silenciosos pois o
     // reload do servidor sincroniza caso haja inconsistência)
-    updateStat(gtpId, field, delta).then((result) => {
+    updateStat(gtpId, field, delta).then(result => {
       if (result.error) {
         // Reverte em caso de erro
-        setLocalStats((prev) => {
+        setLocalStats(prev => {
           const next = new Map(prev);
           next.set(gtpId, { ...current });
           return next;
@@ -223,7 +223,7 @@ export function TeamsClient({
   const canFinish = !isTournament || tournamentCompleted;
   const finishBlockedReason =
     isTournament && !tournamentCompleted
-      ? "Finalize o campeonato antes de encerrar o jogo."
+      ? 'Finalize o campeonato antes de encerrar o jogo.'
       : null;
 
   return (
@@ -235,7 +235,7 @@ export function TeamsClient({
       )}
 
       {/* Times */}
-      {teams.map((team) => (
+      {teams.map(team => (
         <TeamCard
           key={team.id}
           team={team}
@@ -280,7 +280,7 @@ export function TeamsClient({
               onClick={handleFinish}
               disabled={finishPending}
             >
-              {finishPending ? "Finalizando..." : "Confirmar"}
+              {finishPending ? 'Finalizando...' : 'Confirmar'}
             </Button>
             <Button
               variant="outline"

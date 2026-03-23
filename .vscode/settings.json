@@ -1,0 +1,39 @@
+{
+  // Associa arquivos .css ao modo Tailwind CSS para ativar o IntelliSense
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+
+  // Aplica correções automáticas do ESLint ao salvar
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always"
+  },
+
+  // JAVASCRIPT / TYPESCRIPT / REACT
+  "javascript.updateImportsOnFileMove.enabled": "never",
+  "javascript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "never",
+  "typescript.suggest.autoImports": true,
+  "emmet.includeLanguages": {
+    "javascript": "javascriptreact"
+  },
+  "emmet.syntaxProfiles": {
+    "javascript": "jsx"
+  },
+
+  // Prettier como formatador padrão para arquivos do projeto
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  "editor.inlineSuggest.enabled": true
+}

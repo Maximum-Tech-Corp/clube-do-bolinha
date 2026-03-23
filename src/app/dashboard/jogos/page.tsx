@@ -1,35 +1,35 @@
-import Link from "next/link";
-import { listGames } from "@/actions/games-admin";
-import { Badge } from "@/components/ui/badge";
+import Link from 'next/link';
+import { listGames } from '@/actions/games-admin';
+import { Badge } from '@/components/ui/badge';
 
-type GameStatus = "open" | "cancelled" | "finished";
+type GameStatus = 'open' | 'cancelled' | 'finished';
 
 const statusLabel: Record<GameStatus, string> = {
-  open: "Aberto",
-  cancelled: "Cancelado",
-  finished: "Finalizado",
+  open: 'Aberto',
+  cancelled: 'Cancelado',
+  finished: 'Finalizado',
 };
 
-const statusVariant: Record<GameStatus, "default" | "secondary" | "outline"> = {
-  open: "default",
-  cancelled: "outline",
-  finished: "secondary",
+const statusVariant: Record<GameStatus, 'default' | 'secondary' | 'outline'> = {
+  open: 'default',
+  cancelled: 'outline',
+  finished: 'secondary',
 };
 
 const statusClassName: Record<GameStatus, string> = {
-  open: "",
-  cancelled: "text-muted-foreground",
-  finished: "",
+  open: '',
+  cancelled: 'text-muted-foreground',
+  finished: '',
 };
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString("pt-BR", {
-    weekday: "short",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+  return new Date(iso).toLocaleString('pt-BR', {
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
@@ -51,13 +51,15 @@ function GameRow({ game }: { game: Game }) {
       <div className="min-w-0">
         <p className="text-sm font-medium">{formatDate(game.scheduled_at)}</p>
         <p className="text-xs text-muted-foreground truncate">
-          {game.location ?? "Local não definido"}
-          {game.is_tournament && " · Campeonato"}
+          {game.location ?? 'Local não definido'}
+          {game.is_tournament && ' · Campeonato'}
         </p>
       </div>
       <div className="flex items-center gap-2 shrink-0">
         {game.draw_done && (
-          <Badge variant="secondary" className="text-xs">Sorteio feito</Badge>
+          <Badge variant="secondary" className="text-xs">
+            Sorteio feito
+          </Badge>
         )}
         <Badge
           variant={statusVariant[game.status]}
@@ -94,7 +96,7 @@ export default async function JogosPage() {
             Nenhum jogo agendado.
           </p>
         ) : (
-          upcoming.map((g) => <GameRow key={g.id} game={g} />)
+          upcoming.map(g => <GameRow key={g.id} game={g} />)
         )}
       </section>
 
@@ -107,10 +109,9 @@ export default async function JogosPage() {
             Nenhum jogo no histórico.
           </p>
         ) : (
-          past.map((g) => <GameRow key={g.id} game={g} />)
+          past.map(g => <GameRow key={g.id} game={g} />)
         )}
       </section>
-
     </div>
   );
 }

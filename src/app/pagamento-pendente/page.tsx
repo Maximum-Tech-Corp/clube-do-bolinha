@@ -1,15 +1,15 @@
-import { createClient } from "@/lib/supabase/server";
-import { createCheckoutSession } from "@/actions/stripe";
-import { logout } from "@/actions/auth";
-import { redirect } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { createClient } from '@/lib/supabase/server';
+import { createCheckoutSession } from '@/actions/stripe';
+import { logout } from '@/actions/auth';
+import { redirect } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 
 export default async function PagamentoPendentePage() {
   const supabase = await createClient();
@@ -18,16 +18,16 @@ export default async function PagamentoPendentePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  if (!user) redirect('/login');
 
   const { data: admin } = await supabase
-    .from("admins")
-    .select("name, subscription_status")
-    .eq("user_id", user.id)
+    .from('admins')
+    .select('name, subscription_status')
+    .eq('user_id', user.id)
     .single();
 
   // Se já está ativo, não precisa ficar nesta página
-  if (admin?.subscription_status === "active") redirect("/dashboard");
+  if (admin?.subscription_status === 'active') redirect('/dashboard');
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
