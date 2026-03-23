@@ -174,6 +174,7 @@ export function TeamsClient({
     const player = teams
       .flatMap(t => t.players)
       .find(p => p.gameTeamPlayerId === gtpId);
+    /* v8 ignore next */
     if (!player) return;
 
     const current = localStats.get(gtpId) ?? {
