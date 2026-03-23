@@ -17,6 +17,7 @@ const {
   getPlayer,
   getPlayerStats,
   addRetroactiveStat,
+  deleteRetroactiveStat,
 } = await import('@/actions/players-admin');
 
 // Helper: configure the auth + admin + team chain (getAdminTeamId)
@@ -761,6 +762,91 @@ describe('addRetroactiveStat', () => {
     });
 
     expect(result).toEqual({ error: 'Erro ao salvar estatísticas.' });
+  });
+});
+
+// ─── deleteRetroactiveStat ────────────────────────────────────────────────────
+
+describe('deleteRetroactiveStat', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns unauthorized when no session', async () => {
+    setupUnauthenticated();
+    const result = await deleteRetroactiveStat('stat-1');
+    expect(result).toEqual({ error: 'Não autorizado.' });
+  });
+
+  it('returns error when stat is not found', async () => {
+    setupAdminChain();
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    const result = await deleteRetroactiveStat('stat-1');
+    expect(result).toEqual({ error: 'Lançamento não encontrado.' });
+  });
+
+  it('returns unauthorized when player does not belong to team', async () => {
+    setupAdminChain();
+    // stat found
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: { id: 'stat-1', player_id: 'player-1' },
+        error: null,
+      }),
+    );
+    // assertPlayerOwnership → player not in team
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    const result = await deleteRetroactiveStat('stat-1');
+    expect(result).toEqual({ error: 'Não autorizado.' });
+  });
+
+  it('returns error when delete fails', async () => {
+    setupAdminChain();
+    // stat found
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: { id: 'stat-1', player_id: 'player-1' },
+        error: null,
+      }),
+    );
+    // assertPlayerOwnership → OK
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { id: 'player-1' }, error: null }),
+    );
+    // delete → fails
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: { message: 'db error' } }),
+    );
+    const result = await deleteRetroactiveStat('stat-1');
+    expect(result).toEqual({ error: 'Erro ao remover lançamento.' });
+  });
+
+  it('deletes stat and revalidates path on success', async () => {
+    setupAdminChain();
+    // stat found
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: { id: 'stat-1', player_id: 'player-1' },
+        error: null,
+      }),
+    );
+    // assertPlayerOwnership → OK
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { id: 'player-1' }, error: null }),
+    );
+    // delete → OK
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    const result = await deleteRetroactiveStat('stat-1');
+    expect(result).toEqual({});
+    expect(mockRevalidatePath).toHaveBeenCalledWith(
+      '/dashboard/jogadores/player-1',
+    );
   });
 });
 

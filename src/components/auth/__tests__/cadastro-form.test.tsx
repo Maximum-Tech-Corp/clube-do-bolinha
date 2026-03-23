@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CadastroForm } from '../cadastro-form';
+import { mockPush } from '@/test/mocks/next';
 
 const mockSignup = vi.fn();
 
@@ -23,7 +24,7 @@ async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
 describe('CadastroForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSignup.mockResolvedValue(undefined);
+    mockSignup.mockResolvedValue({ success: true });
   });
 
   describe('rendering', () => {
@@ -172,7 +173,10 @@ describe('CadastroForm', () => {
 
     it("shows 'Criando conta...' loading state during submission", async () => {
       mockSignup.mockImplementation(
-        () => new Promise(resolve => setTimeout(() => resolve(undefined), 200)),
+        () =>
+          new Promise(resolve =>
+            setTimeout(() => resolve({ success: true }), 200),
+          ),
       );
       const user = userEvent.setup();
       render(<CadastroForm />);
@@ -185,16 +189,14 @@ describe('CadastroForm', () => {
       ).toBeDisabled();
 
       await waitFor(() => {
-        expect(
-          screen.getByRole('button', { name: 'Criar conta' }),
-        ).toBeInTheDocument();
+        expect(screen.getByText('Verifique seu e-mail')).toBeInTheDocument();
       });
     });
 
     it('clears server error on new submission attempt', async () => {
       mockSignup
         .mockResolvedValueOnce({ error: 'Erro de servidor.' })
-        .mockResolvedValue(undefined);
+        .mockResolvedValue({ success: true });
 
       const user = userEvent.setup();
       render(<CadastroForm />);
@@ -211,6 +213,37 @@ describe('CadastroForm', () => {
       await waitFor(() => {
         expect(screen.queryByText('Erro de servidor.')).not.toBeInTheDocument();
       });
+    });
+
+    it('shows email confirmation modal on successful signup', async () => {
+      const user = userEvent.setup();
+      render(<CadastroForm />);
+
+      await fillValidForm(user);
+      await user.click(screen.getByRole('button', { name: 'Criar conta' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Verifique seu e-mail')).toBeInTheDocument();
+        expect(
+          screen.getByText(/Confirme seu cadastro antes de fazer login/),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('navigates to /pagamento-pendente after confirming email modal', async () => {
+      const user = userEvent.setup();
+      render(<CadastroForm />);
+
+      await fillValidForm(user);
+      await user.click(screen.getByRole('button', { name: 'Criar conta' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Verifique seu e-mail')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByRole('button', { name: 'Ok' }));
+
+      expect(mockPush).toHaveBeenCalledWith('/pagamento-pendente');
     });
   });
 });

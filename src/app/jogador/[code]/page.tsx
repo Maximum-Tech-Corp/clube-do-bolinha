@@ -5,6 +5,7 @@ import { GameCard } from '@/components/player/game-card';
 import { PlayerDataSection } from '@/components/player/player-data-section';
 import { PlayerBottomNav } from '@/components/player/player-bottom-nav';
 import { InstallBanner } from '@/components/player/install-banner';
+import { AppLogo } from '@/components/app-logo';
 
 interface Props {
   params: Promise<{ code: string }>;
@@ -162,8 +163,9 @@ export default async function TeamPage({ params }: Props) {
 
   return (
     <div className="max-w-md mx-auto p-4 pb-24 space-y-4">
-      <div>
-        <h1 className="text-xl font-bold">{team.name}</h1>
+      <div className="flex flex-col items-center gap-1">
+        <AppLogo size="sm" />
+        <h1 className="text-base font-bold">{team.name}</h1>
         <p className="text-sm text-muted-foreground">Próximos 7 dias</p>
       </div>
 

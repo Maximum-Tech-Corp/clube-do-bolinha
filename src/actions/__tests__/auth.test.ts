@@ -131,7 +131,7 @@ describe('signup', () => {
     expect(mockRedirect).not.toHaveBeenCalled();
   });
 
-  it('redirects to /pagamento-pendente on full success', async () => {
+  it('returns { success: true } on full successful signup', async () => {
     // Admin insert succeeds; team duplicate check returns no existing; team insert succeeds
     mockSupabaseFrom
       .mockReturnValueOnce(
@@ -147,9 +147,10 @@ describe('signup', () => {
         createQueryMock({ data: null, error: null }),
       );
 
-    await signup(VALID_DATA);
+    const result = await signup(VALID_DATA);
 
-    expect(mockRedirect).toHaveBeenCalledWith('/pagamento-pendente');
+    expect(result).toEqual({ success: true });
+    expect(mockRedirect).not.toHaveBeenCalled();
   });
 
   it('returns error when team insert fails', async () => {

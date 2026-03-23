@@ -13,7 +13,7 @@
 
 DO $$
 DECLARE
-  v_game_id    UUID    := 'COLE-AQUI-O-ID-DO-JOGO';  -- ← altere aqui
+  v_game_id    UUID    := NULL; -- ← cole aqui o UUID do jogo (ex: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx')
   v_quantidade INTEGER := 20;                          -- ← altere aqui
 
   v_team_id    UUID;
@@ -22,6 +22,10 @@ DECLARE
   v_waitlist   INTEGER := 0;
   rec          RECORD;
 BEGIN
+
+  IF v_game_id IS NULL THEN
+    RAISE EXCEPTION 'Defina o v_game_id antes de rodar este seed. Copie o UUID do jogo em: SELECT id, scheduled_at FROM games ORDER BY created_at DESC LIMIT 5;';
+  END IF;
 
   -- Descobre a turma do jogo
   SELECT team_id INTO v_team_id FROM games WHERE id = v_game_id;

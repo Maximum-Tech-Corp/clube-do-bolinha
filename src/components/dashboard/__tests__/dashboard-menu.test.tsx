@@ -175,6 +175,35 @@ describe('DashboardMenu', () => {
       });
     });
 
+    it('does not call updateTeamSettings when team name is empty', async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await openSettings(user);
+
+      const nameInput = screen.getByLabelText('Nome da turma');
+      await user.clear(nameInput);
+      await user.click(screen.getByRole('button', { name: 'Atualizar' }));
+
+      expect(mockUpdateTeamSettings).not.toHaveBeenCalled();
+    });
+
+    it('does not call updateTeamSettings when duration is less than 1', async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await openSettings(user);
+
+      const durationInput = screen.getByLabelText(
+        'Tempo das partidas (minutos)',
+      );
+      await user.clear(durationInput);
+      await user.type(durationInput, '0');
+      await user.click(screen.getByRole('button', { name: 'Atualizar' }));
+
+      expect(mockUpdateTeamSettings).not.toHaveBeenCalled();
+    });
+
     it("shows 'Salvando...' during save", async () => {
       mockUpdateTeamSettings.mockImplementation(
         () => new Promise(resolve => setTimeout(() => resolve({}), 200)),

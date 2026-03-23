@@ -9,6 +9,10 @@ DECLARE
   v_team_id UUID := (SELECT id FROM teams LIMIT 1); -- ajuste se tiver mais de uma turma
 BEGIN
 
+  IF v_team_id IS NULL THEN
+    RAISE EXCEPTION 'Nenhuma turma encontrada. Crie uma turma pelo dashboard antes de rodar este seed.';
+  END IF;
+
 INSERT INTO players (team_id, name, phone, weight_kg, stamina, is_star)
 VALUES
   (v_team_id, 'Carlos Almeida',    '11987650001', 78,  '3',    false),
