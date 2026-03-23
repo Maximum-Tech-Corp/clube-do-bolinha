@@ -174,7 +174,9 @@ describe('CadastroForm', () => {
     it("shows 'Criando conta...' loading state during submission", async () => {
       mockSignup.mockImplementation(
         () =>
-          new Promise(resolve => setTimeout(() => resolve({ success: true }), 200)),
+          new Promise(resolve =>
+            setTimeout(() => resolve({ success: true }), 200),
+          ),
       );
       const user = userEvent.setup();
       render(<CadastroForm />);

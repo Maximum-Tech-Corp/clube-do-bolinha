@@ -272,7 +272,10 @@ describe('GameCard', () => {
 
   it("shows 'Cancelando...' and disables button during cancel", async () => {
     mockCancelPresence.mockImplementation(
-      () => new Promise(resolve => setTimeout(() => resolve({ success: true }), 200)),
+      () =>
+        new Promise(resolve =>
+          setTimeout(() => resolve({ success: true }), 200),
+        ),
     );
     const user = userEvent.setup();
     render(<GameCard {...BASE_PROPS} playerStatus="confirmed" />);

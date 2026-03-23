@@ -16,6 +16,10 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'default',
     title: 'Clube do Bolinha',
+    startupImage: '/icon.png',
+  },
+  icons: {
+    apple: '/icon.png',
   },
 };
 

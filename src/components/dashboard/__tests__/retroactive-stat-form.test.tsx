@@ -227,9 +227,7 @@ describe('RetroactiveStatForm', () => {
       const user = userEvent.setup();
       render(<RetroactiveStatForm playerId="player-1" stats={STATS} />);
 
-      expect(
-        screen.queryByTestId('dialog-content'),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByTestId('dialog-content')).not.toBeInTheDocument();
 
       const [firstDeleteBtn] = screen.getAllByRole('button', {
         name: 'Remover lançamento',
@@ -251,9 +249,7 @@ describe('RetroactiveStatForm', () => {
       await user.click(screen.getByRole('button', { name: 'Cancelar' }));
 
       await waitFor(() => {
-        expect(
-          screen.queryByTestId('dialog-content'),
-        ).not.toBeInTheDocument();
+        expect(screen.queryByTestId('dialog-content')).not.toBeInTheDocument();
       });
       expect(mockDeleteRetroactiveStat).not.toHaveBeenCalled();
     });
@@ -289,9 +285,7 @@ describe('RetroactiveStatForm', () => {
       expect(
         screen.getByRole('button', { name: 'Removendo...' }),
       ).toBeDisabled();
-      expect(
-        screen.getByRole('button', { name: 'Cancelar' }),
-      ).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
     });
   });
 });
