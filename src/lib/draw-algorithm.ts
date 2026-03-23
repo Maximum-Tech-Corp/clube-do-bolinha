@@ -178,7 +178,7 @@ function shuffle<T>(arr: T[]): T[] {
  * estrela do time "rico" com o melhor não-estrela do time "pobre".
  * Repete até a diferença máxima entre quaisquer dois times ser ≤ 1.
  */
-function redistributeStars(teams: ScoredPlayer[][]): void {
+export function redistributeStars(teams: ScoredPlayer[][]): void {
   for (let iter = 0; iter < 50; iter++) {
     const counts = teams.map((t) => t.filter((p) => p.is_star).length);
     const maxStars = Math.max(...counts);

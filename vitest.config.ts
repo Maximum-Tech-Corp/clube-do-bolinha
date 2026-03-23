@@ -24,6 +24,8 @@ export default defineConfig({
         "src/types/**",
         // Auth proxy — integration concern
         "src/proxy.ts",
+        // Stripe checkout — integration concern (Supabase Auth + Stripe SDK + redirect)
+        "src/actions/stripe.ts",
         // Pure SVG, no logic
         "src/components/football-field-bg.tsx",
         // Browser-only API, no logic

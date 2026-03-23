@@ -338,9 +338,9 @@ npm run test:coverage    # coverage report
 
 | Part | Status |
 |---|---|
-| 1 — Setup | ⬜ pending |
-| 2 — Player tests | ⬜ pending |
-| 3a — Auth + pure logic | ⬜ pending |
-| 3b — Player management (admin) | ⬜ pending |
-| 3c — Game management + tournament | ⬜ pending |
-| 4 — Coverage analysis | ⬜ pending |
+| 1 — Setup | ✅ done |
+| 2 — Player tests | ✅ done |
+| 3a — Auth + pure logic | ✅ done |
+| 3b — Player management (admin) | ✅ done |
+| 3c — Game management + tournament | ✅ done |
+| 4 — Coverage analysis | ✅ done |

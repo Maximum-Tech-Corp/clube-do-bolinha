@@ -1,5 +1,24 @@
 import { vi } from "vitest";
 
+// next/link — renders a plain <a> to avoid Next.js prefetching / IntersectionObserver
+vi.mock("next/link", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const React = require("react");
+  return {
+    default: ({
+      children,
+      href,
+      className,
+      ...rest
+    }: {
+      children: unknown;
+      href: string;
+      className?: string;
+      [key: string]: unknown;
+    }) => React.createElement("a", { href, className, ...rest }, children),
+  };
+});
+
 // next/navigation
 export const mockPush = vi.fn();
 export const mockReplace = vi.fn();
