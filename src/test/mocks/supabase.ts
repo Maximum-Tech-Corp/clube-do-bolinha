@@ -11,7 +11,10 @@ import { vi } from 'vitest';
  *   );
  */
 export function createQueryMock(
-  result: { data: unknown; error: unknown } = { data: null, error: null },
+  result: { data: unknown; error: unknown; count?: number } = {
+    data: null,
+    error: null,
+  },
 ) {
   const chain: Record<string, unknown> = {};
 
@@ -57,7 +60,12 @@ export function createQueryMock(
 // The mock client returned by createClient / createServiceClient
 export const mockSupabaseFrom = vi.fn();
 export const mockSupabaseAuth = {
-  getUser: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
+  getUser: vi.fn<
+    () => Promise<{
+      data: { user: { id: string; email?: string } | null };
+      error: null;
+    }>
+  >(() => Promise.resolve({ data: { user: null }, error: null })),
   signInWithPassword: vi.fn(),
   signUp: vi.fn(),
   signOut: vi.fn(() => Promise.resolve({ error: null })),

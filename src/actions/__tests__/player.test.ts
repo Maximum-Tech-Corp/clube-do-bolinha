@@ -181,7 +181,7 @@ describe('confirmPresence', () => {
       gameId: GAME_ID,
       teamId: TEAM_ID,
       phone: PHONE,
-      newPlayer: { name: 'Novo Jogador', weight_kg: 70, stamina: 'medium' },
+      newPlayer: { name: 'Novo Jogador', weight_kg: 70, stamina: '2' },
     });
     expect(result).toEqual({ error: 'Erro ao registrar jogador.' });
   });
@@ -405,7 +405,7 @@ describe('confirmPresence', () => {
       gameId: GAME_ID,
       teamId: TEAM_ID,
       phone: PHONE,
-      newPlayer: { name: 'Novo Jogador', weight_kg: 75, stamina: 'high' },
+      newPlayer: { name: 'Novo Jogador', weight_kg: 75, stamina: '3' },
     });
     expect(result).toEqual({ status: 'confirmed' });
   });

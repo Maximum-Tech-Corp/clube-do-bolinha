@@ -508,7 +508,7 @@ describe('createAndAddPlayer', () => {
     name: 'Novo Jogador',
     phone: '11999999999',
     weight_kg: 70,
-    stamina: 'medium' as const,
+    stamina: '2' as const,
   };
 
   beforeEach(() => {
