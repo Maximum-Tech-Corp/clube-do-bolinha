@@ -58,7 +58,7 @@ export default async function TimesPage({ params }: Props) {
   // Busca times ordenados
   const { data: gameTeams } = await service
     .from('game_teams')
-    .select('id, team_number')
+    .select('id, team_number, custom_name')
     .eq('game_id', gameId)
     .order('team_number');
 
@@ -115,6 +115,7 @@ export default async function TimesPage({ params }: Props) {
   const teamsData = (gameTeams ?? []).map(gt => ({
     id: gt.id,
     teamNumber: gt.team_number,
+    customName: gt.custom_name,
     players: teamPlayers
       .filter(tp => tp.game_team_id === gt.id)
       .map(tp => {

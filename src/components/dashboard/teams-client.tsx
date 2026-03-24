@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { updateStat, finishGame } from '@/actions/game-stats';
+import { Pencil, Check, X } from 'lucide-react';
+import { updateStat, finishGame, renameGameTeam } from '@/actions/game-stats';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -24,6 +25,7 @@ interface PlayerStat {
 interface TeamData {
   id: string;
   teamNumber: number;
+  customName: string | null;
   players: PlayerStat[];
 }
 
@@ -81,25 +83,113 @@ function TeamCard({
   stats,
   isFinished,
   onUpdate,
+  onRename,
 }: {
   team: TeamData;
   stats: Map<string, { goals: number; assists: number }>;
   isFinished: boolean;
   onUpdate: (gtpId: string, field: 'goals' | 'assists', delta: 1 | -1) => void;
+  onRename: (teamId: string, name: string) => Promise<{ error?: string }>;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [renaming, setRenaming] = useState(false);
+  const [renameError, setRenameError] = useState<string | null>(null);
+
   const totalGoals = team.players.reduce(
     (sum, p) => sum + (stats.get(p.gameTeamPlayerId)?.goals ?? p.goals),
     0,
   );
 
+  function handleEditStart() {
+    setDraft(team.customName ?? '');
+    setRenameError(null);
+    setEditing(true);
+  }
+
+  function handleCancel() {
+    setEditing(false);
+    setRenameError(null);
+  }
+
+  async function handleSave() {
+    if (draft.trim() === '') {
+      setEditing(false);
+      return;
+    }
+    setRenaming(true);
+    const result = await onRename(team.id, draft);
+    setRenaming(false);
+    if (result.error) {
+      setRenameError(result.error);
+    } else {
+      setEditing(false);
+    }
+  }
+
   return (
     <div className="rounded-lg border border-border overflow-hidden">
       <div className="flex items-center justify-between px-4 py-2 bg-muted/50">
-        <h2 className="font-semibold text-sm">Time {team.teamNumber}</h2>
-        <span className="text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          {editing ? (
+            <input
+              className="text-sm font-semibold bg-transparent border-b border-border focus:outline-none w-1/2"
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') handleSave();
+                if (e.key === 'Escape') handleCancel();
+              }}
+              autoFocus
+              disabled={renaming}
+              aria-label="Nome do time"
+            />
+          ) : (
+            <h2 className="font-semibold text-sm truncate">
+              {team.customName ?? `Time ${team.teamNumber}`}
+            </h2>
+          )}
+
+          {!isFinished && !editing && (
+            <button
+              onClick={handleEditStart}
+              className="text-muted-foreground hover:text-foreground transition-colors shrink-0 font-bold"
+              aria-label="Renomear time"
+            >
+              <Pencil className="w-4 h-4" strokeWidth={2.5} />
+            </button>
+          )}
+
+          {editing && (
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                onClick={handleSave}
+                disabled={renaming}
+                className="text-green-600 hover:text-green-700 disabled:opacity-40 transition-colors font-bold"
+                aria-label="Salvar nome"
+              >
+                <Check className="w-6 h-6" strokeWidth={2.5} />
+              </button>
+              <button
+                onClick={handleCancel}
+                disabled={renaming}
+                className="text-destructive hover:text-destructive/80 disabled:opacity-40 transition-colors font-bold"
+                aria-label="Cancelar"
+              >
+                <X className="w-6 h-6" strokeWidth={2.5} />
+              </button>
+            </div>
+          )}
+        </div>
+
+        <span className="text-xs text-muted-foreground ml-2 shrink-0">
           {totalGoals} gol{totalGoals !== 1 ? 's' : ''}
         </span>
       </div>
+
+      {renameError && (
+        <p className="px-4 py-1 text-xs text-destructive">{renameError}</p>
+      )}
 
       <ul className="divide-y divide-border">
         {team.players.map(player => {
@@ -160,6 +250,11 @@ export function TeamsClient({
     Map<string, { goals: number; assists: number }>
   >(new Map());
 
+  // Mapa local de nomes customizados para atualização otimista
+  const [localNames, setLocalNames] = useState<Map<string, string | null>>(
+    new Map(teams.map(t => [t.id, t.customName])),
+  );
+
   const [error, setError] = useState<string | null>(null);
   const [finishDialogOpen, setFinishDialogOpen] = useState(false);
   const [finishPending, startFinishTransition] = useTransition();
@@ -206,6 +301,22 @@ export function TeamsClient({
     });
   }
 
+  async function handleRename(
+    teamId: string,
+    name: string,
+  ): Promise<{ error?: string }> {
+    const result = await renameGameTeam(teamId, name);
+    if (!result.error) {
+      const trimmed = name.trim();
+      setLocalNames(prev => {
+        const next = new Map(prev);
+        next.set(teamId, trimmed.length > 0 ? trimmed : null);
+        return next;
+      });
+    }
+    return result;
+  }
+
   function handleFinish() {
     setError(null);
     startFinishTransition(async () => {
@@ -226,6 +337,11 @@ export function TeamsClient({
       ? 'Finalize o campeonato antes de encerrar o jogo.'
       : null;
 
+  const teamsWithNames = teams.map(t => ({
+    ...t,
+    customName: localNames.get(t.id) ?? t.customName,
+  }));
+
   return (
     <div className="space-y-4">
       {isFinished && (
@@ -235,13 +351,14 @@ export function TeamsClient({
       )}
 
       {/* Times */}
-      {teams.map(team => (
+      {teamsWithNames.map(team => (
         <TeamCard
           key={team.id}
           team={team}
           stats={localStats}
           isFinished={isFinished}
           onUpdate={handleUpdate}
+          onRename={handleRename}
         />
       ))}
 

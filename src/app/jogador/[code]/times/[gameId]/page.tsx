@@ -41,7 +41,7 @@ export default async function PlayerTimesPage({ params }: Props) {
 
   const { data: gameTeams } = await service
     .from('game_teams')
-    .select('id, team_number')
+    .select('id, team_number, custom_name')
     .eq('game_id', gameId)
     .order('team_number');
 
@@ -66,6 +66,7 @@ export default async function PlayerTimesPage({ params }: Props) {
 
   const teamsData = (gameTeams ?? []).map(gt => ({
     teamNumber: gt.team_number,
+    customName: gt.custom_name,
     players: (teamPlayersRaw ?? [])
       .filter(tp => tp.game_team_id === gt.id)
       .map(tp => playerMap.get(tp.player_id) ?? '—'),
@@ -96,7 +97,9 @@ export default async function PlayerTimesPage({ params }: Props) {
             className="rounded-lg border border-border overflow-hidden"
           >
             <div className="px-4 py-2 bg-muted/50">
-              <h2 className="font-semibold text-sm">Time {team.teamNumber}</h2>
+              <h2 className="font-semibold text-sm">
+                {team.customName ?? `Time ${team.teamNumber}`}
+              </h2>
             </div>
             <ul className="divide-y divide-border">
               {team.players.map((name, i) => (

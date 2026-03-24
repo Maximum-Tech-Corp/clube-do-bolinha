@@ -5,10 +5,12 @@ import { TeamsClient } from '../teams-client';
 
 const mockUpdateStat = vi.fn();
 const mockFinishGame = vi.fn();
+const mockRenameGameTeam = vi.fn();
 
 vi.mock('@/actions/game-stats', () => ({
   updateStat: (...args: unknown[]) => mockUpdateStat(...args),
   finishGame: (...args: unknown[]) => mockFinishGame(...args),
+  renameGameTeam: (...args: unknown[]) => mockRenameGameTeam(...args),
 }));
 
 // Mock Radix Dialog
@@ -33,6 +35,7 @@ const TEAMS = [
   {
     id: 'gt1',
     teamNumber: 1,
+    customName: null,
     players: [
       {
         gameTeamPlayerId: 'gtp1',
@@ -55,6 +58,7 @@ const TEAMS = [
   {
     id: 'gt2',
     teamNumber: 2,
+    customName: null,
     players: [
       {
         gameTeamPlayerId: 'gtp3',
@@ -73,6 +77,7 @@ describe('TeamsClient', () => {
     vi.clearAllMocks();
     mockUpdateStat.mockResolvedValue({ newValue: 1 });
     mockFinishGame.mockResolvedValue({});
+    mockRenameGameTeam.mockResolvedValue({});
   });
 
   describe('team rendering', () => {
@@ -386,6 +391,207 @@ describe('TeamsClient', () => {
       });
       // Dialog should be closed
       expect(screen.queryByText('Finalizar jogo?')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('team renaming', () => {
+    it('shows fallback label when customName is null', () => {
+      render(
+        <TeamsClient
+          gameId="game-1"
+          teams={TEAMS}
+          isFinished={false}
+          isTournament={false}
+          tournamentCompleted={false}
+        />,
+      );
+      expect(screen.getByText('Time 1')).toBeInTheDocument();
+      expect(screen.getByText('Time 2')).toBeInTheDocument();
+    });
+
+    it('shows custom name when set', () => {
+      const teams = [{ ...TEAMS[0], customName: 'Sharks' }, TEAMS[1]];
+      render(
+        <TeamsClient
+          gameId="game-1"
+          teams={teams}
+          isFinished={false}
+          isTournament={false}
+          tournamentCompleted={false}
+        />,
+      );
+      expect(screen.getByText('Sharks')).toBeInTheDocument();
+      expect(screen.queryByText('Time 1')).not.toBeInTheDocument();
+    });
+
+    it('shows pencil icon when game is not finished', () => {
+      render(
+        <TeamsClient
+          gameId="game-1"
+          teams={TEAMS}
+          isFinished={false}
+          isTournament={false}
+          tournamentCompleted={false}
+        />,
+      );
+      expect(
+        screen.getAllByRole('button', { name: 'Renomear time' }),
+      ).toHaveLength(2);
+    });
+
+    it('does not show pencil icon when game is finished', () => {
+      render(
+        <TeamsClient
+          gameId="game-1"
+          teams={TEAMS}
+          isFinished={true}
+          isTournament={false}
+          tournamentCompleted={false}
+        />,
+      );
+      expect(
+        screen.queryByRole('button', { name: 'Renomear time' }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('clicking pencil enters edit mode with input', async () => {
+      const user = userEvent.setup();
+      render(
+        <TeamsClient
+          gameId="game-1"
+          teams={TEAMS}
+          isFinished={false}
+          isTournament={false}
+          tournamentCompleted={false}
+        />,
+      );
+      const pencilButtons = screen.getAllByRole('button', {
+        name: 'Renomear time',
+      });
+      await user.click(pencilButtons[0]);
+      expect(
+        screen.getByRole('textbox', { name: 'Nome do time' }),
+      ).toBeInTheDocument();
+    });
+
+    it('clicking X cancels edit mode and restores original name', async () => {
+      const user = userEvent.setup();
+      render(
+        <TeamsClient
+          gameId="game-1"
+          teams={TEAMS}
+          isFinished={false}
+          isTournament={false}
+          tournamentCompleted={false}
+        />,
+      );
+      const pencilButtons = screen.getAllByRole('button', {
+        name: 'Renomear time',
+      });
+      await user.click(pencilButtons[0]);
+      await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+      expect(
+        screen.queryByRole('textbox', { name: 'Nome do time' }),
+      ).not.toBeInTheDocument();
+      expect(screen.getByText('Time 1')).toBeInTheDocument();
+    });
+
+    it('typing a name and clicking check calls renameGameTeam', async () => {
+      const user = userEvent.setup();
+      render(
+        <TeamsClient
+          gameId="game-1"
+          teams={TEAMS}
+          isFinished={false}
+          isTournament={false}
+          tournamentCompleted={false}
+        />,
+      );
+      const pencilButtons = screen.getAllByRole('button', {
+        name: 'Renomear time',
+      });
+      await user.click(pencilButtons[0]);
+      const input = screen.getByRole('textbox', { name: 'Nome do time' });
+      await user.clear(input);
+      await user.type(input, 'Eagles');
+      await user.click(screen.getByRole('button', { name: 'Salvar nome' }));
+      await waitFor(() => {
+        expect(mockRenameGameTeam).toHaveBeenCalledWith('gt1', 'Eagles');
+      });
+    });
+
+    it('empty input on save cancels without calling renameGameTeam', async () => {
+      const user = userEvent.setup();
+      render(
+        <TeamsClient
+          gameId="game-1"
+          teams={TEAMS}
+          isFinished={false}
+          isTournament={false}
+          tournamentCompleted={false}
+        />,
+      );
+      const pencilButtons = screen.getAllByRole('button', {
+        name: 'Renomear time',
+      });
+      await user.click(pencilButtons[0]);
+      const input = screen.getByRole('textbox', { name: 'Nome do time' });
+      await user.clear(input);
+      await user.click(screen.getByRole('button', { name: 'Salvar nome' }));
+      expect(mockRenameGameTeam).not.toHaveBeenCalled();
+      expect(
+        screen.queryByRole('textbox', { name: 'Nome do time' }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('updates header optimistically on successful rename', async () => {
+      const user = userEvent.setup();
+      render(
+        <TeamsClient
+          gameId="game-1"
+          teams={TEAMS}
+          isFinished={false}
+          isTournament={false}
+          tournamentCompleted={false}
+        />,
+      );
+      const pencilButtons = screen.getAllByRole('button', {
+        name: 'Renomear time',
+      });
+      await user.click(pencilButtons[0]);
+      const input = screen.getByRole('textbox', { name: 'Nome do time' });
+      await user.clear(input);
+      await user.type(input, 'Eagles');
+      await user.click(screen.getByRole('button', { name: 'Salvar nome' }));
+      await waitFor(() => {
+        expect(screen.getByText('Eagles')).toBeInTheDocument();
+      });
+      expect(screen.queryByText('Time 1')).not.toBeInTheDocument();
+    });
+
+    it('shows error and keeps original name when rename fails', async () => {
+      mockRenameGameTeam.mockResolvedValue({ error: 'Erro ao renomear time.' });
+      const user = userEvent.setup();
+      render(
+        <TeamsClient
+          gameId="game-1"
+          teams={TEAMS}
+          isFinished={false}
+          isTournament={false}
+          tournamentCompleted={false}
+        />,
+      );
+      const pencilButtons = screen.getAllByRole('button', {
+        name: 'Renomear time',
+      });
+      await user.click(pencilButtons[0]);
+      const input = screen.getByRole('textbox', { name: 'Nome do time' });
+      await user.clear(input);
+      await user.type(input, 'Eagles');
+      await user.click(screen.getByRole('button', { name: 'Salvar nome' }));
+      await waitFor(() => {
+        expect(screen.getByText('Erro ao renomear time.')).toBeInTheDocument();
+      });
     });
   });
 

@@ -16,6 +16,7 @@ import type { TournamentPhase } from '@/types/database.types';
 interface TeamInfo {
   id: string;
   teamNumber: number;
+  customName: string | null;
 }
 
 interface MatchData {
@@ -53,7 +54,13 @@ interface Props {
 
 // ── Standings table ───────────────────────────────────────────────────────────
 
-function StandingsTable({ standings }: { standings: StandingData[] }) {
+function StandingsTable({
+  standings,
+  nameMap,
+}: {
+  standings: StandingData[];
+  nameMap: Map<string, string>;
+}) {
   if (standings.every(s => s.played === 0)) return null;
 
   return (
@@ -75,7 +82,9 @@ function StandingsTable({ standings }: { standings: StandingData[] }) {
           {standings.map((s, i) => (
             <tr key={s.teamId} className="text-sm">
               <td className="py-2 text-muted-foreground text-xs">{i + 1}</td>
-              <td className="py-2 font-medium">Time {s.teamNumber}</td>
+              <td className="py-2 font-medium">
+                {nameMap.get(s.teamId) ?? `Time ${s.teamNumber}`}
+              </td>
               <td className="py-2 text-center tabular-nums">{s.played}</td>
               <td className="py-2 text-center tabular-nums">{s.wins}</td>
               <td className="py-2 text-center tabular-nums">{s.draws}</td>
@@ -98,21 +107,21 @@ function StandingsTable({ standings }: { standings: StandingData[] }) {
 
 function MatchCard({
   match,
-  teamMap,
+  nameMap,
   isFinished,
   onSave,
   onReopen,
   saving,
 }: {
   match: MatchData;
-  teamMap: Map<string, number>;
+  nameMap: Map<string, string>;
   isFinished: boolean;
   onSave: (matchId: string, home: number, away: number) => void;
   onReopen: (matchId: string) => void;
   saving: boolean;
 }) {
-  const homeNumber = teamMap.get(match.homeTeamId) ?? '?';
-  const awayNumber = teamMap.get(match.awayTeamId) ?? '?';
+  const homeLabel = nameMap.get(match.homeTeamId) ?? '?';
+  const awayLabel = nameMap.get(match.awayTeamId) ?? '?';
 
   const [homeInput, setHomeInput] = useState(
     match.homeScore !== null ? String(match.homeScore) : '',
@@ -132,11 +141,11 @@ function MatchCard({
     return (
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3 text-sm">
-          <span className="font-medium">Time {homeNumber}</span>
+          <span className="font-medium">{homeLabel}</span>
           <span className="tabular-nums font-bold text-base">
             {match.homeScore} × {match.awayScore}
           </span>
-          <span className="font-medium">Time {awayNumber}</span>
+          <span className="font-medium">{awayLabel}</span>
         </div>
         {!isFinished && (
           <button
@@ -154,7 +163,7 @@ function MatchCard({
   return (
     <div className="px-4 py-3 space-y-2">
       <p className="text-sm font-medium">
-        Time {homeNumber} × Time {awayNumber}
+        {homeLabel} × {awayLabel}
       </p>
       {!isFinished && (
         <div className="flex items-center gap-2">
@@ -193,7 +202,7 @@ function MatchCard({
 function PhaseSection({
   title,
   matches,
-  teamMap,
+  nameMap,
   isFinished,
   onSave,
   onReopen,
@@ -201,7 +210,7 @@ function PhaseSection({
 }: {
   title: string;
   matches: MatchData[];
-  teamMap: Map<string, number>;
+  nameMap: Map<string, string>;
   isFinished: boolean;
   onSave: (matchId: string, home: number, away: number) => void;
   onReopen: (matchId: string) => void;
@@ -217,7 +226,7 @@ function PhaseSection({
           <li key={m.id}>
             <MatchCard
               match={m}
-              teamMap={teamMap}
+              nameMap={nameMap}
               isFinished={isFinished}
               onSave={onSave}
               onReopen={onReopen}
@@ -244,7 +253,9 @@ export function TournamentClient({
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
-  const teamMap = new Map(teams.map(t => [t.id, t.teamNumber]));
+  const nameMap = new Map(
+    teams.map(t => [t.id, t.customName ?? `Time ${t.teamNumber}`]),
+  );
 
   const groupMatches = matches
     .filter(m => m.phase === 'group')
@@ -319,7 +330,7 @@ export function TournamentClient({
             <h2 className="font-semibold text-sm">Classificação</h2>
           </div>
           <div className="px-4 py-3">
-            <StandingsTable standings={standings} />
+            <StandingsTable standings={standings} nameMap={nameMap} />
           </div>
         </div>
       )}
@@ -329,7 +340,7 @@ export function TournamentClient({
         <PhaseSection
           title="Fase de Grupos"
           matches={groupMatches}
-          teamMap={teamMap}
+          nameMap={nameMap}
           isFinished={isFinished}
           onSave={handleSave}
           onReopen={handleReopen}
@@ -346,7 +357,7 @@ export function TournamentClient({
         <PhaseSection
           title="Semifinais"
           matches={semiMatches}
-          teamMap={teamMap}
+          nameMap={nameMap}
           isFinished={isFinished}
           onSave={handleSave}
           onReopen={handleReopen}
@@ -359,7 +370,7 @@ export function TournamentClient({
         <PhaseSection
           title="Final"
           matches={finalMatches}
-          teamMap={teamMap}
+          nameMap={nameMap}
           isFinished={isFinished}
           onSave={handleSave}
           onReopen={handleReopen}
