@@ -17,16 +17,16 @@ São responsabilidades separadas: **autenticação vs. dados da aplicação**. A
 
 ## O que o Supabase entrega
 
-| Serviço | O que faz | Sem Supabase |
-|---|---|---|
-| **PostgreSQL** | Banco relacional completo | Precisaria de RDS, Neon, etc. |
-| **Auth** | Login, sessão, JWT, OAuth, magic link | Precisaria de Auth0, Clerk, etc. |
-| **Email transacional** | Confirmação de cadastro, reset de senha | Precisaria de SendGrid, Resend, etc. |
-| **Storage** | Armazenamento de arquivos (fotos, docs) | Precisaria de S3, Cloudflare R2 |
-| **Realtime** | WebSockets nativos via Postgres CDC | Precisaria de Pusher, Ably |
-| **Edge Functions** | Funções serverless (Deno) | Precisaria de Lambda, Cloudflare Workers |
-| **RLS** | Regras de acesso no nível do banco | Precisaria implementar manualmente na API |
-| **API automática** | REST + GraphQL gerados automaticamente | Precisaria construir uma API |
+| Serviço                | O que faz                               | Sem Supabase                              |
+| ---------------------- | --------------------------------------- | ----------------------------------------- |
+| **PostgreSQL**         | Banco relacional completo               | Precisaria de RDS, Neon, etc.             |
+| **Auth**               | Login, sessão, JWT, OAuth, magic link   | Precisaria de Auth0, Clerk, etc.          |
+| **Email transacional** | Confirmação de cadastro, reset de senha | Precisaria de SendGrid, Resend, etc.      |
+| **Storage**            | Armazenamento de arquivos (fotos, docs) | Precisaria de S3, Cloudflare R2           |
+| **Realtime**           | WebSockets nativos via Postgres CDC     | Precisaria de Pusher, Ably                |
+| **Edge Functions**     | Funções serverless (Deno)               | Precisaria de Lambda, Cloudflare Workers  |
+| **RLS**                | Regras de acesso no nível do banco      | Precisaria implementar manualmente na API |
+| **API automática**     | REST + GraphQL gerados automaticamente  | Precisaria construir uma API              |
 
 ---
 
@@ -49,27 +49,27 @@ Hoje os jogadores não sabem quando o sorteio acontece. Uma Edge Function poderi
 **`supabase/functions/notificar-sorteio/index.ts`**
 
 ```typescript
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-Deno.serve(async (req) => {
+Deno.serve(async req => {
   const { gameId } = await req.json();
 
   const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
 
   const { data: confirmations } = await supabase
-    .from("game_confirmations")
-    .select("players(name, phone)")
-    .eq("game_id", gameId)
-    .eq("status", "confirmed");
+    .from('game_confirmations')
+    .select('players(name, phone)')
+    .eq('game_id', gameId)
+    .eq('status', 'confirmed');
 
   for (const confirmation of confirmations ?? []) {
-    await fetch("https://api.twilio.com/...", {
-      method: "POST",
+    await fetch('https://api.twilio.com/...', {
+      method: 'POST',
       body: `To=whatsapp:+55${confirmation.players.phone}&Body=O sorteio foi feito! Acesse o app para ver seu time.`,
-      headers: { Authorization: `Basic ${btoa("SID:TOKEN")}` },
+      headers: { Authorization: `Basic ${btoa('SID:TOKEN')}` },
     });
   }
 
@@ -80,18 +80,18 @@ Deno.serve(async (req) => {
 **Na Server Action, após o sorteio:**
 
 ```typescript
-await supabase.functions.invoke("notificar-sorteio", {
+await supabase.functions.invoke('notificar-sorteio', {
   body: { gameId },
 });
 ```
 
 ### Por que Edge Function e não Server Action?
 
-| | Server Action (Next.js) | Edge Function (Supabase) |
-|---|---|---|
-| Roda em | Vercel (junto com o app) | Deno Deploy (infraestrutura do Supabase) |
-| Timeout | ~10s (Hobby plan Vercel) | 150s |
-| Ideal para | Operações rápidas de UI | Processamento pesado, webhooks, integrações |
+|            | Server Action (Next.js)  | Edge Function (Supabase)                    |
+| ---------- | ------------------------ | ------------------------------------------- |
+| Roda em    | Vercel (junto com o app) | Deno Deploy (infraestrutura do Supabase)    |
+| Timeout    | ~10s (Hobby plan Vercel) | 150s                                        |
+| Ideal para | Operações rápidas de UI  | Processamento pesado, webhooks, integrações |
 
 Para notificar 30+ jogadores em loop, o timeout da Vercel Hobby seria um problema real. A Edge Function resolve isso.
 
@@ -139,9 +139,90 @@ O banco rejeita qualquer query fora do escopo — mesmo que o cliente mande a re
 
 ### Por que usamos `createServiceClient()` e não `createClient()`
 
-| Cliente | Onde roda | RLS ativo | Usado para |
-|---|---|---|---|
-| `createClient()` | Servidor ou cliente | Sim | Verificar sessão do admin |
-| `createServiceClient()` | Só servidor | Não | Todas as operações de dados |
+| Cliente                 | Onde roda           | RLS ativo | Usado para                  |
+| ----------------------- | ------------------- | --------- | --------------------------- |
+| `createClient()`        | Servidor ou cliente | Sim       | Verificar sessão do admin   |
+| `createServiceClient()` | Só servidor         | Não       | Todas as operações de dados |
 
 O service role key **bypassa o RLS** — o que é seguro porque o código roda no servidor (Server Actions), nunca exposto ao cliente. Se um dia expuséssemos dados diretamente ao cliente (app mobile, JS no browser), precisaríamos ativar RLS em todas as tabelas.
+
+## Limites do Supabase no plano gratuito (Free)
+
+Relevantes para o Clube do Bolinha especificamente:
+
+---
+
+### Auth (o que mais impacta)
+
+| Limite | Valor | Impacto |
+|---|---|---|
+| **MAU (usuários ativos/mês)** | 50.000 | Sem impacto — poucos admins |
+| **Rate limit de emails** | 2/hora por usuário | Afeta "Esqueci a senha" |
+| **Emails totais/hora** | 4/hora (projeto inteiro) | Crítico: todos os admins compartilham essa cota |
+| **Sessões simultâneas** | Ilimitadas | OK |
+
+> O limite de **4 emails/hora por projeto** é o mais perigoso. Se dois admins pedirem reset de senha ao mesmo tempo, um deles pode não receber.
+
+---
+
+### Banco de dados
+
+| Limite | Valor | Impacto |
+|---|---|---|
+| **Tamanho do banco** | 500 MB | Tranquilo para dados de pelada |
+| **Conexões simultâneas** | 60 (via pooler) | OK para o volume atual |
+| **Pausa por inatividade** | Após 7 dias sem acesso | ⚠️ Relevante (ver abaixo) |
+
+> A pausa por inatividade é o limite mais traiçoeiro do plano free. Se nenhum usuário acessar o app por 7 dias, o banco "dorme" e a primeira requisição leva ~5-10s para acordar. Isso pode parecer um bug para um novo usuário.
+
+---
+
+### Storage
+
+| Limite | Valor |
+|---|---|
+| **Espaço** | 1 GB |
+| **Banda** | 2 GB/mês |
+
+Não usamos Storage hoje — irrelevante.
+
+---
+
+### Edge Functions
+
+| Limite | Valor |
+|---|---|
+| **Invocações/mês** | 500.000 |
+| **Tempo de execução** | 150s |
+
+Não usamos hoje — sem impacto.
+
+---
+
+### O que muda ao ir para o Pro ($25/mês)
+
+- Pausa por inatividade: **removida completamente**
+- Emails: **ilimitados** via SMTP configurável
+- Banco: **8 GB**
+- Sem rate limits na Auth
+
+---
+
+### Recomendações para produção no free tier
+
+**1. Emails** — Configure um SMTP próprio para contornar o limite de 4/hora:
+- Supabase Dashboard → Authentication → SMTP Settings
+- Use **Resend** (gratuito até 3.000 emails/mês) ou **Brevo** (300/dia grátis)
+- Isso remove completamente o rate limit de email do Supabase
+
+**2. Pausa por inatividade** — Implemente um keep-alive:
+- Um cron job gratuito (ex: [cron-job.org](https://cron-job.org)) que faz um ping no app a cada 5 dias
+- Ou migre para o Pro quando tiver os primeiros clientes pagantes (~1-2 admins já cobrem o custo)
+
+**3. Monitoramento** — Supabase Dashboard → Reports mostra consumo em tempo real
+
+---
+
+### Quando vale migrar para o Pro?
+
+O ponto de virada natural é quando tiver **2-3 admins pagantes** — o plano Pro ($25/mês) se paga e elimina todos esses problemas de uma vez. Até lá, configurar o SMTP externo é o único ajuste que realmente importa.
