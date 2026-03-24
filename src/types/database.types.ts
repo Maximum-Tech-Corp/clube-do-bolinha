@@ -223,18 +223,21 @@ export type Database = {
           id: string;
           game_id: string;
           team_number: number;
+          custom_name: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           game_id: string;
           team_number: number;
+          custom_name?: string | null;
           created_at?: string;
         };
         Update: {
           id?: string;
           game_id?: string;
           team_number?: number;
+          custom_name?: string | null;
           created_at?: string;
         };
         Relationships: [];

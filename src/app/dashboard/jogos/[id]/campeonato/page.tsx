@@ -50,7 +50,7 @@ export default async function CampeonatoPage({ params }: Props) {
   const [{ data: gameTeamsRaw }, { data: matchesRaw }] = await Promise.all([
     service
       .from('game_teams')
-      .select('id, team_number')
+      .select('id, team_number, custom_name')
       .eq('game_id', gameId)
       .order('team_number'),
     service
@@ -93,6 +93,7 @@ export default async function CampeonatoPage({ params }: Props) {
   const teamsData = gameTeams.map(t => ({
     id: t.id,
     teamNumber: t.team_number,
+    customName: t.custom_name,
   }));
 
   const matchesData = matches.map(m => ({

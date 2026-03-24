@@ -6,7 +6,8 @@ import {
 } from '@/test/mocks/supabase';
 import { mockRevalidatePath } from '@/test/mocks/next';
 
-const { updateStat, finishGame } = await import('@/actions/game-stats');
+const { updateStat, finishGame, renameGameTeam } =
+  await import('@/actions/game-stats');
 
 function setupAdminChain(teamId = 'team-1') {
   mockSupabaseAuth.getUser.mockResolvedValue({
@@ -345,5 +346,108 @@ describe('finishGame', () => {
 
     const result = await finishGame('game-1');
     expect(result).toEqual({});
+  });
+});
+
+// ─── renameGameTeam ───────────────────────────────────────────────────────────
+
+describe('renameGameTeam', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns unauthorized when no session', async () => {
+    setupUnauthenticated();
+    const result = await renameGameTeam('gt-1', 'Eagles');
+    expect(result).toEqual({ error: 'Não autorizado.' });
+  });
+
+  it('returns error when game_team not found', async () => {
+    setupAdminChain();
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    const result = await renameGameTeam('gt-1', 'Eagles');
+    expect(result).toEqual({ error: 'Time não encontrado.' });
+  });
+
+  it('returns error when game not found for this team', async () => {
+    setupAdminChain();
+    // game_team found
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { game_id: 'game-1' }, error: null }),
+    );
+    // game not found
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    const result = await renameGameTeam('gt-1', 'Eagles');
+    expect(result).toEqual({ error: 'Jogo não encontrado.' });
+  });
+
+  it('returns error when game is already finished', async () => {
+    setupAdminChain();
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { game_id: 'game-1' }, error: null }),
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: { id: 'game-1', status: 'finished' },
+        error: null,
+      }),
+    );
+    const result = await renameGameTeam('gt-1', 'Eagles');
+    expect(result).toEqual({ error: 'Jogo já finalizado.' });
+  });
+
+  it('saves trimmed name and revalidates path on success', async () => {
+    setupAdminChain();
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { game_id: 'game-1' }, error: null }),
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { id: 'game-1', status: 'open' }, error: null }),
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+
+    const result = await renameGameTeam('gt-1', '  Eagles  ');
+    expect(result).toEqual({});
+    expect(mockRevalidatePath).toHaveBeenCalledWith(
+      '/dashboard/jogos/game-1/times',
+    );
+  });
+
+  it('saves NULL when name trims to empty string', async () => {
+    setupAdminChain();
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { game_id: 'game-1' }, error: null }),
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { id: 'game-1', status: 'open' }, error: null }),
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+
+    const result = await renameGameTeam('gt-1', '   ');
+    expect(result).toEqual({});
+  });
+
+  it('returns error when DB update fails', async () => {
+    setupAdminChain();
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { game_id: 'game-1' }, error: null }),
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { id: 'game-1', status: 'open' }, error: null }),
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: { message: 'db error' } }),
+    );
+
+    const result = await renameGameTeam('gt-1', 'Eagles');
+    expect(result).toEqual({ error: 'Erro ao renomear time.' });
   });
 });

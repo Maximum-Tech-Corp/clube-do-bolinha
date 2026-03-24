@@ -14,10 +14,10 @@ vi.mock('@/actions/tournament', () => ({
 }));
 
 const TEAMS = [
-  { id: 't1', teamNumber: 1 },
-  { id: 't2', teamNumber: 2 },
-  { id: 't3', teamNumber: 3 },
-  { id: 't4', teamNumber: 4 },
+  { id: 't1', teamNumber: 1, customName: null },
+  { id: 't2', teamNumber: 2, customName: null },
+  { id: 't3', teamNumber: 3, customName: null },
+  { id: 't4', teamNumber: 4, customName: null },
 ];
 
 const SEMI_MATCHES = [
@@ -609,6 +609,77 @@ describe('TournamentClient', () => {
         />,
       );
       expect(screen.getByText('Final')).toBeInTheDocument();
+    });
+  });
+
+  describe('final phase draw validation', () => {
+    it('blocks confirm and shows error when final ends in draw', async () => {
+      const user = userEvent.setup();
+      render(
+        <TournamentClient
+          gameId="game-1"
+          nTeams={4}
+          teams={TEAMS}
+          matches={[
+            ...GROUP_MATCHES_COMPLETE,
+            ...COMPLETED_SEMIS,
+            ...FINAL_MATCH,
+          ]}
+          standings={STANDINGS}
+          isFinished={false}
+        />,
+      );
+
+      const scoreInputs = screen.getAllByRole('spinbutton');
+      const finalInputs = scoreInputs.slice(-2);
+      fireEvent.change(finalInputs[0], { target: { value: '1' } });
+      fireEvent.change(finalInputs[1], { target: { value: '1' } });
+
+      const confirmButtons = screen.getAllByRole('button', {
+        name: 'Confirmar',
+      });
+      await user.click(confirmButtons[confirmButtons.length - 1]);
+
+      expect(mockSaveMatchResult).not.toHaveBeenCalled();
+      expect(
+        screen.getByText('A final não pode terminar em empate.'),
+      ).toBeInTheDocument();
+    });
+
+    it('clears draw error when score input changes', async () => {
+      const user = userEvent.setup();
+      render(
+        <TournamentClient
+          gameId="game-1"
+          nTeams={4}
+          teams={TEAMS}
+          matches={[
+            ...GROUP_MATCHES_COMPLETE,
+            ...COMPLETED_SEMIS,
+            ...FINAL_MATCH,
+          ]}
+          standings={STANDINGS}
+          isFinished={false}
+        />,
+      );
+
+      const scoreInputs = screen.getAllByRole('spinbutton');
+      const finalInputs = scoreInputs.slice(-2);
+      fireEvent.change(finalInputs[0], { target: { value: '1' } });
+      fireEvent.change(finalInputs[1], { target: { value: '1' } });
+
+      const confirmButtons = screen.getAllByRole('button', {
+        name: 'Confirmar',
+      });
+      await user.click(confirmButtons[confirmButtons.length - 1]);
+      expect(
+        screen.getByText('A final não pode terminar em empate.'),
+      ).toBeInTheDocument();
+
+      fireEvent.change(finalInputs[0], { target: { value: '2' } });
+      expect(
+        screen.queryByText('A final não pode terminar em empate.'),
+      ).not.toBeInTheDocument();
     });
   });
 

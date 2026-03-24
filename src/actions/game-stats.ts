@@ -128,3 +128,43 @@ export async function finishGame(gameId: string): Promise<{ error?: string }> {
   revalidatePath('/dashboard/jogos');
   return {};
 }
+
+export async function renameGameTeam(
+  gameTeamId: string,
+  customName: string,
+): Promise<{ error?: string }> {
+  const teamId = await getAdminTeamId();
+  if (!teamId) return { error: 'Não autorizado.' };
+
+  const service = createServiceClient();
+
+  const { data: gt } = await service
+    .from('game_teams')
+    .select('game_id')
+    .eq('id', gameTeamId)
+    .single();
+
+  if (!gt) return { error: 'Time não encontrado.' };
+
+  const { data: game } = await service
+    .from('games')
+    .select('id, status')
+    .eq('id', gt.game_id)
+    .eq('team_id', teamId)
+    .maybeSingle();
+
+  if (!game) return { error: 'Jogo não encontrado.' };
+  if (game.status === 'finished') return { error: 'Jogo já finalizado.' };
+
+  const trimmed = customName.trim();
+
+  const { error } = await service
+    .from('game_teams')
+    .update({ custom_name: trimmed.length > 0 ? trimmed : null })
+    .eq('id', gameTeamId);
+
+  if (error) return { error: 'Erro ao renomear time.' };
+
+  revalidatePath(`/dashboard/jogos/${gt.game_id}/times`);
+  return {};
+}

@@ -13,6 +13,8 @@ interface PlayerRanking {
   assists: number;
   gamesPlayed: number;
   attendanceRate: number;
+  championships: number;
+  vices: number;
 }
 
 function RankingTable({
@@ -77,25 +79,26 @@ function RankingTable({
   );
 }
 
-function AttendanceTable({ rows }: { rows: PlayerRanking[] }) {
+function GeneralStatsTable({ rows }: { rows: PlayerRanking[] }) {
   const sorted = [...rows]
     .filter(r => r.gamesPlayed > 0)
-    .sort((a, b) => b.attendanceRate - a.attendanceRate);
+    .sort((a, b) => b.gamesPlayed - a.gamesPlayed);
 
   if (sorted.length === 0) return null;
 
   return (
     <div className="rounded-lg border border-border overflow-hidden">
       <div className="px-4 py-2 bg-muted/50">
-        <h2 className="font-semibold text-sm">Participação</h2>
+        <h2 className="font-semibold text-sm">Estatísticas Gerais</h2>
       </div>
       <table className="w-full text-sm">
         <thead>
           <tr className="text-muted-foreground text-xs border-b border-border">
             <th className="text-left px-4 py-1.5 w-6">#</th>
             <th className="text-left px-4 py-1.5">Jogador</th>
-            <th className="text-center px-2 py-1.5">Jogos</th>
-            <th className="text-center px-2 py-1.5">%</th>
+            <th className="text-center px-2 py-1.5">Qtd. Jogos</th>
+            <th className="text-center px-2 py-1.5">Campeão</th>
+            <th className="text-center px-2 py-1.5">Vice</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
@@ -109,8 +112,9 @@ function AttendanceTable({ rows }: { rows: PlayerRanking[] }) {
                 {r.gamesPlayed}
               </td>
               <td className="px-2 py-2 text-center tabular-nums font-semibold">
-                {r.attendanceRate}%
+                {r.championships}
               </td>
+              <td className="px-2 py-2 text-center tabular-nums">{r.vices}</td>
             </tr>
           ))}
         </tbody>
@@ -183,7 +187,7 @@ export default async function RankingsPage({ searchParams }: Props) {
     // Jogos finalizados no ano selecionado
     service
       .from('games')
-      .select('id, scheduled_at')
+      .select('id, scheduled_at, is_tournament')
       .eq('team_id', team.id)
       .eq('status', 'finished')
       .gte('scheduled_at', yearStart)
@@ -213,6 +217,9 @@ export default async function RankingsPage({ searchParams }: Props) {
     assists: number;
     game_team_id: string;
   }[] = [];
+  const championTeamIds = new Set<string>();
+  const viceTeamIds = new Set<string>();
+
   if (finishedGameIds.length > 0) {
     const { data: gameTeams } = await service
       .from('game_teams')
@@ -220,6 +227,33 @@ export default async function RankingsPage({ searchParams }: Props) {
       .in('game_id', finishedGameIds);
 
     const gameTeamIds = (gameTeams ?? []).map(gt => gt.id);
+
+    // Busca finais dos torneios concluídos para calcular campeão/vice
+    const tournamentGameIds = finishedGameList
+      .filter(g => g.is_tournament)
+      .map(g => g.id);
+
+    if (tournamentGameIds.length > 0) {
+      const { data: finals } = await service
+        .from('tournament_matches')
+        .select('home_team_id, away_team_id, home_score, away_score')
+        .in('game_id', tournamentGameIds)
+        .eq('phase', 'final')
+        .eq('completed', true);
+
+      (finals ?? [])
+        .filter(
+          f =>
+            f.home_score !== null &&
+            f.away_score !== null &&
+            f.home_score !== f.away_score,
+        )
+        .forEach(f => {
+          const homeWon = (f.home_score ?? 0) > (f.away_score ?? 0);
+          championTeamIds.add(homeWon ? f.home_team_id : f.away_team_id);
+          viceTeamIds.add(homeWon ? f.away_team_id : f.home_team_id);
+        });
+    }
 
     if (gameTeamIds.length > 0) {
       const { data: gtp } = await service
@@ -281,6 +315,11 @@ export default async function RankingsPage({ searchParams }: Props) {
     const attendanceRate =
       denominator > 0 ? Math.round((gamesPlayed / denominator) * 100) : 0;
 
+    const championships = myGtp.filter(r =>
+      championTeamIds.has(r.game_team_id),
+    ).length;
+    const vices = myGtp.filter(r => viceTeamIds.has(r.game_team_id)).length;
+
     return {
       playerId: player.id,
       name: player.name,
@@ -288,6 +327,8 @@ export default async function RankingsPage({ searchParams }: Props) {
       assists,
       gamesPlayed,
       attendanceRate,
+      championships,
+      vices,
     };
   });
 
@@ -320,7 +361,7 @@ export default async function RankingsPage({ searchParams }: Props) {
             label="Assists"
             tieLabel="Gols"
           />
-          <AttendanceTable rows={rankings} />
+          <GeneralStatsTable rows={rankings} />
         </div>
       )}
 

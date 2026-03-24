@@ -65,7 +65,7 @@ export default async function HistoricoDetailPage({ params }: Props) {
   const [{ data: gameTeamsRaw }, { data: matchesRaw }] = await Promise.all([
     service
       .from('game_teams')
-      .select('id, team_number')
+      .select('id, team_number, custom_name')
       .eq('game_id', gameId)
       .order('team_number'),
     game.is_tournament
@@ -102,10 +102,14 @@ export default async function HistoricoDetailPage({ params }: Props) {
 
   const playerMap = new Map((playersRaw ?? []).map(p => [p.id, p]));
   const teamMap = new Map(gameTeams.map(t => [t.id, t.team_number]));
+  const nameMap = new Map(
+    gameTeams.map(t => [t.id, t.custom_name ?? `Time ${t.team_number}`]),
+  );
 
   // Monta dados dos times
   const teamsData = gameTeams.map(gt => ({
     teamNumber: gt.team_number,
+    customName: gt.custom_name,
     players: gtp
       .filter(p => p.game_team_id === gt.id)
       .map(p => {
@@ -251,7 +255,7 @@ export default async function HistoricoDetailPage({ params }: Props) {
             >
               <div className="flex items-center justify-between px-4 py-2 bg-muted/50">
                 <h3 className="font-semibold text-sm">
-                  Time {team.teamNumber}
+                  {team.customName ?? `Time ${team.teamNumber}`}
                 </h3>
                 <span className="text-xs text-muted-foreground">
                   {totalGoals} gol{totalGoals !== 1 ? 's' : ''}
@@ -312,7 +316,9 @@ export default async function HistoricoDetailPage({ params }: Props) {
                       <td className="py-2 text-muted-foreground text-xs">
                         {i + 1}
                       </td>
-                      <td className="py-2 font-medium">Time {s.teamNumber}</td>
+                      <td className="py-2 font-medium">
+                        {nameMap.get(s.teamId) ?? `Time ${s.teamNumber}`}
+                      </td>
                       <td className="py-2 text-center tabular-nums">
                         {s.played}
                       </td>
@@ -354,13 +360,13 @@ export default async function HistoricoDetailPage({ params }: Props) {
                     className="flex items-center gap-3 px-4 py-3 text-sm"
                   >
                     <span className="font-medium">
-                      Time {teamMap.get(m.home_team_id) ?? '?'}
+                      {nameMap.get(m.home_team_id) ?? '?'}
                     </span>
                     <span className="tabular-nums font-bold text-base">
                       {m.home_score ?? '—'} × {m.away_score ?? '—'}
                     </span>
                     <span className="font-medium">
-                      Time {teamMap.get(m.away_team_id) ?? '?'}
+                      {nameMap.get(m.away_team_id) ?? '?'}
                     </span>
                   </li>
                 ))}
