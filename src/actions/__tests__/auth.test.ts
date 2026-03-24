@@ -7,7 +7,14 @@ import {
 import { mockRedirect } from '@/test/mocks/next';
 
 // Import actions after mocks are set up
-const { login, logout, signup } = await import('@/actions/auth');
+const {
+  login,
+  logout,
+  signup,
+  requestPasswordReset,
+  updatePassword,
+  changePassword,
+} = await import('@/actions/auth');
 
 describe('login', () => {
   beforeEach(() => {
@@ -62,6 +69,140 @@ describe('logout', () => {
   it('redirects to /login after sign out', async () => {
     await logout();
     expect(mockRedirect).toHaveBeenCalledWith('/login');
+  });
+});
+
+describe('requestPasswordReset', () => {
+  it('calls resetPasswordForEmail with the provided email', async () => {
+    await requestPasswordReset('admin@example.com');
+
+    expect(mockSupabaseAuth.resetPasswordForEmail).toHaveBeenCalledWith(
+      'admin@example.com',
+      expect.objectContaining({
+        redirectTo: expect.stringContaining('/auth/callback'),
+      }),
+    );
+  });
+
+  it('returns { success: true } when email is sent successfully', async () => {
+    const result = await requestPasswordReset('admin@example.com');
+    expect(result).toEqual({ success: true });
+  });
+
+  it('returns error when resetPasswordForEmail fails', async () => {
+    mockSupabaseAuth.resetPasswordForEmail.mockResolvedValueOnce({
+      error: { message: 'Rate limit exceeded' },
+    });
+
+    const result = await requestPasswordReset('admin@example.com');
+
+    expect(result).toEqual({
+      error: 'Não foi possível enviar o e-mail. Tente novamente.',
+    });
+  });
+});
+
+describe('updatePassword', () => {
+  it('calls auth.updateUser with the new password', async () => {
+    await updatePassword('newpassword123');
+
+    expect(mockSupabaseAuth.updateUser).toHaveBeenCalledWith({
+      password: 'newpassword123',
+    });
+  });
+
+  it('signs out and redirects to /login on success', async () => {
+    await updatePassword('newpassword123');
+
+    expect(mockSupabaseAuth.signOut).toHaveBeenCalled();
+    expect(mockRedirect).toHaveBeenCalledWith('/login');
+  });
+
+  it('returns error when updateUser fails', async () => {
+    mockSupabaseAuth.updateUser.mockResolvedValueOnce({
+      error: { message: 'update failed' },
+    });
+
+    const result = await updatePassword('newpassword123');
+
+    expect(result).toEqual({
+      error: 'Não foi possível atualizar a senha. Tente novamente.',
+    });
+  });
+
+  it('does not sign out or redirect when updateUser fails', async () => {
+    mockSupabaseAuth.updateUser.mockResolvedValueOnce({
+      error: { message: 'update failed' },
+    });
+
+    await updatePassword('newpassword123');
+
+    expect(mockSupabaseAuth.signOut).not.toHaveBeenCalled();
+    expect(mockRedirect).not.toHaveBeenCalled();
+  });
+});
+
+describe('changePassword', () => {
+  beforeEach(() => {
+    mockSupabaseAuth.getUser.mockResolvedValue({
+      data: { user: { id: 'user-uuid', email: 'admin@example.com' } },
+      error: null,
+    });
+    mockSupabaseAuth.signInWithPassword.mockResolvedValue({ error: null });
+    mockSupabaseAuth.updateUser.mockResolvedValue({ error: null });
+  });
+
+  it('verifies current password then updates to new password', async () => {
+    const result = await changePassword('currentpass', 'newpass123');
+
+    expect(mockSupabaseAuth.signInWithPassword).toHaveBeenCalledWith({
+      email: 'admin@example.com',
+      password: 'currentpass',
+    });
+    expect(mockSupabaseAuth.updateUser).toHaveBeenCalledWith({
+      password: 'newpass123',
+    });
+    expect(result).toEqual({ success: true });
+  });
+
+  it('returns error when session has no user', async () => {
+    mockSupabaseAuth.getUser.mockResolvedValue({
+      data: { user: null },
+      error: null,
+    });
+
+    const result = await changePassword('currentpass', 'newpass123');
+
+    expect(result).toEqual({ error: 'Sessão inválida. Faça login novamente.' });
+    expect(mockSupabaseAuth.updateUser).not.toHaveBeenCalled();
+  });
+
+  it('returns error when current password is wrong', async () => {
+    mockSupabaseAuth.signInWithPassword.mockResolvedValue({
+      error: { message: 'Invalid credentials' },
+    });
+
+    const result = await changePassword('wrongpass', 'newpass123');
+
+    expect(result).toEqual({ error: 'Senha atual incorreta.' });
+    expect(mockSupabaseAuth.updateUser).not.toHaveBeenCalled();
+  });
+
+  it('returns error when updateUser fails', async () => {
+    mockSupabaseAuth.updateUser.mockResolvedValueOnce({
+      error: { message: 'update failed' },
+    });
+
+    const result = await changePassword('currentpass', 'newpass123');
+
+    expect(result).toEqual({
+      error: 'Não foi possível atualizar a senha. Tente novamente.',
+    });
+  });
+
+  it('does not redirect after changing password', async () => {
+    await changePassword('currentpass', 'newpass123');
+    expect(mockRedirect).not.toHaveBeenCalled();
   });
 });
 

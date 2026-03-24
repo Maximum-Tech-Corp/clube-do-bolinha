@@ -615,6 +615,30 @@ TRUNCATE TABLE admins                 CASCADE;
 
 ---
 
+### STEP 17b-pre — Configurar "Esqueci a Senha" no Supabase de Produção
+
+**Objetivo:** Garantir que os emails de redefinição de senha sejam enviados e redirecionem corretamente para a URL de produção.
+
+**O que fazer no Supabase Dashboard (projeto de produção):**
+
+1. **Adicionar a URL de produção nas Redirect URLs**
+   - Supabase Dashboard → Authentication → URL Configuration
+   - Em **Redirect URLs**, adicionar: `https://sua-url.vercel.app/auth/callback`
+   - Sem isso, o Supabase rejeita o redirecionamento por segurança e o link do email não funciona
+
+2. **Verificar o template do email de reset**
+   - Supabase Dashboard → Authentication → Email Templates → Reset Password
+   - O template padrão já funciona — apenas confirmar que está ativo
+   - Opcional: personalizar o texto do email com o nome do produto ("Clube do Bolinha")
+
+3. **Testar o fluxo completo em produção**
+   - Acessar `/login` → clicar "Esqueci a senha" → inserir email → verificar recebimento do email
+   - Clicar no link do email → deve chegar em `/redefinir-senha` → definir nova senha → redirecionar para `/login`
+
+> **Atenção:** O Supabase usa o próprio serviço de email (via SendGrid internamente) no plano gratuito. Há um limite de **~3 emails por hora por usuário** em projetos free. Para produção com volume alto, considere configurar um SMTP customizado em Authentication → SMTP Settings.
+
+---
+
 ### STEP 17b — Virada de Chave: Stripe em Produção
 
 > ⚠️ **Esta etapa só deve ser executada após o ciclo completo de validação descrito abaixo.**

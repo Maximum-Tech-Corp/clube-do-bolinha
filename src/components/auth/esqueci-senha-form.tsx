@@ -5,8 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useState } from 'react';
 import Link from 'next/link';
-import { login } from '@/actions/auth';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { requestPasswordReset } from '@/actions/auth';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -20,13 +20,13 @@ import {
 
 const schema = z.object({
   email: z.string().email('E-mail inválido'),
-  password: z.string().min(1, 'Informe a senha'),
 });
 
 type FormData = z.infer<typeof schema>;
 
-export function LoginForm() {
+export function EsqueciSenhaForm() {
   const [serverError, setServerError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
 
   const {
     register,
@@ -38,20 +38,48 @@ export function LoginForm() {
 
   async function onSubmit(data: FormData) {
     setServerError(null);
-    const result = await login(data);
-    if (result?.error) setServerError(result.error);
+    const result = await requestPasswordReset(data.email);
+    if ('error' in result) {
+      setServerError(result.error);
+    } else {
+      setSent(true);
+    }
+  }
+
+  if (sent) {
+    return (
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle>E-mail enviado</CardTitle>
+          <CardDescription>
+            Verifique sua caixa de entrada e clique no link para redefinir sua
+            senha.
+          </CardDescription>
+        </CardHeader>
+        <CardFooter>
+          <Link
+            href="/login"
+            className="text-sm text-muted-foreground underline"
+          >
+            Voltar para o login
+          </Link>
+        </CardFooter>
+      </Card>
+    );
   }
 
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
-        <CardTitle>Entrar</CardTitle>
-        <CardDescription>Acesso do organizador da turma</CardDescription>
+        <CardTitle>Esqueci a senha</CardTitle>
+        <CardDescription>
+          Informe seu e-mail e enviaremos um link para redefinir sua senha.
+        </CardDescription>
       </CardHeader>
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-4">
-          <div className="space-y-1">
+          <div className="space-y-1 mb-2">
             <Label htmlFor="email">E-mail</Label>
             <Input
               id="email"
@@ -65,21 +93,6 @@ export function LoginForm() {
             )}
           </div>
 
-          <div className="space-y-1 mb-2">
-            <Label htmlFor="password">Senha</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              {...register('password')}
-            />
-            {errors.password && (
-              <p className="text-sm text-destructive">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
-
           {serverError && (
             <p className="text-sm text-destructive">{serverError}</p>
           )}
@@ -87,25 +100,13 @@ export function LoginForm() {
 
         <CardFooter className="flex flex-col gap-3">
           <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? 'Entrando...' : 'Entrar'}
+            {isSubmitting ? 'Enviando...' : 'Enviar link'}
           </Button>
-          <p className="text-sm text-muted-foreground text-center">
-            Não tem conta?{' '}
-            <Link href="/cadastro" className="underline">
-              Cadastre-se
-            </Link>
-          </p>
           <Link
-            href="/esqueci-senha"
+            href="/login"
             className="text-sm text-muted-foreground underline"
           >
-            Esqueci a senha
-          </Link>
-          <Link
-            href="/"
-            className={buttonVariants({ variant: 'outline', size: 'sm' })}
-          >
-            Troque de Perfil
+            Voltar para o login
           </Link>
         </CardFooter>
       </form>
