@@ -129,11 +129,17 @@ function MatchCard({
   const [awayInput, setAwayInput] = useState(
     match.awayScore !== null ? String(match.awayScore) : '',
   );
+  const [drawError, setDrawError] = useState(false);
 
   function handleSubmit() {
     const h = parseInt(homeInput, 10);
     const a = parseInt(awayInput, 10);
     if (isNaN(h) || isNaN(a) || h < 0 || a < 0) return;
+    if (match.phase === 'final' && h === a) {
+      setDrawError(true);
+      return;
+    }
+    setDrawError(false);
     onSave(match.id, h, a);
   }
 
@@ -166,31 +172,44 @@ function MatchCard({
         {homeLabel} × {awayLabel}
       </p>
       {!isFinished && (
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            min={0}
-            value={homeInput}
-            onChange={e => setHomeInput(e.target.value)}
-            placeholder="0"
-            className="w-14 h-8 rounded border border-border text-center text-sm tabular-nums bg-background"
-          />
-          <span className="text-muted-foreground text-xs">×</span>
-          <input
-            type="number"
-            min={0}
-            value={awayInput}
-            onChange={e => setAwayInput(e.target.value)}
-            placeholder="0"
-            className="w-14 h-8 rounded border border-border text-center text-sm tabular-nums bg-background"
-          />
-          <Button
-            size="sm"
-            onClick={handleSubmit}
-            disabled={saving || homeInput === '' || awayInput === ''}
-          >
-            Confirmar
-          </Button>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={0}
+              value={homeInput}
+              onChange={e => {
+                setHomeInput(e.target.value);
+                setDrawError(false);
+              }}
+              placeholder="0"
+              className="w-14 h-8 rounded border border-border text-center text-sm tabular-nums bg-background"
+            />
+            <span className="text-muted-foreground text-xs">×</span>
+            <input
+              type="number"
+              min={0}
+              value={awayInput}
+              onChange={e => {
+                setAwayInput(e.target.value);
+                setDrawError(false);
+              }}
+              placeholder="0"
+              className="w-14 h-8 rounded border border-border text-center text-sm tabular-nums bg-background"
+            />
+            <Button
+              size="sm"
+              onClick={handleSubmit}
+              disabled={saving || homeInput === '' || awayInput === ''}
+            >
+              Confirmar
+            </Button>
+          </div>
+          {drawError && (
+            <p className="text-xs text-destructive">
+              A final não pode terminar em empate.
+            </p>
+          )}
         </div>
       )}
     </div>
