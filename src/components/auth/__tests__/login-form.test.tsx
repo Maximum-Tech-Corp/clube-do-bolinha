@@ -9,6 +9,7 @@ vi.mock('@/actions/auth', () => ({
   login: (...args: unknown[]) => mockLogin(...args),
   signup: vi.fn(),
   logout: vi.fn(),
+  requestPasswordReset: vi.fn(),
 }));
 
 describe('LoginForm', () => {
@@ -38,6 +39,12 @@ describe('LoginForm', () => {
     render(<LoginForm />);
     const link = screen.getByRole('link', { name: /Troque de Perfil/ });
     expect(link).toHaveAttribute('href', '/');
+  });
+
+  it('renders link to /esqueci-senha', () => {
+    render(<LoginForm />);
+    const link = screen.getByRole('link', { name: /esqueci a senha/i });
+    expect(link).toHaveAttribute('href', '/esqueci-senha');
   });
 
   describe('validation', () => {

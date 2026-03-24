@@ -6,6 +6,7 @@ import { DashboardMenu } from '../dashboard-menu';
 const mockUpdateTeamSettings = vi.fn();
 const mockCreateBillingPortalSession = vi.fn();
 const mockLogout = vi.fn();
+const mockChangePassword = vi.fn();
 
 vi.mock('@/actions/team', () => ({
   updateTeamSettings: (...args: unknown[]) => mockUpdateTeamSettings(...args),
@@ -19,6 +20,7 @@ vi.mock('@/actions/stripe', () => ({
 
 vi.mock('@/actions/auth', () => ({
   logout: (...args: unknown[]) => mockLogout(...args),
+  changePassword: (...args: unknown[]) => mockChangePassword(...args),
 }));
 
 // Mock Radix Dialog
@@ -26,8 +28,32 @@ vi.mock('@/components/ui/dialog', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require('react');
   return {
-    Dialog: ({ children, open }: { children: unknown; open: boolean }) =>
-      open ? React.createElement(React.Fragment, null, children) : null,
+    Dialog: ({
+      children,
+      open,
+      onOpenChange,
+    }: {
+      children: unknown;
+      open: boolean;
+      onOpenChange?: (open: boolean) => void;
+    }) =>
+      open
+        ? React.createElement(
+            React.Fragment,
+            null,
+            children,
+            onOpenChange
+              ? React.createElement(
+                  'button',
+                  {
+                    'data-testid': 'dialog-close',
+                    onClick: () => onOpenChange(false),
+                  },
+                  'Fechar dialog',
+                )
+              : null,
+          )
+        : null,
     DialogContent: ({ children }: { children: unknown }) =>
       React.createElement('div', { 'data-testid': 'dialog-content' }, children),
     DialogHeader: ({ children }: { children: unknown }) =>
@@ -51,6 +77,7 @@ describe('DashboardMenu', () => {
     mockUpdateTeamSettings.mockResolvedValue({});
     mockCreateBillingPortalSession.mockResolvedValue(undefined);
     mockLogout.mockResolvedValue(undefined);
+    mockChangePassword.mockResolvedValue({ success: true });
   });
 
   describe('menu button', () => {
@@ -175,6 +202,220 @@ describe('DashboardMenu', () => {
       expect(
         decodeURIComponent(shareLink.getAttribute('href') ?? ''),
       ).toContain('https://clube.app');
+    });
+  });
+
+  describe('trocar senha', () => {
+    async function openChangePassword(
+      user: ReturnType<typeof userEvent.setup>,
+    ) {
+      await user.click(screen.getByRole('button', { name: 'Menu' }));
+      await user.click(screen.getByRole('button', { name: /trocar senha/i }));
+    }
+
+    it('shows Trocar Senha button in menu', async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await user.click(screen.getByRole('button', { name: 'Menu' }));
+
+      expect(
+        screen.getByRole('button', { name: /trocar senha/i }),
+      ).toBeInTheDocument();
+    });
+
+    it('opens change password dialog when Trocar Senha is clicked', async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await openChangePassword(user);
+
+      expect(screen.getByLabelText('Senha atual')).toBeInTheDocument();
+      expect(screen.getByLabelText('Nova senha')).toBeInTheDocument();
+      expect(screen.getByLabelText('Confirmar nova senha')).toBeInTheDocument();
+    });
+
+    it('closes menu when Trocar Senha is clicked', async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await openChangePassword(user);
+
+      expect(screen.queryByText('Compartilhar')).not.toBeInTheDocument();
+    });
+
+    it('calls changePassword with current and new passwords on submit', async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await openChangePassword(user);
+
+      await user.type(screen.getByLabelText('Senha atual'), 'oldpass123');
+      await user.type(screen.getByLabelText('Nova senha'), 'newpass123');
+      await user.type(
+        screen.getByLabelText('Confirmar nova senha'),
+        'newpass123',
+      );
+      await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+      await waitFor(() => {
+        expect(mockChangePassword).toHaveBeenCalledWith(
+          'oldpass123',
+          'newpass123',
+        );
+      });
+    });
+
+    it("shows 'As senhas não coincidem' when passwords do not match", async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await openChangePassword(user);
+
+      await user.type(screen.getByLabelText('Nova senha'), 'newpass123');
+      await user.type(
+        screen.getByLabelText('Confirmar nova senha'),
+        'different',
+      );
+      await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+      expect(screen.getByText('As senhas não coincidem')).toBeInTheDocument();
+      expect(mockChangePassword).not.toHaveBeenCalled();
+    });
+
+    it('shows error when new password is too short', async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await openChangePassword(user);
+
+      await user.type(screen.getByLabelText('Nova senha'), '123');
+      await user.type(screen.getByLabelText('Confirmar nova senha'), '123');
+      await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+      expect(
+        screen.getByText('A nova senha deve ter pelo menos 6 caracteres'),
+      ).toBeInTheDocument();
+      expect(mockChangePassword).not.toHaveBeenCalled();
+    });
+
+    it('shows server error returned by changePassword action', async () => {
+      mockChangePassword.mockResolvedValueOnce({
+        error: 'Senha atual incorreta.',
+      });
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await openChangePassword(user);
+
+      await user.type(screen.getByLabelText('Senha atual'), 'wrongpass');
+      await user.type(screen.getByLabelText('Nova senha'), 'newpass123');
+      await user.type(
+        screen.getByLabelText('Confirmar nova senha'),
+        'newpass123',
+      );
+      await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Senha atual incorreta.')).toBeInTheDocument();
+      });
+    });
+
+    it("shows 'Senha alterada!' on success", async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await openChangePassword(user);
+
+      await user.type(screen.getByLabelText('Senha atual'), 'oldpass123');
+      await user.type(screen.getByLabelText('Nova senha'), 'newpass123');
+      await user.type(
+        screen.getByLabelText('Confirmar nova senha'),
+        'newpass123',
+      );
+      await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole('button', { name: 'Senha alterada!' }),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('resets fields and errors when dialog is closed via onOpenChange', async () => {
+      mockChangePassword.mockResolvedValueOnce({
+        error: 'Senha atual incorreta.',
+      });
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await openChangePassword(user);
+      await user.type(screen.getByLabelText('Senha atual'), 'wrongpass');
+      await user.type(screen.getByLabelText('Nova senha'), 'newpass123');
+      await user.type(
+        screen.getByLabelText('Confirmar nova senha'),
+        'newpass123',
+      );
+      await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Senha atual incorreta.')).toBeInTheDocument();
+      });
+
+      // Close via onOpenChange (simulates clicking outside or pressing Escape in Radix)
+      const closeButtons = screen.getAllByTestId('dialog-close');
+      await user.click(closeButtons[closeButtons.length - 1]);
+
+      await waitFor(() => {
+        expect(screen.queryByLabelText('Senha atual')).not.toBeInTheDocument();
+      });
+
+      // Reopen — fields and error must be cleared
+      await openChangePassword(user);
+
+      expect(
+        screen.queryByText('Senha atual incorreta.'),
+      ).not.toBeInTheDocument();
+      expect(
+        (screen.getByLabelText('Senha atual') as HTMLInputElement).value,
+      ).toBe('');
+      expect(
+        (screen.getByLabelText('Nova senha') as HTMLInputElement).value,
+      ).toBe('');
+      expect(
+        (screen.getByLabelText('Confirmar nova senha') as HTMLInputElement)
+          .value,
+      ).toBe('');
+    });
+
+    it("shows 'Salvando...' during submission", async () => {
+      mockChangePassword.mockImplementation(
+        () =>
+          new Promise(resolve =>
+            setTimeout(() => resolve({ success: true }), 200),
+          ),
+      );
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await openChangePassword(user);
+      await user.type(screen.getByLabelText('Senha atual'), 'oldpass123');
+      await user.type(screen.getByLabelText('Nova senha'), 'newpass123');
+      await user.type(
+        screen.getByLabelText('Confirmar nova senha'),
+        'newpass123',
+      );
+      await user.click(screen.getByRole('button', { name: 'Salvar' }));
+
+      expect(
+        screen.getByRole('button', { name: 'Salvando...' }),
+      ).toBeDisabled();
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole('button', { name: 'Senha alterada!' }),
+        ).toBeInTheDocument();
+      });
     });
   });
 

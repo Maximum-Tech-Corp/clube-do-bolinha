@@ -152,16 +152,31 @@ Relevantes para o Clube do Bolinha especificamente:
 
 ---
 
-### Auth (o que mais impacta)
+### ⚠️ Email built-in vs SMTP customizado — a diferença crítica
+
+O aviso amarelo que aparece em Authentication → Email ("You're using the built-in email service") existe porque os dois modos têm limites completamente diferentes:
+
+| | Email built-in (padrão) | SMTP customizado |
+|---|---|---|
+| **Rate limit total/hora** | ~4 emails (projeto inteiro) | 360 verificações/hora |
+| **Novos cadastros/hora** | Muito limitado | 30/hora |
+| **Remetente** | `noreply@mail.supabase.io` | Seu domínio / serviço |
+| **Indicado para** | Testes locais apenas | Produção |
+
+> O email built-in **não deve ser usado em produção**. É suficiente para desenvolvimento e E2E, mas não para usuários reais.
+
+**Como resolver:** Authentication → SMTP Settings → configurar Resend ou Brevo (ambos têm plano gratuito generoso e são triviais de conectar).
+
+---
+
+### Auth
 
 | Limite | Valor | Impacto |
 |---|---|---|
 | **MAU (usuários ativos/mês)** | 50.000 | Sem impacto — poucos admins |
-| **Rate limit de emails** | 2/hora por usuário | Afeta "Esqueci a senha" |
-| **Emails totais/hora** | 4/hora (projeto inteiro) | Crítico: todos os admins compartilham essa cota |
+| **Verificações/hora** (com SMTP) | 360 | Suficiente para escalar |
+| **Refresh de tokens/hora** | 1.800 | Sem impacto |
 | **Sessões simultâneas** | Ilimitadas | OK |
-
-> O limite de **4 emails/hora por projeto** é o mais perigoso. Se dois admins pedirem reset de senha ao mesmo tempo, um deles pode não receber.
 
 ---
 
@@ -201,28 +216,31 @@ Não usamos hoje — sem impacto.
 
 ### O que muda ao ir para o Pro ($25/mês)
 
-- Pausa por inatividade: **removida completamente**
-- Emails: **ilimitados** via SMTP configurável
+- Pausa por inatividade: **removida completamente** — o mais importante para produção
 - Banco: **8 GB**
-- Sem rate limits na Auth
+- Suporte a **PITR** (Point-in-Time Recovery) quando banco > 4 GB
+- SLA e suporte prioritário
+
+> O Pro não remove os rate limits de Auth — esses já são resolvidos configurando SMTP customizado, independente do plano.
 
 ---
 
-### Recomendações para produção no free tier
+### Recomendações de prioridade
 
-**1. Emails** — Configure um SMTP próprio para contornar o limite de 4/hora:
-- Supabase Dashboard → Authentication → SMTP Settings
-- Use **Resend** (gratuito até 3.000 emails/mês) ou **Brevo** (300/dia grátis)
-- Isso remove completamente o rate limit de email do Supabase
+**Imediato (antes de ir para produção):**
+- Configurar SMTP customizado — Authentication → SMTP Settings
+- Usar **Resend** (gratuito até 3.000 emails/mês) ou **Brevo** (300/dia grátis)
+- Habilitar MFA na conta do Supabase (Settings → Account)
 
-**2. Pausa por inatividade** — Implemente um keep-alive:
-- Um cron job gratuito (ex: [cron-job.org](https://cron-job.org)) que faz um ping no app a cada 5 dias
-- Ou migre para o Pro quando tiver os primeiros clientes pagantes (~1-2 admins já cobrem o custo)
+**Quando tiver os primeiros clientes pagantes:**
+- Migrar para o Pro — elimina a pausa por inatividade e garante que o banco nunca "duerma"
+- ~1-2 admins pagantes já cobrem o custo do Pro ($25/mês)
 
-**3. Monitoramento** — Supabase Dashboard → Reports mostra consumo em tempo real
+**Monitoramento:**
+- Supabase Dashboard → Reports mostra consumo em tempo real
 
 ---
 
 ### Quando vale migrar para o Pro?
 
-O ponto de virada natural é quando tiver **2-3 admins pagantes** — o plano Pro ($25/mês) se paga e elimina todos esses problemas de uma vez. Até lá, configurar o SMTP externo é o único ajuste que realmente importa.
+O ponto de virada é quando o **primeiro cliente real se cadastrar**. A pausa por inatividade é inaceitável em produção com usuários pagantes — e o Pro elimina isso. Configurar SMTP antes disso resolve o problema imediato de emails sem custo adicional.

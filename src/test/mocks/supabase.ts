@@ -69,6 +69,8 @@ export const mockSupabaseAuth = {
   signInWithPassword: vi.fn(),
   signUp: vi.fn(),
   signOut: vi.fn(() => Promise.resolve({ error: null })),
+  resetPasswordForEmail: vi.fn(() => Promise.resolve({ error: null })),
+  updateUser: vi.fn(() => Promise.resolve({ error: null })),
 };
 
 export const mockSupabaseClient = {

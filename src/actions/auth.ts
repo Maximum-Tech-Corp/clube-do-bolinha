@@ -83,3 +83,69 @@ export async function logout() {
   await supabase.auth.signOut();
   redirect('/login');
 }
+
+export async function requestPasswordReset(
+  email: string,
+): Promise<{ error: string } | { success: true }> {
+  const supabase = await createClient();
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/redefinir-senha`,
+  });
+
+  if (error) {
+    return { error: 'Não foi possível enviar o e-mail. Tente novamente.' };
+  }
+
+  return { success: true };
+}
+
+export async function updatePassword(
+  password: string,
+): Promise<{ error: string } | { success: true }> {
+  const supabase = await createClient();
+
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    return { error: 'Não foi possível atualizar a senha. Tente novamente.' };
+  }
+
+  await supabase.auth.signOut();
+  redirect('/login');
+}
+
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<{ error: string } | { success: true }> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.email) {
+    return { error: 'Sessão inválida. Faça login novamente.' };
+  }
+
+  // Verify current password by re-authenticating
+  const { error: authError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  });
+
+  if (authError) {
+    return { error: 'Senha atual incorreta.' };
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
+
+  if (updateError) {
+    return { error: 'Não foi possível atualizar a senha. Tente novamente.' };
+  }
+
+  return { success: true };
+}

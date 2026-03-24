@@ -7,6 +7,7 @@ import {
   Settings,
   CreditCard,
   LogOut,
+  KeyRound,
 } from 'lucide-react';
 import {
   Dialog,
@@ -19,7 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updateTeamSettings } from '@/actions/team';
 import { createBillingPortalSession } from '@/actions/stripe';
-import { logout } from '@/actions/auth';
+import { logout, changePassword } from '@/actions/auth';
 
 interface Props {
   appUrl: string;
@@ -34,11 +35,18 @@ export function DashboardMenu({
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [name, setName] = useState(teamName);
   const [duration, setDuration] = useState(String(matchDurationMinutes));
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loadingPortal, setLoadingPortal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSaved, setPasswordSaved] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -65,6 +73,33 @@ Acesse: ${appUrl}
 Android: abra no Chrome, toque nos 3 pontos e selecione "Adicionar a tela inicial"
 iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de Inicio"`,
   );
+
+  async function handleChangePassword() {
+    if (!newPassword || newPassword !== confirmPassword) {
+      setPasswordError('As senhas não coincidem');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError('A nova senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+    setPasswordError(null);
+    setChangingPassword(true);
+    const result = await changePassword(currentPassword, newPassword);
+    setChangingPassword(false);
+    if ('error' in result) {
+      setPasswordError(result.error);
+    } else {
+      setPasswordSaved(true);
+      setTimeout(() => {
+        setChangePasswordOpen(false);
+        setPasswordSaved(false);
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      }, 1500);
+    }
+  }
 
   async function handleSave() {
     const val = parseInt(duration, 10);
@@ -101,6 +136,17 @@ iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de I
           >
             <CreditCard className="w-4 h-4 text-muted-foreground" />
             {loadingPortal ? 'Redirecionando...' : 'Minha Assinatura'}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMenuOpen(false);
+              setChangePasswordOpen(true);
+            }}
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+          >
+            <KeyRound className="w-4 h-4 text-muted-foreground" />
+            Trocar Senha
           </button>
           <a
             href={`https://wa.me/?text=${shareText}`}
@@ -162,6 +208,72 @@ iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de I
             </div>
             <Button onClick={handleSave} disabled={saving} className="w-full">
               {saving ? 'Salvando...' : saved ? 'Salvo!' : 'Atualizar'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={changePasswordOpen}
+        onOpenChange={open => {
+          setChangePasswordOpen(open);
+          if (!open) {
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+            setPasswordError(null);
+            setPasswordSaved(false);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Trocar senha</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="current-password">Senha atual</Label>
+              <Input
+                id="current-password"
+                type="password"
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={e => setCurrentPassword(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-password">Nova senha</Label>
+              <Input
+                id="new-password"
+                type="password"
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirmar nova senha</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+              />
+            </div>
+            {passwordError && (
+              <p className="text-sm text-destructive">{passwordError}</p>
+            )}
+            <Button
+              onClick={handleChangePassword}
+              disabled={changingPassword || passwordSaved}
+              className="w-full"
+            >
+              {changingPassword
+                ? 'Salvando...'
+                : passwordSaved
+                  ? 'Senha alterada!'
+                  : 'Salvar'}
             </Button>
           </div>
         </DialogContent>
