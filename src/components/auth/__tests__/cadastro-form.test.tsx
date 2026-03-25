@@ -45,10 +45,9 @@ describe('CadastroForm', () => {
       ).toBeInTheDocument();
     });
 
-    it('renders link back to /login', () => {
+    it('renders payment notice', () => {
       render(<CadastroForm />);
-      const link = screen.getByRole('link', { name: 'Entrar' });
-      expect(link).toHaveAttribute('href', '/login');
+      expect(screen.getByText(/R\$ 19,90\/mês/)).toBeInTheDocument();
     });
   });
 

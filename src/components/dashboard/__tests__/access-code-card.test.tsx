@@ -39,7 +39,7 @@ describe('AccessCodeCard', () => {
     it('shows WhatsApp share link', () => {
       render(<AccessCodeCard {...DEFAULT_PROPS} />);
       const link = screen.getByRole('link', {
-        name: /compartilhar no whatsapp/i,
+        name: /compartilhar código/i,
       });
       expect(link).toBeInTheDocument();
       expect(link.getAttribute('href')).toContain('wa.me');
@@ -48,7 +48,7 @@ describe('AccessCodeCard', () => {
     it('WhatsApp link contains the access code', () => {
       render(<AccessCodeCard {...DEFAULT_PROPS} />);
       const link = screen.getByRole('link', {
-        name: /compartilhar no whatsapp/i,
+        name: /compartilhar código/i,
       });
       expect(link.getAttribute('href')).toContain('ABCD-XYZ123');
     });
@@ -56,7 +56,7 @@ describe('AccessCodeCard', () => {
     it('WhatsApp link contains the team name', () => {
       render(<AccessCodeCard {...DEFAULT_PROPS} />);
       const link = screen.getByRole('link', {
-        name: /compartilhar no whatsapp/i,
+        name: /compartilhar código/i,
       });
       expect(decodeURIComponent(link.getAttribute('href') ?? '')).toContain(
         'Bolinha FC',

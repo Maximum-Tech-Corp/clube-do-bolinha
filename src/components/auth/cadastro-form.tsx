@@ -5,19 +5,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { signup } from '@/actions/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -88,119 +79,118 @@ export function CadastroForm() {
         </DialogContent>
       </Dialog>
 
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Criar conta</CardTitle>
-          <CardDescription>
-            Cadastre-se para organizar sua turma de futebol
-          </CardDescription>
-        </CardHeader>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Crie sua conta para organizar sua turma de futebol
+        </p>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            <div className="space-y-1">
-              <Label htmlFor="name">Nome completo</Label>
-              <Input id="name" placeholder="João Silva" {...register('name')} />
-              {errors.name && (
-                <p className="text-sm text-destructive">
-                  {errors.name.message}
-                </p>
-              )}
-            </div>
+        <div className="space-y-1">
+          <Label htmlFor="name">Nome completo</Label>
+          <Input
+            id="name"
+            placeholder="João Silva"
+            className="h-auto py-2 border-gray-300"
+            {...register('name')}
+          />
+          {errors.name && (
+            <p className="text-sm text-destructive">{errors.name.message}</p>
+          )}
+        </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                placeholder="seu@email.com"
-                {...register('email')}
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">
-                  {errors.email.message}
-                </p>
-              )}
-            </div>
+        <div className="space-y-1">
+          <Label htmlFor="email">E-mail</Label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            placeholder="seu@email.com"
+            className="h-auto py-2 border-gray-300"
+            {...register('email')}
+          />
+          {errors.email && (
+            <p className="text-sm text-destructive">{errors.email.message}</p>
+          )}
+        </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="phone">Celular</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="(11) 99999-9999"
-                {...register('phone')}
-              />
-              {errors.phone && (
-                <p className="text-sm text-destructive">
-                  {errors.phone.message}
-                </p>
-              )}
-            </div>
+        <div className="space-y-1">
+          <Label htmlFor="phone">Celular</Label>
+          <Input
+            id="phone"
+            type="tel"
+            placeholder="(11) 99999-9999"
+            className="h-auto py-2 border-gray-300"
+            {...register('phone')}
+          />
+          {errors.phone && (
+            <p className="text-sm text-destructive">{errors.phone.message}</p>
+          )}
+        </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="teamName">Nome da turma</Label>
-              <Input
-                id="teamName"
-                placeholder="Os Cracks do Bairro"
-                {...register('teamName')}
-              />
-              {errors.teamName && (
-                <p className="text-sm text-destructive">
-                  {errors.teamName.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="new-password"
-                {...register('password')}
-              />
-              {errors.password && (
-                <p className="text-sm text-destructive">
-                  {errors.password.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-1 mb-2">
-              <Label htmlFor="confirmPassword">Confirmar senha</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                autoComplete="new-password"
-                {...register('confirmPassword')}
-              />
-              {errors.confirmPassword && (
-                <p className="text-sm text-destructive">
-                  {errors.confirmPassword.message}
-                </p>
-              )}
-            </div>
-
-            {serverError && (
-              <p className="text-sm text-destructive">{serverError}</p>
-            )}
-          </CardContent>
-
-          <CardFooter className="flex flex-col gap-3">
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Criando conta...' : 'Criar conta'}
-            </Button>
-            <p className="text-sm text-muted-foreground text-center">
-              Já tem conta?{' '}
-              <Link href="/login" className="underline">
-                Entrar
-              </Link>
+        <div className="space-y-1">
+          <Label htmlFor="teamName">Nome da turma</Label>
+          <Input
+            id="teamName"
+            placeholder="Os Cracks do Bairro"
+            className="h-auto py-2 border-gray-300"
+            {...register('teamName')}
+          />
+          {errors.teamName && (
+            <p className="text-sm text-destructive">
+              {errors.teamName.message}
             </p>
-          </CardFooter>
-        </form>
-      </Card>
+          )}
+        </div>
+
+        <div className="space-y-1">
+          <Label htmlFor="password">Senha</Label>
+          <Input
+            id="password"
+            type="password"
+            autoComplete="new-password"
+            className="h-auto py-2 border-gray-300"
+            {...register('password')}
+          />
+          {errors.password && (
+            <p className="text-sm text-destructive">
+              {errors.password.message}
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-1">
+          <Label htmlFor="confirmPassword">Confirmar senha</Label>
+          <Input
+            id="confirmPassword"
+            type="password"
+            autoComplete="new-password"
+            className="h-auto py-2 border-gray-300"
+            {...register('confirmPassword')}
+          />
+          {errors.confirmPassword && (
+            <p className="text-sm text-destructive">
+              {errors.confirmPassword.message}
+            </p>
+          )}
+        </div>
+
+        {serverError && (
+          <p className="text-sm text-destructive">{serverError}</p>
+        )}
+
+        <Button type="submit" className="w-full py-5" disabled={isSubmitting}>
+          {isSubmitting ? 'Criando conta...' : 'Criar conta'}
+        </Button>
+
+        <div className="flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2.5">
+          <span className="text-blue-400 text-base font-bold leading-none mt-0.5">
+            i
+          </span>
+          <p className="text-xs text-blue-800">
+            Após o cadastro, você será direcionado para assinar o plano por{' '}
+            <span className="font-semibold">R$ 19,90/mês</span>.
+          </p>
+        </div>
+      </form>
     </>
   );
 }
