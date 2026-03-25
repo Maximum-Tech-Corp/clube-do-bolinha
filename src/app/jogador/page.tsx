@@ -43,7 +43,7 @@ export default function JogadorPage() {
         style={{ backgroundColor: '#fed015' }}
       >
         <AppLogo size="md" />
-        <p className="text-sm mt-4 text-white">
+        <p className="text-sm mt-4 font-bold" style={{ color: '#002776' }}>
           Acesse com o código da sua turma
         </p>
       </div>

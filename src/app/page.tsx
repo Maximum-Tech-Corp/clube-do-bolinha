@@ -11,7 +11,7 @@ export default function Home() {
         style={{ backgroundColor: '#fed015' }}
       >
         <AppLogo size="md" />
-        <p className="text-sm mt-4 text-white">
+        <p className="text-sm mt-4 font-bold" style={{ color: '#002776' }}>
           Organize o futebol da sua turma
         </p>
       </div>

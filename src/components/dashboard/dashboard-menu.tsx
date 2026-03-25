@@ -119,7 +119,7 @@ iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de I
         className="p-2 rounded-lg cursor-pointer"
         aria-label="Menu"
       >
-        <MoreVertical className="w-7 h-7 text-white" strokeWidth={2.5} />
+        <MoreVertical className="w-7 h-7" style={{ color: '#002776' }} strokeWidth={2.5} />
       </button>
 
       {menuOpen && (

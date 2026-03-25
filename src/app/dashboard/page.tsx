@@ -47,8 +47,8 @@ export default async function DashboardPage() {
           />
         </div>
         <AppLogo size="md" />
-        <p className="text-lg font-semibold mt-3 text-white">{team.name}</p>
-        <p className="text-sm text-white mt-0.5">
+        <p className="text-lg font-semibold mt-3" style={{ color: '#002776' }}>{team.name}</p>
+        <p className="text-sm mt-0.5" style={{ color: '#002776' }}>
           Olá, <span className="font-medium">{admin.name}</span>!
         </p>
       </div>
