@@ -40,7 +40,10 @@ export default function Home() {
 
           <Link href="/jogador" className="block">
             <div className="flex items-center gap-4 bg-primary/5 rounded-xl px-4 py-6 hover:bg-primary/10 transition-colors cursor-pointer">
-              <Trophy className="w-6 h-6 text-primary shrink-0" strokeWidth={2.5} />
+              <Trophy
+                className="w-6 h-6 text-primary shrink-0"
+                strokeWidth={2.5}
+              />
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm">Jogador</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
