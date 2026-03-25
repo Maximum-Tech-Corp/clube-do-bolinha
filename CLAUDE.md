@@ -48,6 +48,28 @@ When a test breaks:
 **UI**
 - shadcn/ui as component base
 - Mobile-first design
+- Full design system documented in `docs/padrao-layout.md` — consult it when building or standardizing screens
+
+**Layout pattern** (apply automatically to all screens unless told otherwise):
+- Yellow header: full-width `style={{ backgroundColor: '#fed015' }}`, `pt-12 pb-10 px-8`, `<AppLogo size="md" />` centered; optional subtitle uses `text-sm font-bold` with `style={{ color: '#002776' }}` — never white text on yellow
+- Content area: `flex-1 w-full max-w-sm mx-auto px-6 pt-8`
+- Footer nav card: `max-w-sm mx-auto p-4 mt-1`, `<Card className="bg-primary/5 ring-0">`, `ArrowLeft` icon inside `bg-muted` box, title + subtitle
+
+**Forms:**
+- No Card wrapper — loose form with `className="space-y-4"`
+- Inputs: `className="h-auto py-2 border-gray-300"`
+- Primary button: `className="w-full py-5"`
+- Outline/secondary button: `variant="outline" className="w-full py-5 border-primary text-primary hover:bg-primary/5 hover:text-primary"`
+
+**Color palette:**
+- `#fed015` — yellow, header backgrounds only
+- `#002776` — dark blue, text on yellow headers and small accent details
+- `primary` (shadcn green) — buttons, outline borders, icons
+- `bg-primary/5` / `bg-primary/10` — card backgrounds, hover states
+- `bg-blue-50 border-blue-200 text-blue-800` — info/alert notice boxes (use "i" character as icon)
+- `bg-background` / `bg-muted` — predominant page backgrounds
+- `text-muted-foreground` — auxiliary/helper text
+- `text-destructive` — validation and server errors
 
 ---
 
