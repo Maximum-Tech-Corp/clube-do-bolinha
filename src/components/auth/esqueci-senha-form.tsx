@@ -4,19 +4,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useState } from 'react';
-import Link from 'next/link';
 import { requestPasswordReset } from '@/actions/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 
 const schema = z.object({
   email: z.string().email('E-mail inválido'),
@@ -48,68 +39,44 @@ export function EsqueciSenhaForm() {
 
   if (sent) {
     return (
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>E-mail enviado</CardTitle>
-          <CardDescription>
-            Verifique sua caixa de entrada e clique no link para redefinir sua
-            senha.
-          </CardDescription>
-        </CardHeader>
-        <CardFooter>
-          <Link
-            href="/login"
-            className="text-sm text-muted-foreground underline"
-          >
-            Voltar para o login
-          </Link>
-        </CardFooter>
-      </Card>
+      <div className="space-y-2">
+        <p className="font-semibold text-base">E-mail enviado</p>
+        <p className="text-sm text-muted-foreground">
+          Verifique sua caixa de entrada e clique no link para redefinir sua
+          senha.
+        </p>
+      </div>
     );
   }
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle>Esqueci a senha</CardTitle>
-        <CardDescription>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <div className="space-y-1">
+        <p className="text-sm text-muted-foreground">
           Informe seu e-mail e enviaremos um link para redefinir sua senha.
-        </CardDescription>
-      </CardHeader>
+        </p>
+      </div>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <CardContent className="space-y-4">
-          <div className="space-y-1 mb-2">
-            <Label htmlFor="email">E-mail</Label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              placeholder="seu@email.com"
-              {...register('email')}
-            />
-            {errors.email && (
-              <p className="text-sm text-destructive">{errors.email.message}</p>
-            )}
-          </div>
+      <div className="space-y-1">
+        <Label htmlFor="email">E-mail</Label>
+        <Input
+          id="email"
+          type="email"
+          autoComplete="email"
+          placeholder="seu@email.com"
+          className="h-auto py-2 border-gray-300"
+          {...register('email')}
+        />
+        {errors.email && (
+          <p className="text-sm text-destructive">{errors.email.message}</p>
+        )}
+      </div>
 
-          {serverError && (
-            <p className="text-sm text-destructive">{serverError}</p>
-          )}
-        </CardContent>
+      {serverError && <p className="text-sm text-destructive">{serverError}</p>}
 
-        <CardFooter className="flex flex-col gap-3">
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? 'Enviando...' : 'Enviar link'}
-          </Button>
-          <Link
-            href="/login"
-            className="text-sm text-muted-foreground underline"
-          >
-            Voltar para o login
-          </Link>
-        </CardFooter>
-      </form>
-    </Card>
+      <Button type="submit" className="w-full py-5" disabled={isSubmitting}>
+        {isSubmitting ? 'Enviando...' : 'Enviar email'}
+      </Button>
+    </form>
   );
 }

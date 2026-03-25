@@ -7,16 +7,9 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { login } from '@/actions/auth';
 import { Button, buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 
 const schema = z.object({
   email: z.string().email('E-mail inválido'),
@@ -43,72 +36,68 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle>Entrar</CardTitle>
-        <CardDescription>Acesso do organizador da turma</CardDescription>
-      </CardHeader>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <div className="space-y-1">
+        <Label htmlFor="email">E-mail</Label>
+        <Input
+          id="email"
+          type="email"
+          autoComplete="email"
+          placeholder="seu@email.com"
+          className="h-auto py-2 border-gray-300"
+          {...register('email')}
+        />
+        {errors.email && (
+          <p className="text-sm text-destructive">{errors.email.message}</p>
+        )}
+      </div>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <CardContent className="space-y-4">
-          <div className="space-y-1">
-            <Label htmlFor="email">E-mail</Label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              placeholder="seu@email.com"
-              {...register('email')}
-            />
-            {errors.email && (
-              <p className="text-sm text-destructive">{errors.email.message}</p>
-            )}
-          </div>
+      <div className="space-y-1">
+        <Label htmlFor="password">Senha</Label>
+        <Input
+          id="password"
+          type="password"
+          autoComplete="current-password"
+          className="h-auto py-2 border-gray-300"
+          {...register('password')}
+        />
+        {errors.password && (
+          <p className="text-sm text-destructive">{errors.password.message}</p>
+        )}
+      </div>
 
-          <div className="space-y-1 mb-2">
-            <Label htmlFor="password">Senha</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              {...register('password')}
-            />
-            {errors.password && (
-              <p className="text-sm text-destructive">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
+      {serverError && <p className="text-sm text-destructive">{serverError}</p>}
 
-          {serverError && (
-            <p className="text-sm text-destructive">{serverError}</p>
-          )}
-        </CardContent>
+      <Button
+        type="submit"
+        className="w-full py-5 cursor-pointer"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? 'Entrando...' : 'Entrar'}
+      </Button>
 
-        <CardFooter className="flex flex-col gap-3">
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? 'Entrando...' : 'Entrar'}
-          </Button>
-          <p className="text-sm text-muted-foreground text-center">
-            Não tem conta?{' '}
-            <Link href="/cadastro" className="underline">
-              Cadastre-se
-            </Link>
-          </p>
-          <Link
-            href="/esqueci-senha"
-            className="text-sm text-muted-foreground underline"
-          >
-            Esqueci a senha
-          </Link>
-          <Link
-            href="/"
-            className={buttonVariants({ variant: 'outline', size: 'sm' })}
-          >
-            Troque de Perfil
-          </Link>
-        </CardFooter>
-      </form>
-    </Card>
+      <Link
+        href="/esqueci-senha"
+        className="text-sm text-primary underline block text-center font-semibold"
+      >
+        Esqueci a senha
+      </Link>
+
+      <div className="flex items-center gap-3">
+        <hr className="flex-1 border-border" />
+        <span className="text-sm text-muted-foreground">ou</span>
+        <hr className="flex-1 border-border" />
+      </div>
+
+      <Link
+        href="/cadastro"
+        className={cn(
+          buttonVariants({ variant: 'outline' }),
+          'w-full py-5 border-primary text-primary hover:bg-primary/5 hover:text-primary',
+        )}
+      >
+        Cadastre-se
+      </Link>
+    </form>
   );
 }

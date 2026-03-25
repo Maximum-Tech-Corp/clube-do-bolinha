@@ -34,27 +34,32 @@ export default async function DashboardPage() {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 
   return (
-    <div className="max-w-md mx-auto p-4 pt-8 space-y-6">
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col items-center gap-1 flex-1">
-          <AppLogo size="sm" />
-          <p className="text-sm font-semibold text-foreground">{team.name}</p>
-          <p className="text-xs text-muted-foreground">
-            Olá, <span className="font-medium">{admin.name}</span>!
-          </p>
+    <div className="flex flex-col bg-background">
+      <div
+        className="relative w-full flex flex-col items-center pt-12 pb-10 px-8"
+        style={{ backgroundColor: '#fed015' }}
+      >
+        <div className="absolute top-4 right-4">
+          <DashboardMenu
+            appUrl={appUrl}
+            teamName={team.name}
+            matchDurationMinutes={team.match_duration_minutes ?? 10}
+          />
         </div>
-        <DashboardMenu
-          appUrl={appUrl}
-          teamName={team.name}
-          matchDurationMinutes={team.match_duration_minutes ?? 10}
-        />
+        <AppLogo size="md" />
+        <p className="text-lg font-semibold mt-3 text-white">{team.name}</p>
+        <p className="text-sm text-white mt-0.5">
+          Olá, <span className="font-medium">{admin.name}</span>!
+        </p>
       </div>
 
-      <AccessCodeCard
-        teamName={team.name}
-        accessCode={team.access_code}
-        appUrl={appUrl}
-      />
+      <div className="flex-1 w-full max-w-sm mx-auto px-6 pt-8">
+        <AccessCodeCard
+          teamName={team.name}
+          accessCode={team.access_code}
+          appUrl={appUrl}
+        />
+      </div>
     </div>
   );
 }

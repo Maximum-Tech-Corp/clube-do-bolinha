@@ -35,12 +35,6 @@ describe('LoginForm', () => {
     expect(link).toHaveAttribute('href', '/cadastro');
   });
 
-  it('renders link back to /', () => {
-    render(<LoginForm />);
-    const link = screen.getByRole('link', { name: /Troque de Perfil/ });
-    expect(link).toHaveAttribute('href', '/');
-  });
-
   it('renders link to /esqueci-senha', () => {
     render(<LoginForm />);
     const link = screen.getByRole('link', { name: /esqueci a senha/i });

@@ -20,14 +20,8 @@ describe('EsqueciSenhaForm', () => {
     render(<EsqueciSenhaForm />);
     expect(screen.getByLabelText('E-mail')).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /enviar link/i }),
+      screen.getByRole('button', { name: /enviar email/i }),
     ).toBeInTheDocument();
-  });
-
-  it('renders link back to /login', () => {
-    render(<EsqueciSenhaForm />);
-    const link = screen.getByRole('link', { name: /voltar para o login/i });
-    expect(link).toHaveAttribute('href', '/login');
   });
 
   describe('validation', () => {
@@ -48,7 +42,7 @@ describe('EsqueciSenhaForm', () => {
       const user = userEvent.setup();
       render(<EsqueciSenhaForm />);
 
-      await user.click(screen.getByRole('button', { name: /enviar link/i }));
+      await user.click(screen.getByRole('button', { name: /enviar email/i }));
 
       await waitFor(() => {
         expect(screen.getByText('E-mail inválido')).toBeInTheDocument();
@@ -63,7 +57,7 @@ describe('EsqueciSenhaForm', () => {
       render(<EsqueciSenhaForm />);
 
       await user.type(screen.getByLabelText('E-mail'), 'admin@example.com');
-      await user.click(screen.getByRole('button', { name: /enviar link/i }));
+      await user.click(screen.getByRole('button', { name: /enviar email/i }));
 
       await waitFor(() => {
         expect(mockRequestPasswordReset).toHaveBeenCalledWith(
@@ -77,7 +71,7 @@ describe('EsqueciSenhaForm', () => {
       render(<EsqueciSenhaForm />);
 
       await user.type(screen.getByLabelText('E-mail'), 'admin@example.com');
-      await user.click(screen.getByRole('button', { name: /enviar link/i }));
+      await user.click(screen.getByRole('button', { name: /enviar email/i }));
 
       await waitFor(() => {
         expect(screen.getByText('E-mail enviado')).toBeInTheDocument();
@@ -92,12 +86,12 @@ describe('EsqueciSenhaForm', () => {
       render(<EsqueciSenhaForm />);
 
       await user.type(screen.getByLabelText('E-mail'), 'admin@example.com');
-      await user.click(screen.getByRole('button', { name: /enviar link/i }));
+      await user.click(screen.getByRole('button', { name: /enviar email/i }));
 
       await waitFor(() => {
         expect(screen.queryByLabelText('E-mail')).not.toBeInTheDocument();
         expect(
-          screen.queryByRole('button', { name: /enviar link/i }),
+          screen.queryByRole('button', { name: /enviar email/i }),
         ).not.toBeInTheDocument();
       });
     });
@@ -110,7 +104,7 @@ describe('EsqueciSenhaForm', () => {
       render(<EsqueciSenhaForm />);
 
       await user.type(screen.getByLabelText('E-mail'), 'admin@example.com');
-      await user.click(screen.getByRole('button', { name: /enviar link/i }));
+      await user.click(screen.getByRole('button', { name: /enviar email/i }));
 
       await waitFor(() => {
         expect(
@@ -132,7 +126,7 @@ describe('EsqueciSenhaForm', () => {
       render(<EsqueciSenhaForm />);
 
       await user.type(screen.getByLabelText('E-mail'), 'admin@example.com');
-      await user.click(screen.getByRole('button', { name: /enviar link/i }));
+      await user.click(screen.getByRole('button', { name: /enviar email/i }));
 
       expect(
         screen.getByRole('button', { name: 'Enviando...' }),

@@ -42,11 +42,18 @@ export default async function PagamentoPendentePage() {
         <CardContent className="space-y-3">
           <form action={createCheckoutSession}>
             <Button type="submit" className="w-full">
-              Assinar agora
+              Assine agora
             </Button>
-            <p className="text-xs text-muted-foreground text-center mt-2">
-              Cobrança mensal recorrente. Cancele quando quiser.
-            </p>
+            <div className="flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2.5 mt-2">
+              <span className="text-blue-400 text-base font-bold leading-none mt-0.5">
+                i
+              </span>
+              <p className="text-xs text-blue-800">
+                A cobrança mensal será recorrente. E você poderá cancelar quando
+                quiser após login.
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground text-center mt-2"></p>
           </form>
           <form action={logout}>
             <Button type="submit" variant="ghost" className="w-full">

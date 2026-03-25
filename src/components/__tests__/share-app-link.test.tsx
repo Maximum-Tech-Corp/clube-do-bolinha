@@ -11,7 +11,7 @@ describe('ShareAppLink', () => {
   it('renders the share button', () => {
     render(<ShareAppLink />);
     expect(
-      screen.getByRole('button', { name: /compartilhar com amigos/i }),
+      screen.getByRole('button', { name: /compartilhe o app/i }),
     ).toBeInTheDocument();
   });
 
@@ -20,7 +20,7 @@ describe('ShareAppLink', () => {
     render(<ShareAppLink />);
 
     await user.click(
-      screen.getByRole('button', { name: /compartilhar com amigos/i }),
+      screen.getByRole('button', { name: /compartilhe o app/i }),
     );
 
     expect(window.open).toHaveBeenCalledWith(
@@ -35,7 +35,7 @@ describe('ShareAppLink', () => {
     render(<ShareAppLink />);
 
     await user.click(
-      screen.getByRole('button', { name: /compartilhar com amigos/i }),
+      screen.getByRole('button', { name: /compartilhe o app/i }),
     );
 
     const [url] = (window.open as ReturnType<typeof vi.fn>).mock.calls[0];
