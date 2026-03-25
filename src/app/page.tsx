@@ -1,30 +1,59 @@
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { ShieldCheck, ChevronRight } from 'lucide-react';
 import { AppLogo } from '@/components/app-logo';
 import { ShareAppLink } from '@/components/share-app-link';
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start pt-24 p-6 pb-28 bg-muted/40">
-      <div className="w-full max-w-sm space-y-12">
-        <div className="flex flex-col items-center text-center">
-          <AppLogo size="lg" />
-          <p className="mt-3 text-muted-foreground text-sm">
-            Organize o futebol da sua turma
-          </p>
+    <div className="min-h-screen flex flex-col bg-background pb-16">
+      <div
+        className="w-full flex flex-col items-center pt-12 pb-10 px-8"
+        style={{ backgroundColor: '#fed015' }}
+      >
+        <AppLogo size="md" />
+        <p className="text-sm mt-4 text-white">
+          Organize o futebol da sua turma
+        </p>
+      </div>
+
+      <div className="w-full max-w-sm mx-auto px-6 pt-8">
+        <p className="text-xs text-muted-foreground text-center mb-4">
+          Selecione o tipo de acesso para começar
+        </p>
+
+        <div className="space-y-6">
+          <Link href="/login" className="block">
+            <div className="flex items-center gap-4 bg-primary/5 rounded-xl px-4 py-6 hover:bg-primary/10 transition-colors cursor-pointer">
+              <ShieldCheck
+                className="w-6 h-6 text-primary shrink-0"
+                strokeWidth={2.5}
+              />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm">Organizador</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Acesso ao administração do racha da turma
+                </p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+            </div>
+          </Link>
+
+          <Link href="/jogador" className="block">
+            <div className="flex items-center gap-4 bg-primary/5 rounded-xl px-4 py-6 hover:bg-primary/10 transition-colors cursor-pointer">
+              <span className="text-2xl shrink-0">⚽</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm">Jogador</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Acesso para marcar presença nos jogos e ver a lista de
+                  jogadores
+                </p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+            </div>
+          </Link>
         </div>
 
-        <div className="flex flex-col items-center gap-2.5">
-          <Link href="/jogador" className="w-full">
-            <Button className="w-full" size="lg">
-              Sou jogador
-            </Button>
-          </Link>
-          <Link href="/login" className="w-full">
-            <Button variant="outline" className="w-full" size="lg">
-              Sou organizador
-            </Button>
-          </Link>
+        <div className="flex justify-center pt-4">
           <ShareAppLink />
         </div>
       </div>
@@ -37,11 +66,9 @@ export default function Home() {
           alt="Maximum Tech"
           width={400}
           height={101}
-          className="h-5 w-auto opacity-60"
+          className="h-7 w-auto opacity-60"
         />
-        <span className="text-[10px] text-muted-foreground/60">
-          v1.0.0 Beta
-        </span>
+        <span className="text-xs text-muted-foreground/60">v1.0.0 Beta</span>
       </footer>
     </div>
   );

@@ -1,5 +1,7 @@
 'use client';
 
+import { Share2 } from 'lucide-react';
+
 export function ShareAppLink() {
   function handleShare() {
     const url = window.location.origin;
@@ -13,9 +15,10 @@ export function ShareAppLink() {
     <button
       type="button"
       onClick={handleShare}
-      className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors"
+      className="flex items-center mt-2 gap-1.5 text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors cursor-pointer"
     >
-      Compartilhar com amigos
+      <Share2 className="w-4 h-4" />
+      Compartilhe o App com os amigos
     </button>
   );
 }
