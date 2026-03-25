@@ -56,6 +56,16 @@ export default function Home() {
           </Link>
         </div>
 
+        <div className="flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2.5 mt-6">
+          <span className="text-blue-400 text-base font-bold leading-none mt-0.5">
+            i
+          </span>
+          <p className="text-xs text-blue-800">
+            Este app está em <span className="font-semibold">Fase Beta</span>. O
+            lançamento oficial será em breve — fique de olho!
+          </p>
+        </div>
+
         <div className="flex justify-center pt-4">
           <ShareAppLink />
         </div>
