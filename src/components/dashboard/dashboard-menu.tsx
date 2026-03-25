@@ -116,10 +116,10 @@ iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de I
       <button
         type="button"
         onClick={() => setMenuOpen(o => !o)}
-        className="p-2 rounded-lg hover:bg-muted transition-colors"
+        className="p-2 rounded-lg cursor-pointer"
         aria-label="Menu"
       >
-        <MoreVertical className="w-5 h-5 text-muted-foreground" />
+        <MoreVertical className="w-7 h-7 text-white" strokeWidth={2.5} />
       </button>
 
       {menuOpen && (
