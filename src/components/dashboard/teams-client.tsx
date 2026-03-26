@@ -382,7 +382,7 @@ export function TeamsClient({
         </div>
       )}
 
-      {/* Dialog de confirmação */}
+      {/* Dialog de confirmação — finalizar */}
       <Dialog open={finishDialogOpen} onOpenChange={setFinishDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>

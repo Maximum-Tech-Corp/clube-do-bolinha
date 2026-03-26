@@ -8,6 +8,7 @@ const mockRemoveConfirmedPlayer = vi.fn();
 const mockPromoteWaitlistPlayer = vi.fn();
 const mockAddPlayerToGame = vi.fn();
 const mockCreateAndAddPlayer = vi.fn();
+const mockResetDraw = vi.fn();
 
 vi.mock('@/actions/games-admin', () => ({
   cancelGame: (...args: unknown[]) => mockCancelGame(...args),
@@ -20,6 +21,10 @@ vi.mock('@/actions/games-admin', () => ({
   createGame: vi.fn(),
   toggleTournament: vi.fn(),
   listGames: vi.fn(),
+}));
+
+vi.mock('@/actions/draw', () => ({
+  resetDraw: (...args: unknown[]) => mockResetDraw(...args),
 }));
 
 // Mock DrawModal to avoid deep rendering
@@ -151,6 +156,7 @@ describe('GameDetailClient', () => {
     mockPromoteWaitlistPlayer.mockResolvedValue({});
     mockAddPlayerToGame.mockResolvedValue({});
     mockCreateAndAddPlayer.mockResolvedValue({});
+    mockResetDraw.mockResolvedValue({});
   });
 
   describe('confirmed list', () => {
@@ -159,6 +165,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={CONFIRMED}
           waitlist={[]}
           availablePlayers={[]}
@@ -172,6 +179,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={CONFIRMED}
           waitlist={[]}
           availablePlayers={[]}
@@ -186,6 +194,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
@@ -200,6 +209,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={CONFIRMED}
           waitlist={[]}
           availablePlayers={[]}
@@ -221,6 +231,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={CONFIRMED}
           waitlist={WAITLIST}
           availablePlayers={[]}
@@ -235,6 +246,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={CONFIRMED}
           waitlist={[]}
           availablePlayers={[]}
@@ -249,6 +261,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={CONFIRMED}
           waitlist={WAITLIST}
           availablePlayers={[]}
@@ -269,6 +282,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[
             {
               confirmationId: 'c-banned',
@@ -293,6 +307,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[
             {
               confirmationId: 'c-susp',
@@ -317,6 +332,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[
             {
               confirmationId: 'c-exp',
@@ -341,6 +357,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[
             {
               confirmationId: 'c-both',
@@ -366,6 +383,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={CONFIRMED}
           waitlist={[]}
           availablePlayers={[]}
@@ -382,6 +400,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[
             {
@@ -407,6 +426,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[
             {
@@ -432,6 +452,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[
             {
@@ -470,6 +491,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={confirmed15}
           waitlist={[]}
           availablePlayers={[]}
@@ -485,6 +507,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={CONFIRMED} // only 2 players — cannot draw
           waitlist={[]}
           availablePlayers={[]}
@@ -495,19 +518,20 @@ describe('GameDetailClient', () => {
       ).toBeDisabled();
     });
 
-    it("shows 'Sorteio realizado' when draw is done", () => {
+    it("hides 'Rodar sorteio' when draw is done", () => {
       render(
         <GameDetailClient
           gameId="game-1"
           drawDone={true}
+          hasAnyStats={false}
           confirmed={CONFIRMED}
           waitlist={[]}
           availablePlayers={[]}
         />,
       );
       expect(
-        screen.getByRole('button', { name: 'Sorteio realizado' }),
-      ).toBeInTheDocument();
+        screen.queryByRole('button', { name: 'Rodar sorteio' }),
+      ).not.toBeInTheDocument();
     });
 
     it("opens draw modal when 'Rodar sorteio' is clicked", async () => {
@@ -526,6 +550,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={confirmed15}
           waitlist={[]}
           availablePlayers={[]}
@@ -538,12 +563,171 @@ describe('GameDetailClient', () => {
     });
   });
 
+  describe('desfazer sorteio button', () => {
+    it('shows Desfazer Sorteio when draw done and no stats', () => {
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={true}
+          hasAnyStats={false}
+          confirmed={CONFIRMED}
+          waitlist={[]}
+          availablePlayers={[]}
+        />,
+      );
+      expect(
+        screen.getByRole('button', { name: 'Desfazer Sorteio' }),
+      ).toBeInTheDocument();
+    });
+
+    it('does not show Desfazer Sorteio when stats exist', () => {
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={true}
+          hasAnyStats={true}
+          confirmed={CONFIRMED}
+          waitlist={[]}
+          availablePlayers={[]}
+        />,
+      );
+      expect(
+        screen.queryByRole('button', { name: 'Desfazer Sorteio' }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('does not show Desfazer Sorteio when draw not done', () => {
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={false}
+          hasAnyStats={false}
+          confirmed={CONFIRMED}
+          waitlist={[]}
+          availablePlayers={[]}
+        />,
+      );
+      expect(
+        screen.queryByRole('button', { name: 'Desfazer Sorteio' }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('opens confirmation dialog on Desfazer Sorteio click', async () => {
+      const user = userEvent.setup();
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={true}
+          hasAnyStats={false}
+          confirmed={CONFIRMED}
+          waitlist={[]}
+          availablePlayers={[]}
+        />,
+      );
+
+      await user.click(
+        screen.getByRole('button', { name: 'Desfazer Sorteio' }),
+      );
+
+      expect(screen.getByText('Desfazer Sorteio?')).toBeInTheDocument();
+    });
+
+    it('calls resetDraw on confirm', async () => {
+      const user = userEvent.setup();
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={true}
+          hasAnyStats={false}
+          confirmed={CONFIRMED}
+          waitlist={[]}
+          availablePlayers={[]}
+        />,
+      );
+
+      await user.click(
+        screen.getByRole('button', { name: 'Desfazer Sorteio' }),
+      );
+      await user.click(screen.getByRole('button', { name: 'Confirmar' }));
+
+      await waitFor(() => {
+        expect(mockResetDraw).toHaveBeenCalledWith('game-1');
+      });
+    });
+
+    it('shows error and closes dialog when resetDraw fails', async () => {
+      mockResetDraw.mockResolvedValue({
+        error: 'Não é possível re-sortear após registrar placares.',
+      });
+      const user = userEvent.setup();
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={true}
+          hasAnyStats={false}
+          confirmed={CONFIRMED}
+          waitlist={[]}
+          availablePlayers={[]}
+        />,
+      );
+
+      await user.click(
+        screen.getByRole('button', { name: 'Desfazer Sorteio' }),
+      );
+      await user.click(screen.getByRole('button', { name: 'Confirmar' }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(
+            'Não é possível re-sortear após registrar placares.',
+          ),
+        ).toBeInTheDocument();
+      });
+      expect(screen.queryByText('Desfazer Sorteio?')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('confirmed list — Remover button visibility', () => {
+    it('shows Remover buttons when draw not done', () => {
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={false}
+          hasAnyStats={false}
+          confirmed={CONFIRMED}
+          waitlist={[]}
+          availablePlayers={[]}
+        />,
+      );
+      expect(screen.getAllByRole('button', { name: 'Remover' })).toHaveLength(
+        CONFIRMED.length,
+      );
+    });
+
+    it('hides Remover buttons when draw is done', () => {
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={true}
+          hasAnyStats={false}
+          confirmed={CONFIRMED}
+          waitlist={[]}
+          availablePlayers={[]}
+        />,
+      );
+      expect(
+        screen.queryByRole('button', { name: 'Remover' }),
+      ).not.toBeInTheDocument();
+    });
+  });
+
   describe('cancel game button', () => {
     it("shows 'Cancelar jogo' button", () => {
       render(
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
@@ -560,6 +744,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
@@ -577,6 +762,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
@@ -600,6 +786,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[]}
           availablePlayers={AVAILABLE_PLAYERS}
@@ -615,6 +802,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
@@ -630,6 +818,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[]}
           availablePlayers={AVAILABLE_PLAYERS}
@@ -641,12 +830,34 @@ describe('GameDetailClient', () => {
       ).toBeInTheDocument();
     });
 
+    it('disables select and Adicionar button when draw is done', async () => {
+      const user = userEvent.setup();
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={true}
+          hasAnyStats={false}
+          confirmed={[]}
+          waitlist={[]}
+          availablePlayers={AVAILABLE_PLAYERS}
+        />,
+      );
+
+      // Select trigger should not open dropdown when disabled
+      await user.click(screen.getByText('Selecionar jogador'));
+      expect(screen.queryByText('Diego Santos')).not.toBeInTheDocument();
+
+      // Adicionar button should be disabled
+      expect(screen.getByRole('button', { name: 'Adicionar' })).toBeDisabled();
+    });
+
     it('opens SearchablePlayerSelect on click and allows player selection', async () => {
       const user = userEvent.setup();
       render(
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[]}
           availablePlayers={AVAILABLE_PLAYERS}
@@ -669,6 +880,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[]}
           availablePlayers={AVAILABLE_PLAYERS}
@@ -694,6 +906,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[]}
           availablePlayers={AVAILABLE_PLAYERS}
@@ -714,6 +927,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[]}
           availablePlayers={AVAILABLE_PLAYERS}
@@ -757,6 +971,7 @@ describe('GameDetailClient', () => {
           <GameDetailClient
             gameId="game-1"
             drawDone={false}
+            hasAnyStats={false}
             confirmed={[]}
             waitlist={[]}
             availablePlayers={[BANNED_AVAILABLE]}
@@ -772,6 +987,7 @@ describe('GameDetailClient', () => {
           <GameDetailClient
             gameId="game-1"
             drawDone={false}
+            hasAnyStats={false}
             confirmed={[]}
             waitlist={[]}
             availablePlayers={[SUSPENDED_AVAILABLE]}
@@ -787,6 +1003,7 @@ describe('GameDetailClient', () => {
           <GameDetailClient
             gameId="game-1"
             drawDone={false}
+            hasAnyStats={false}
             confirmed={[]}
             waitlist={[]}
             availablePlayers={[EXPIRED_AVAILABLE]}
@@ -802,6 +1019,7 @@ describe('GameDetailClient', () => {
           <GameDetailClient
             gameId="game-1"
             drawDone={false}
+            hasAnyStats={false}
             confirmed={[]}
             waitlist={[]}
             availablePlayers={[BANNED_AND_SUSPENDED_AVAILABLE]}
@@ -818,6 +1036,7 @@ describe('GameDetailClient', () => {
           <GameDetailClient
             gameId="game-1"
             drawDone={false}
+            hasAnyStats={false}
             confirmed={[]}
             waitlist={[]}
             availablePlayers={[BANNED_AVAILABLE]}
@@ -834,6 +1053,7 @@ describe('GameDetailClient', () => {
           <GameDetailClient
             gameId="game-1"
             drawDone={false}
+            hasAnyStats={false}
             confirmed={[]}
             waitlist={[]}
             availablePlayers={[SUSPENDED_AVAILABLE]}
@@ -852,6 +1072,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
@@ -868,6 +1089,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
@@ -888,6 +1110,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
@@ -908,6 +1131,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
@@ -950,6 +1174,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
@@ -984,6 +1209,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
@@ -1011,6 +1237,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={CONFIRMED}
           waitlist={[]}
           availablePlayers={[]}
@@ -1033,6 +1260,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[]}
           availablePlayers={AVAILABLE_PLAYERS}
@@ -1053,6 +1281,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
@@ -1081,6 +1310,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[]}
           availablePlayers={[]}
@@ -1104,6 +1334,22 @@ describe('GameDetailClient', () => {
       });
       expect(mockCreateAndAddPlayer).not.toHaveBeenCalled();
     });
+
+    it("disables 'Cadastrar novo jogador' button when draw is done", () => {
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={true}
+          hasAnyStats={false}
+          confirmed={[]}
+          waitlist={[]}
+          availablePlayers={[]}
+        />,
+      );
+      expect(
+        screen.getByRole('button', { name: /Cadastrar novo jogador/ }),
+      ).toBeDisabled();
+    });
   });
 
   describe('searchable player select search and click-outside', () => {
@@ -1113,6 +1359,7 @@ describe('GameDetailClient', () => {
         <GameDetailClient
           gameId="game-1"
           drawDone={false}
+          hasAnyStats={false}
           confirmed={[]}
           waitlist={[]}
           availablePlayers={AVAILABLE_PLAYERS}

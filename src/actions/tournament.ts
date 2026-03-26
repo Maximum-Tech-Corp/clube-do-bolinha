@@ -71,6 +71,7 @@ export async function saveMatchResult(
 
   if (error) return { error: 'Erro ao salvar resultado.' };
 
+  revalidatePath(`/dashboard/jogos/${gameId}`);
   revalidatePath(`/dashboard/jogos/${gameId}/campeonato`);
   revalidatePath(`/dashboard/jogos/${gameId}/times`);
   return {};
@@ -100,6 +101,7 @@ export async function reopenMatch(
 
   if (error) return { error: 'Erro ao reabrir partida.' };
 
+  revalidatePath(`/dashboard/jogos/${gameId}`);
   revalidatePath(`/dashboard/jogos/${gameId}/campeonato`);
   revalidatePath(`/dashboard/jogos/${gameId}/times`);
   return {};

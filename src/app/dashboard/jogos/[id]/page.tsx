@@ -46,13 +46,35 @@ export default async function GameDetailPage({ params }: Props) {
   if (!game) notFound();
 
   // Conta times sorteados (para exibir o toggle de campeonato apenas com 4+ times)
+  // Também verifica se algum placar foi registrado (para controlar o botão re-sortear)
   let teamCount = 0;
+  let hasAnyStats = false;
   if (game.draw_done) {
     const { data: gameTeamsForCount } = await service
       .from('game_teams')
       .select('id')
       .eq('game_id', gameId);
     teamCount = (gameTeamsForCount ?? []).length;
+
+    const teamIds = (gameTeamsForCount ?? []).map(t => t.id);
+    if (teamIds.length > 0) {
+      const { count: playerCount } = await service
+        .from('game_team_players')
+        .select('id', { count: 'exact', head: true })
+        .in('game_team_id', teamIds)
+        .or('goals.gt.0,assists.gt.0');
+      hasAnyStats = (playerCount ?? 0) > 0;
+    }
+
+    // Also check tournament match scores
+    if (!hasAnyStats && game.is_tournament) {
+      const { count: tournamentCount } = await service
+        .from('tournament_matches')
+        .select('id', { count: 'exact', head: true })
+        .eq('game_id', gameId)
+        .not('home_score', 'is', null);
+      hasAnyStats = (tournamentCount ?? 0) > 0;
+    }
   }
 
   // Busca confirmações (confirmed + waitlist)
@@ -227,6 +249,7 @@ export default async function GameDetailPage({ params }: Props) {
         <GameDetailClient
           gameId={gameId}
           drawDone={game.draw_done}
+          hasAnyStats={hasAnyStats}
           confirmed={confirmed}
           waitlist={waitlist}
           availablePlayers={availablePlayers}
