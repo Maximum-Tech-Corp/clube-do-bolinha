@@ -15,6 +15,7 @@ export type GameStatus = 'open' | 'cancelled' | 'finished';
 export type ConfirmationStatus = 'confirmed' | 'waitlist' | 'removed';
 export type TournamentPhase = 'group' | 'semi' | 'final';
 export type StaminaLevel = '1' | '2' | '3' | '4plus';
+export type PlayerPosition = 'zagueiro' | 'atacante' | 'libero';
 
 // ============================================================
 // Database schema — formato compatível com @supabase/supabase-js 2.x
@@ -97,6 +98,7 @@ export type Database = {
           phone: string;
           weight_kg: number;
           stamina: StaminaLevel;
+          position: PlayerPosition | null;
           is_star: boolean;
           is_banned: boolean;
           suspended_until: string | null;
@@ -110,6 +112,7 @@ export type Database = {
           phone: string;
           weight_kg: number;
           stamina: StaminaLevel;
+          position?: PlayerPosition | null;
           is_star?: boolean;
           is_banned?: boolean;
           suspended_until?: string | null;
@@ -123,6 +126,7 @@ export type Database = {
           phone?: string;
           weight_kg?: number;
           stamina?: StaminaLevel;
+          position?: PlayerPosition | null;
           is_star?: boolean;
           is_banned?: boolean;
           suspended_until?: string | null;

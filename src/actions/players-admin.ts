@@ -3,7 +3,7 @@
 import { createServiceClient } from '@/lib/supabase/server';
 import { getEffectiveTeamId } from '@/lib/admin-context';
 import { revalidatePath } from 'next/cache';
-import type { StaminaLevel } from '@/types/database.types';
+import type { StaminaLevel, PlayerPosition } from '@/types/database.types';
 
 export async function listPlayers() {
   const teamId = await getEffectiveTeamId();
@@ -81,7 +81,7 @@ export async function getPlayer(playerId: string) {
   const { data } = await service
     .from('players')
     .select(
-      'id, name, phone, weight_kg, stamina, is_star, is_banned, suspended_until, suspension_reason',
+      'id, name, phone, weight_kg, stamina, position, is_star, is_banned, suspended_until, suspension_reason',
     )
     .eq('id', playerId)
     .eq('team_id', teamId)
@@ -228,6 +228,7 @@ export async function updatePlayer(
     name: string;
     weight_kg: number;
     stamina: StaminaLevel;
+    position: PlayerPosition | null;
     is_star: boolean;
   },
 ): Promise<{ error?: string }> {
@@ -252,6 +253,7 @@ export async function updatePlayer(
       name: params.name,
       weight_kg: params.weight_kg,
       stamina: params.stamina,
+      position: params.position,
       is_star: params.is_star,
     })
     .eq('id', playerId);
