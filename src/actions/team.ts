@@ -1,6 +1,7 @@
 'use server';
 
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
+import { getAdminContext } from '@/lib/admin-context';
 import { revalidatePath } from 'next/cache';
 
 export async function updateAccessCodePrefix(
@@ -14,25 +15,15 @@ export async function updateAccessCodePrefix(
     };
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const ctx = await getAdminContext();
+  if (!ctx) return { error: 'Não autenticado.' };
 
-  if (!user) return { error: 'Não autenticado.' };
+  const service = createServiceClient();
 
-  const { data: admin } = await supabase
-    .from('admins')
-    .select('id')
-    .eq('user_id', user.id)
-    .single();
-
-  if (!admin) return { error: 'Admin não encontrado.' };
-
-  const { data: team } = await supabase
+  const { data: team } = await service
     .from('teams')
     .select('id, access_code')
-    .eq('admin_id', admin.id)
+    .eq('admin_id', ctx.effectiveAdminId)
     .single();
 
   if (!team) return { error: 'Turma não encontrada.' };
@@ -40,8 +31,6 @@ export async function updateAccessCodePrefix(
   const suffix = team.access_code.split('-')[1];
   const newCode = `${normalized}-${suffix}`;
 
-  // Verifica unicidade excluindo a própria turma
-  const service = createServiceClient();
   const { data: existing } = await service
     .from('teams')
     .select('id')
@@ -76,26 +65,14 @@ export async function updateTeamSettings({
 
   if (!name) return { error: 'O nome da turma não pode ser vazio.' };
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return { error: 'Não autenticado.' };
-
-  const { data: admin } = await supabase
-    .from('admins')
-    .select('id')
-    .eq('user_id', user.id)
-    .single();
-
-  if (!admin) return { error: 'Admin não encontrado.' };
+  const ctx = await getAdminContext();
+  if (!ctx) return { error: 'Não autenticado.' };
 
   const service = createServiceClient();
   const { error } = await service
     .from('teams')
     .update({ match_duration_minutes: minutes, name })
-    .eq('admin_id', admin.id);
+    .eq('admin_id', ctx.effectiveAdminId);
 
   if (error) return { error: 'Erro ao salvar configurações.' };
 

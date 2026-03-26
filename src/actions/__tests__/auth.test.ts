@@ -222,9 +222,9 @@ describe('signup', () => {
       error: null,
     });
 
-    // Admin insert succeeds
+    // Default: return null (safe fallback for existingAdmin check and unspecified calls)
     mockSupabaseFrom.mockReturnValue(
-      createQueryMock({ data: { id: 'admin-uuid' }, error: null }),
+      createQueryMock({ data: null, error: null }),
     );
   });
 
@@ -237,7 +237,7 @@ describe('signup', () => {
     });
   });
 
-  it('returns auth error when signUp fails', async () => {
+  it('returns error when email is already registered', async () => {
     mockSupabaseAuth.signUp.mockResolvedValue({
       data: { user: null },
       error: { message: 'User already registered' },
@@ -245,7 +245,9 @@ describe('signup', () => {
 
     const result = await signup(VALID_DATA);
 
-    expect(result).toEqual({ error: 'User already registered' });
+    expect(result).toEqual({
+      error: 'Este e-mail já está vinculado a outra turma de futebol.',
+    });
     expect(mockRedirect).not.toHaveBeenCalled();
   });
 
@@ -260,11 +262,29 @@ describe('signup', () => {
     expect(result).toEqual({ error: 'Erro ao criar conta.' });
   });
 
-  it('returns error when admin insert fails', async () => {
-    // First call (admins insert) returns error
+  it('returns error when email already has an admin record (fake success guard)', async () => {
+    // Supabase fake success: signUp returns a user but they already have an admins record
     mockSupabaseFrom.mockReturnValueOnce(
-      createQueryMock({ data: null, error: { message: 'insert failed' } }),
+      createQueryMock({ data: { id: 'existing-admin-uuid' }, error: null }),
     );
+
+    const result = await signup(VALID_DATA);
+
+    expect(result).toEqual({
+      error: 'Este e-mail já está vinculado a outra turma de futebol.',
+    });
+  });
+
+  it('returns error when admin insert fails', async () => {
+    mockSupabaseFrom
+      .mockReturnValueOnce(
+        // existingAdmin check — no existing admin
+        createQueryMock({ data: null, error: null }),
+      )
+      .mockReturnValueOnce(
+        // admins.insert().select().single() — fails
+        createQueryMock({ data: null, error: { message: 'insert failed' } }),
+      );
 
     const result = await signup(VALID_DATA);
 
@@ -273,8 +293,11 @@ describe('signup', () => {
   });
 
   it('returns { success: true } on full successful signup', async () => {
-    // Admin insert succeeds; team duplicate check returns no existing; team insert succeeds
     mockSupabaseFrom
+      .mockReturnValueOnce(
+        // existingAdmin check — no existing admin
+        createQueryMock({ data: null, error: null }),
+      )
       .mockReturnValueOnce(
         // admins.insert().select().single()
         createQueryMock({ data: { id: 'admin-uuid' }, error: null }),
@@ -296,6 +319,10 @@ describe('signup', () => {
 
   it('returns error when team insert fails', async () => {
     mockSupabaseFrom
+      .mockReturnValueOnce(
+        // existingAdmin check — no existing admin
+        createQueryMock({ data: null, error: null }),
+      )
       .mockReturnValueOnce(
         // admins.insert().select().single() — OK
         createQueryMock({ data: { id: 'admin-uuid' }, error: null }),

@@ -13,6 +13,8 @@ interface Player {
   weight_kg: number;
   stamina: string;
   is_star: boolean;
+  is_banned: boolean;
+  suspended_until: string | null;
   attendanceRate: number | null;
 }
 
@@ -58,7 +60,16 @@ export function PlayersListClient({ players }: Props) {
               href={`/dashboard/jogadores/${player.id}`}
               className="block"
             >
-              <Card className="hover:bg-muted/50 transition-colors">
+              <Card
+                className={
+                  player.is_banned
+                    ? 'bg-red-50 ring-red-300'
+                    : player.suspended_until &&
+                        new Date(player.suspended_until) > new Date()
+                      ? 'bg-yellow-50 ring-yellow-300'
+                      : 'hover:bg-muted/50 transition-colors'
+                }
+              >
                 <CardContent className="py-3 px-4">
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
@@ -66,6 +77,18 @@ export function PlayersListClient({ players }: Props) {
                         <span className="font-medium truncate">
                           {player.name}
                         </span>
+                        {player.is_banned && (
+                          <Badge variant="destructive" className="shrink-0">
+                            Banido
+                          </Badge>
+                        )}
+                        {!player.is_banned &&
+                          player.suspended_until &&
+                          new Date(player.suspended_until) > new Date() && (
+                            <Badge className="shrink-0 bg-yellow-100 text-yellow-700 border-transparent">
+                              Suspenso
+                            </Badge>
+                          )}
                         {player.is_star && (
                           <Badge variant="secondary" className="shrink-0">
                             ⭐ Destaque

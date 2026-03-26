@@ -1,0 +1,2 @@
+ALTER TABLE admins
+  ADD COLUMN co_admin_of UUID REFERENCES admins(id) ON DELETE CASCADE;

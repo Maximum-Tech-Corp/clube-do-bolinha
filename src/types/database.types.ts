@@ -32,6 +32,7 @@ export type Database = {
           stripe_customer_id: string | null;
           stripe_subscription_id: string | null;
           subscription_status: SubscriptionStatus;
+          co_admin_of: string | null;
           created_at: string;
         };
         Insert: {
@@ -42,6 +43,7 @@ export type Database = {
           stripe_customer_id?: string | null;
           stripe_subscription_id?: string | null;
           subscription_status?: SubscriptionStatus;
+          co_admin_of?: string | null;
           created_at?: string;
         };
         Update: {
@@ -52,6 +54,7 @@ export type Database = {
           stripe_customer_id?: string | null;
           stripe_subscription_id?: string | null;
           subscription_status?: SubscriptionStatus;
+          co_admin_of?: string | null;
           created_at?: string;
         };
         Relationships: [];

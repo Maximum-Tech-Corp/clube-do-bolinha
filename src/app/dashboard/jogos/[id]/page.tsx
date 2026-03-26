@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
+import { getAdminContext } from '@/lib/admin-context';
 import { GameDetailClient } from '@/components/dashboard/game-detail-client';
 import { TournamentToggle } from '@/components/dashboard/tournament-toggle';
 import { Badge } from '@/components/ui/badge';
@@ -23,25 +24,15 @@ function formatDate(iso: string) {
 export default async function GameDetailPage({ params }: Props) {
   const { id: gameId } = await params;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
+  const ctx = await getAdminContext();
+  if (!ctx) redirect('/login');
 
   const service = createServiceClient();
-
-  const { data: admin } = await service
-    .from('admins')
-    .select('id')
-    .eq('user_id', user.id)
-    .single();
-  if (!admin) redirect('/login');
 
   const { data: team } = await service
     .from('teams')
     .select('id')
-    .eq('admin_id', admin.id)
+    .eq('admin_id', ctx.effectiveAdminId)
     .single();
   if (!team) redirect('/login');
 
@@ -84,13 +75,16 @@ export default async function GameDetailPage({ params }: Props) {
   // Busca detalhes dos jogadores já na lista
   const [playersInGameResult, availablePlayersResult] = await Promise.all([
     allPlayerIds.length > 0
-      ? service.from('players').select('id, name, phone').in('id', allPlayerIds)
+      ? service
+          .from('players')
+          .select('id, name, phone, is_banned, suspended_until')
+          .in('id', allPlayerIds)
       : Promise.resolve({ data: [] }),
 
     // Jogadores da turma que ainda não estão no jogo
     service
       .from('players')
-      .select('id, name')
+      .select('id, name, is_banned, suspended_until')
       .eq('team_id', team.id)
       .not(
         'id',
@@ -112,6 +106,8 @@ export default async function GameDetailPage({ params }: Props) {
       id: c.player_id,
       name: '—',
       phone: '',
+      is_banned: false,
+      suspended_until: null,
     },
   }));
 
@@ -122,12 +118,16 @@ export default async function GameDetailPage({ params }: Props) {
       id: c.player_id,
       name: '—',
       phone: '',
+      is_banned: false,
+      suspended_until: null,
     },
   }));
 
   const availablePlayers = (availablePlayersResult.data ?? []) as {
     id: string;
     name: string;
+    is_banned: boolean;
+    suspended_until: string | null;
   }[];
 
   const statusLabel = {
