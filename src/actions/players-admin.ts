@@ -14,7 +14,7 @@ export async function listPlayers() {
   // Busca jogadores com contagem de presenças confirmadas
   const { data: players, error } = await service
     .from('players')
-    .select('id, name, phone, weight_kg, stamina, is_star, created_at')
+    .select('id, name, phone, weight_kg, stamina, is_star, is_banned, suspended_until, created_at')
     .eq('team_id', teamId)
     .order('name', { ascending: true });
 

@@ -3,6 +3,9 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PlayersListClient } from '../players-list-client';
 
+const FUTURE_DATE = new Date(Date.now() + 7 * 86400000).toISOString();
+const PAST_DATE = new Date(Date.now() - 86400000).toISOString();
+
 const PLAYERS = [
   {
     id: '1',
@@ -11,6 +14,8 @@ const PLAYERS = [
     weight_kg: 78,
     stamina: '3',
     is_star: false,
+    is_banned: false,
+    suspended_until: null,
     attendanceRate: 85,
   },
   {
@@ -20,6 +25,8 @@ const PLAYERS = [
     weight_kg: 72,
     stamina: '2',
     is_star: true,
+    is_banned: false,
+    suspended_until: null,
     attendanceRate: 60,
   },
   {
@@ -29,6 +36,8 @@ const PLAYERS = [
     weight_kg: 85,
     stamina: '4plus',
     is_star: false,
+    is_banned: false,
+    suspended_until: null,
     attendanceRate: null,
   },
 ];
@@ -149,6 +158,112 @@ describe('PlayersListClient', () => {
 
       expect(screen.getByText('Bruno Lima')).toBeInTheDocument();
       expect(screen.queryByText('Carlos Ramos')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('banned player', () => {
+    const BANNED_PLAYER = {
+      ...PLAYERS[0],
+      id: 'banned-1',
+      name: 'João Banido',
+      is_banned: true,
+    };
+
+    it('shows "— Banido" next to the player name', () => {
+      render(<PlayersListClient players={[BANNED_PLAYER]} />);
+      expect(screen.getByText(/— Banido/)).toBeInTheDocument();
+    });
+
+    it('applies red background to the card', () => {
+      render(<PlayersListClient players={[BANNED_PLAYER]} />);
+      const card = screen
+        .getByText(/— Banido/)
+        .closest('[data-slot="card"]');
+      expect(card?.className).toContain('bg-red-50');
+    });
+
+    it('applies red ring to the card', () => {
+      render(<PlayersListClient players={[BANNED_PLAYER]} />);
+      const card = screen
+        .getByText(/— Banido/)
+        .closest('[data-slot="card"]');
+      expect(card?.className).toContain('ring-red-300');
+    });
+
+    it('does not show "— Banido" for a normal player', () => {
+      render(<PlayersListClient players={[PLAYERS[0]]} />);
+      expect(screen.queryByText(/— Banido/)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('suspended player', () => {
+    const SUSPENDED_PLAYER = {
+      ...PLAYERS[0],
+      id: 'suspended-1',
+      name: 'Pedro Suspenso',
+      suspended_until: FUTURE_DATE,
+    };
+
+    const EXPIRED_SUSPENSION_PLAYER = {
+      ...PLAYERS[0],
+      id: 'expired-1',
+      name: 'Lucas Expirado',
+      suspended_until: PAST_DATE,
+    };
+
+    const BANNED_AND_SUSPENDED_PLAYER = {
+      ...PLAYERS[0],
+      id: 'banned-suspended-1',
+      name: 'Marcos BanidoSuspenso',
+      is_banned: true,
+      suspended_until: FUTURE_DATE,
+    };
+
+    it('shows "— Suspenso" next to the player name when suspension is active', () => {
+      render(<PlayersListClient players={[SUSPENDED_PLAYER]} />);
+      expect(screen.getByText(/— Suspenso/)).toBeInTheDocument();
+    });
+
+    it('applies yellow background to the card', () => {
+      render(<PlayersListClient players={[SUSPENDED_PLAYER]} />);
+      const card = screen
+        .getByText(/— Suspenso/)
+        .closest('[data-slot="card"]');
+      expect(card?.className).toContain('bg-yellow-50');
+    });
+
+    it('applies yellow ring to the card', () => {
+      render(<PlayersListClient players={[SUSPENDED_PLAYER]} />);
+      const card = screen
+        .getByText(/— Suspenso/)
+        .closest('[data-slot="card"]');
+      expect(card?.className).toContain('ring-yellow-300');
+    });
+
+    it('does not show "— Suspenso" when suspension has expired', () => {
+      render(<PlayersListClient players={[EXPIRED_SUSPENSION_PLAYER]} />);
+      expect(screen.queryByText(/— Suspenso/)).not.toBeInTheDocument();
+    });
+
+    it('does not apply yellow styles when suspension has expired', () => {
+      render(<PlayersListClient players={[EXPIRED_SUSPENSION_PLAYER]} />);
+      const cards = document.querySelectorAll('[data-slot="card"]');
+      cards.forEach(card => {
+        expect(card.className).not.toContain('bg-yellow-50');
+      });
+    });
+
+    it('shows "— Banido" (not "— Suspenso") when player is both banned and suspended', () => {
+      render(<PlayersListClient players={[BANNED_AND_SUSPENDED_PLAYER]} />);
+      expect(screen.getByText(/— Banido/)).toBeInTheDocument();
+      expect(screen.queryByText(/— Suspenso/)).not.toBeInTheDocument();
+    });
+
+    it('applies red (not yellow) styles when player is both banned and suspended', () => {
+      render(<PlayersListClient players={[BANNED_AND_SUSPENDED_PLAYER]} />);
+      const card = document.querySelector('[data-slot="card"]');
+      expect(card?.className).toContain('bg-red-50');
+      expect(card?.className).not.toContain('bg-yellow-50');
     });
   });
 });
