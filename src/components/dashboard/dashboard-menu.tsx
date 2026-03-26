@@ -8,6 +8,7 @@ import {
   CreditCard,
   LogOut,
   KeyRound,
+  Users,
 } from 'lucide-react';
 import {
   Dialog,
@@ -26,12 +27,14 @@ interface Props {
   appUrl: string;
   teamName: string;
   matchDurationMinutes: number;
+  isCoAdmin: boolean;
 }
 
 export function DashboardMenu({
   appUrl,
   teamName,
   matchDurationMinutes,
+  isCoAdmin,
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -119,7 +122,11 @@ iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de I
         className="p-2 rounded-lg cursor-pointer"
         aria-label="Menu"
       >
-        <MoreVertical className="w-7 h-7" style={{ color: '#002776' }} strokeWidth={2.5} />
+        <MoreVertical
+          className="w-7 h-7"
+          style={{ color: '#002776' }}
+          strokeWidth={2.5}
+        />
       </button>
 
       {menuOpen && (
@@ -137,6 +144,16 @@ iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de I
             <CreditCard className="w-4 h-4 text-muted-foreground" />
             {loadingPortal ? 'Redirecionando...' : 'Minha Assinatura'}
           </button>
+          {!isCoAdmin && (
+            <a
+              href="/dashboard/co-admin"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+            >
+              <Users className="w-4 h-4 text-muted-foreground" />
+              Defina Co-admin
+            </a>
+          )}
           <button
             type="button"
             onClick={() => {

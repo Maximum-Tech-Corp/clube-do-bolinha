@@ -1,35 +1,12 @@
 'use server';
 
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
+import { getEffectiveTeamId } from '@/lib/admin-context';
 import { revalidatePath } from 'next/cache';
 import type { StaminaLevel } from '@/types/database.types';
 
-async function getAdminTeamId(): Promise<string | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const service = createServiceClient();
-  const { data: admin } = await service
-    .from('admins')
-    .select('id')
-    .eq('user_id', user.id)
-    .single();
-  if (!admin) return null;
-
-  const { data: team } = await service
-    .from('teams')
-    .select('id')
-    .eq('admin_id', admin.id)
-    .single();
-
-  return team?.id ?? null;
-}
-
 export async function listGames() {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { upcoming: [], past: [] };
 
   const service = createServiceClient();
@@ -63,7 +40,7 @@ export async function createGame(params: {
   location: string;
   scheduled_at: string;
 }): Promise<{ error?: string }> {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
 
   if (new Date(params.scheduled_at) <= new Date()) {
@@ -84,7 +61,7 @@ export async function createGame(params: {
 }
 
 export async function cancelGame(gameId: string): Promise<{ error?: string }> {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
 
   const service = createServiceClient();
@@ -115,7 +92,7 @@ export async function toggleTournament(
   gameId: string,
   isTournament: boolean,
 ): Promise<{ error?: string }> {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
 
   const service = createServiceClient();
@@ -148,7 +125,7 @@ export async function removeConfirmedPlayer(
   gameId: string,
   playerId: string,
 ): Promise<{ error?: string }> {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
 
   const service = createServiceClient();
@@ -202,7 +179,7 @@ export async function promoteWaitlistPlayer(
   confirmationId: string,
   gameId: string,
 ): Promise<{ error?: string }> {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
 
   const service = createServiceClient();
@@ -231,7 +208,7 @@ export async function addPlayerToGame(
   gameId: string,
   playerId: string,
 ): Promise<{ error?: string }> {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
 
   const service = createServiceClient();
@@ -291,7 +268,7 @@ export async function createAndAddPlayer(
     stamina: StaminaLevel;
   },
 ): Promise<{ error?: string }> {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
 
   const service = createServiceClient();

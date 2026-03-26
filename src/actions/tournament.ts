@@ -1,33 +1,10 @@
 'use server';
 
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
+import { getEffectiveTeamId } from '@/lib/admin-context';
 import { revalidatePath } from 'next/cache';
 import { computeStandings } from '@/lib/tournament-utils';
 import type { MatchRow } from '@/lib/tournament-utils';
-
-async function getAdminTeamId(): Promise<string | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const service = createServiceClient();
-  const { data: admin } = await service
-    .from('admins')
-    .select('id')
-    .eq('user_id', user.id)
-    .single();
-  if (!admin) return null;
-
-  const { data: team } = await service
-    .from('teams')
-    .select('id')
-    .eq('admin_id', admin.id)
-    .single();
-
-  return team?.id ?? null;
-}
 
 /** Verifica posse do jogo via match_id → game_id → team_id */
 async function getMatchGameId(matchId: string): Promise<string | null> {
@@ -63,7 +40,7 @@ export async function saveMatchResult(
   homeScore: number,
   awayScore: number,
 ): Promise<{ error?: string }> {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
 
   const gameId = await getMatchGameId(matchId);
@@ -105,7 +82,7 @@ export async function saveMatchResult(
 export async function reopenMatch(
   matchId: string,
 ): Promise<{ error?: string }> {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
 
   const gameId = await getMatchGameId(matchId);
@@ -136,7 +113,7 @@ export async function reopenMatch(
 export async function generateNextPhase(
   gameId: string,
 ): Promise<{ error?: string }> {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
 
   if (!(await assertOwnership(gameId, teamId)))

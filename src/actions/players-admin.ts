@@ -1,36 +1,12 @@
 'use server';
 
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
+import { getEffectiveTeamId } from '@/lib/admin-context';
 import { revalidatePath } from 'next/cache';
 import type { StaminaLevel } from '@/types/database.types';
 
-// Retorna o team_id do admin autenticado
-async function getAdminTeamId(): Promise<string | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const service = createServiceClient();
-  const { data: admin } = await service
-    .from('admins')
-    .select('id')
-    .eq('user_id', user.id)
-    .single();
-  if (!admin) return null;
-
-  const { data: team } = await service
-    .from('teams')
-    .select('id')
-    .eq('admin_id', admin.id)
-    .single();
-
-  return team?.id ?? null;
-}
-
 export async function listPlayers() {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado', players: [] };
 
   const service = createServiceClient();
@@ -96,7 +72,7 @@ export async function listPlayers() {
 }
 
 export async function getPlayer(playerId: string) {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return null;
 
   const service = createServiceClient();
@@ -127,7 +103,7 @@ async function assertPlayerOwnership(
 }
 
 export async function banPlayer(playerId: string): Promise<{ error?: string }> {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
   if (!(await assertPlayerOwnership(playerId, teamId)))
     return { error: 'Jogador não encontrado.' };
@@ -146,7 +122,7 @@ export async function banPlayer(playerId: string): Promise<{ error?: string }> {
 export async function unbanPlayer(
   playerId: string,
 ): Promise<{ error?: string }> {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
   if (!(await assertPlayerOwnership(playerId, teamId)))
     return { error: 'Jogador não encontrado.' };
@@ -167,7 +143,7 @@ export async function suspendPlayer(
   suspendedUntil: string,
   reason: string,
 ): Promise<{ error?: string }> {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
   if (!(await assertPlayerOwnership(playerId, teamId)))
     return { error: 'Jogador não encontrado.' };
@@ -192,7 +168,7 @@ export async function suspendPlayer(
 export async function removeSuspension(
   playerId: string,
 ): Promise<{ error?: string }> {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
   if (!(await assertPlayerOwnership(playerId, teamId)))
     return { error: 'Jogador não encontrado.' };
@@ -214,7 +190,7 @@ export async function createPlayer(params: {
   weight_kg: number;
   stamina: StaminaLevel;
 }): Promise<{ error?: string }> {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
 
   const service = createServiceClient();
@@ -253,7 +229,7 @@ export async function updatePlayer(
     is_star: boolean;
   },
 ): Promise<{ error?: string }> {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
 
   const service = createServiceClient();
@@ -286,7 +262,7 @@ export async function updatePlayer(
 }
 
 export async function getPlayerStats(playerId: string) {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return [];
 
   const service = createServiceClient();
@@ -302,7 +278,7 @@ export async function getPlayerStats(playerId: string) {
 export async function deleteRetroactiveStat(
   statId: string,
 ): Promise<{ error?: string }> {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
 
   const service = createServiceClient();
@@ -335,7 +311,7 @@ export async function addRetroactiveStat(params: {
   assists: number;
   year: number;
 }): Promise<{ error?: string }> {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
 
   const service = createServiceClient();

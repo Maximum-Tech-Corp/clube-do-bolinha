@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
+import { getAdminContext } from '@/lib/admin-context';
 import { Badge } from '@/components/ui/badge';
 import { computeStandings } from '@/lib/tournament-utils';
 import type { MatchRow } from '@/lib/tournament-utils';
@@ -29,25 +30,15 @@ const phaseLabel: Record<TournamentPhase, string> = {
 export default async function HistoricoDetailPage({ params }: Props) {
   const { id: gameId } = await params;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
+  const ctx = await getAdminContext();
+  if (!ctx) redirect('/login');
 
   const service = createServiceClient();
-
-  const { data: admin } = await service
-    .from('admins')
-    .select('id')
-    .eq('user_id', user.id)
-    .single();
-  if (!admin) redirect('/login');
 
   const { data: team } = await service
     .from('teams')
     .select('id')
-    .eq('admin_id', admin.id)
+    .eq('admin_id', ctx.effectiveAdminId)
     .single();
   if (!team) redirect('/login');
 

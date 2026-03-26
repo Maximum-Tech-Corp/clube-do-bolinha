@@ -69,6 +69,7 @@ const DEFAULT_PROPS = {
   appUrl: 'https://clube.app',
   teamName: 'Bolinha FC',
   matchDurationMinutes: 20,
+  isCoAdmin: false,
 };
 
 describe('DashboardMenu', () => {
@@ -416,6 +417,40 @@ describe('DashboardMenu', () => {
           screen.getByRole('button', { name: 'Senha alterada!' }),
         ).toBeInTheDocument();
       });
+    });
+  });
+
+  describe('co-admin menu item', () => {
+    it('shows Defina Co-admin link for main admin', async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} isCoAdmin={false} />);
+
+      await user.click(screen.getByRole('button', { name: 'Menu' }));
+
+      expect(
+        screen.getByRole('link', { name: /defina co-admin/i }),
+      ).toBeInTheDocument();
+    });
+
+    it('hides Defina Co-admin link for co-admin', async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} isCoAdmin={true} />);
+
+      await user.click(screen.getByRole('button', { name: 'Menu' }));
+
+      expect(
+        screen.queryByRole('link', { name: /defina co-admin/i }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('Defina Co-admin link points to /dashboard/co-admin', async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} isCoAdmin={false} />);
+
+      await user.click(screen.getByRole('button', { name: 'Menu' }));
+
+      const link = screen.getByRole('link', { name: /defina co-admin/i });
+      expect(link.getAttribute('href')).toBe('/dashboard/co-admin');
     });
   });
 

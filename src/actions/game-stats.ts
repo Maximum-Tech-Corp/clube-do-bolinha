@@ -1,31 +1,8 @@
 'use server';
 
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
+import { getEffectiveTeamId } from '@/lib/admin-context';
 import { revalidatePath } from 'next/cache';
-
-async function getAdminTeamId(): Promise<string | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const service = createServiceClient();
-  const { data: admin } = await service
-    .from('admins')
-    .select('id')
-    .eq('user_id', user.id)
-    .single();
-  if (!admin) return null;
-
-  const { data: team } = await service
-    .from('teams')
-    .select('id')
-    .eq('admin_id', admin.id)
-    .single();
-
-  return team?.id ?? null;
-}
 
 /**
  * Incrementa ou decrementa gols/assistências de um jogador no jogo.
@@ -36,7 +13,7 @@ export async function updateStat(
   field: 'goals' | 'assists',
   delta: 1 | -1,
 ): Promise<{ error?: string; newValue?: number }> {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
 
   const service = createServiceClient();
@@ -82,7 +59,7 @@ export async function updateStat(
 }
 
 export async function finishGame(gameId: string): Promise<{ error?: string }> {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
 
   const service = createServiceClient();
@@ -133,7 +110,7 @@ export async function renameGameTeam(
   gameTeamId: string,
   customName: string,
 ): Promise<{ error?: string }> {
-  const teamId = await getAdminTeamId();
+  const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
 
   const service = createServiceClient();

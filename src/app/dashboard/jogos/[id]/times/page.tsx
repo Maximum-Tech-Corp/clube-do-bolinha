@@ -1,7 +1,8 @@
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
+import { getAdminContext } from '@/lib/admin-context';
 import { TeamsClient } from '@/components/dashboard/teams-client';
 import { MatchTimer } from '@/components/dashboard/match-timer';
 import { Badge } from '@/components/ui/badge';
@@ -23,25 +24,15 @@ function formatDate(iso: string) {
 export default async function TimesPage({ params }: Props) {
   const { id: gameId } = await params;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
+  const ctx = await getAdminContext();
+  if (!ctx) redirect('/login');
 
   const service = createServiceClient();
-
-  const { data: admin } = await service
-    .from('admins')
-    .select('id')
-    .eq('user_id', user.id)
-    .single();
-  if (!admin) redirect('/login');
 
   const { data: team } = await service
     .from('teams')
     .select('id, match_duration_minutes')
-    .eq('admin_id', admin.id)
+    .eq('admin_id', ctx.effectiveAdminId)
     .single();
   if (!team) redirect('/login');
 

@@ -19,10 +19,27 @@ export async function signup(data: {
   });
 
   if (authError || !authData.user) {
+    if (authError?.message === 'User already registered') {
+      return {
+        error: 'Este e-mail já está vinculado a outra turma de futebol.',
+      };
+    }
     return { error: authError?.message ?? 'Erro ao criar conta.' };
   }
 
   const service = createServiceClient();
+
+  // Guard against Supabase's "fake success" for existing emails (when email confirmation is on).
+  // If the user already exists, they'll already have an admins record.
+  const { data: existingAdmin } = await service
+    .from('admins')
+    .select('id')
+    .eq('user_id', authData.user.id)
+    .maybeSingle();
+
+  if (existingAdmin) {
+    return { error: 'Este e-mail já está vinculado a outra turma de futebol.' };
+  }
 
   const { data: admin, error: adminError } = await service
     .from('admins')

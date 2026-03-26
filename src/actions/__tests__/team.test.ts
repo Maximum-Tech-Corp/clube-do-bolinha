@@ -57,7 +57,7 @@ describe('updateAccessCodePrefix', () => {
       createQueryMock({ data: null, error: null }),
     );
     const result = await updateAccessCodePrefix('ABCD');
-    expect(result).toEqual({ error: 'Admin não encontrado.' });
+    expect(result).toEqual({ error: 'Não autenticado.' });
   });
 
   it('returns error when team not found', async () => {
@@ -181,7 +181,7 @@ describe('updateTeamSettings', () => {
       matchDurationMinutes: 20,
       teamName: 'Turma A',
     });
-    expect(result).toEqual({ error: 'Admin não encontrado.' });
+    expect(result).toEqual({ error: 'Não autenticado.' });
   });
 
   it('updates settings and revalidates on success', async () => {

@@ -1,32 +1,20 @@
 import { redirect } from 'next/navigation';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
+import { getAdminContext } from '@/lib/admin-context';
 import { AccessCodeCard } from '@/components/dashboard/access-code-card';
 import { DashboardMenu } from '@/components/dashboard/dashboard-menu';
 import { AppLogo } from '@/components/app-logo';
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect('/login');
-
-  const { data: admin } = await supabase
-    .from('admins')
-    .select('id, name')
-    .eq('user_id', user.id)
-    .single();
-
-  if (!admin) redirect('/login');
+  const ctx = await getAdminContext();
+  if (!ctx) redirect('/login');
 
   const service = createServiceClient();
 
   const { data: team } = await service
     .from('teams')
     .select('name, access_code, match_duration_minutes')
-    .eq('admin_id', admin.id)
+    .eq('admin_id', ctx.effectiveAdminId)
     .single();
 
   if (!team) redirect('/login');
@@ -44,12 +32,15 @@ export default async function DashboardPage() {
             appUrl={appUrl}
             teamName={team.name}
             matchDurationMinutes={team.match_duration_minutes ?? 10}
+            isCoAdmin={ctx.isCoAdmin}
           />
         </div>
         <AppLogo size="md" />
-        <p className="text-lg font-semibold mt-3" style={{ color: '#002776' }}>{team.name}</p>
+        <p className="text-lg font-semibold mt-3" style={{ color: '#002776' }}>
+          {team.name}
+        </p>
         <p className="text-sm mt-0.5" style={{ color: '#002776' }}>
-          Olá, <span className="font-medium">{admin.name}</span>!
+          Olá, <span className="font-medium">{ctx.adminName}</span>!
         </p>
       </div>
 
