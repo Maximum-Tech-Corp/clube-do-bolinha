@@ -75,13 +75,16 @@ export default async function GameDetailPage({ params }: Props) {
   // Busca detalhes dos jogadores já na lista
   const [playersInGameResult, availablePlayersResult] = await Promise.all([
     allPlayerIds.length > 0
-      ? service.from('players').select('id, name, phone').in('id', allPlayerIds)
+      ? service
+          .from('players')
+          .select('id, name, phone, is_banned, suspended_until')
+          .in('id', allPlayerIds)
       : Promise.resolve({ data: [] }),
 
     // Jogadores da turma que ainda não estão no jogo
     service
       .from('players')
-      .select('id, name')
+      .select('id, name, is_banned, suspended_until')
       .eq('team_id', team.id)
       .not(
         'id',
@@ -103,6 +106,8 @@ export default async function GameDetailPage({ params }: Props) {
       id: c.player_id,
       name: '—',
       phone: '',
+      is_banned: false,
+      suspended_until: null,
     },
   }));
 
@@ -113,12 +118,16 @@ export default async function GameDetailPage({ params }: Props) {
       id: c.player_id,
       name: '—',
       phone: '',
+      is_banned: false,
+      suspended_until: null,
     },
   }));
 
   const availablePlayers = (availablePlayersResult.data ?? []) as {
     id: string;
     name: string;
+    is_banned: boolean;
+    suspended_until: string | null;
   }[];
 
   const statusLabel = {

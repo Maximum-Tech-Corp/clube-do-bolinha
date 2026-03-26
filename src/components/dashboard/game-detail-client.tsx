@@ -11,6 +11,7 @@ import {
   addPlayerToGame,
   createAndAddPlayer,
 } from '@/actions/games-admin';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,6 +39,8 @@ interface Player {
   id: string;
   name: string;
   phone: string;
+  is_banned: boolean;
+  suspended_until: string | null;
 }
 
 interface ConfirmedEntry {
@@ -51,12 +54,19 @@ interface WaitlistEntry {
   player: Player;
 }
 
+interface AvailablePlayer {
+  id: string;
+  name: string;
+  is_banned: boolean;
+  suspended_until: string | null;
+}
+
 interface Props {
   gameId: string;
   drawDone: boolean;
   confirmed: ConfirmedEntry[];
   waitlist: WaitlistEntry[];
-  availablePlayers: { id: string; name: string }[];
+  availablePlayers: AvailablePlayer[];
 }
 
 // ── Botão cancelar jogo ──────────────────────────────────────────────────────
@@ -172,7 +182,21 @@ function ConfirmedList({
               className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2"
             >
               <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{player.name}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-sm font-medium truncate">{player.name}</p>
+                  {player.is_banned && (
+                    <Badge variant="destructive" className="shrink-0">
+                      Banido
+                    </Badge>
+                  )}
+                  {!player.is_banned &&
+                    player.suspended_until &&
+                    new Date(player.suspended_until) > new Date() && (
+                      <Badge className="shrink-0 bg-yellow-100 text-yellow-700 border-transparent">
+                        Suspenso
+                      </Badge>
+                    )}
+                </div>
                 <p className="text-xs text-muted-foreground">{player.phone}</p>
               </div>
               <Button
@@ -243,7 +267,21 @@ function WaitlistPanel({
                 {position}
               </span>
               <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{player.name}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-sm font-medium truncate">{player.name}</p>
+                  {player.is_banned && (
+                    <Badge variant="destructive" className="shrink-0">
+                      Banido
+                    </Badge>
+                  )}
+                  {!player.is_banned &&
+                    player.suspended_until &&
+                    new Date(player.suspended_until) > new Date() && (
+                      <Badge className="shrink-0 bg-yellow-100 text-yellow-700 border-transparent">
+                        Suspenso
+                      </Badge>
+                    )}
+                </div>
                 <p className="text-xs text-muted-foreground">{player.phone}</p>
               </div>
             </div>
@@ -274,7 +312,7 @@ function SearchablePlayerSelect({
   value,
   onChange,
 }: {
-  players: { id: string; name: string }[];
+  players: AvailablePlayer[];
   value: string;
   onChange: (id: string) => void;
 }) {
@@ -298,7 +336,7 @@ function SearchablePlayerSelect({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  function handleSelect(player: { id: string; name: string }) {
+  function handleSelect(player: AvailablePlayer) {
     onChange(player.id);
     setSearch('');
     setOpen(false);
@@ -319,10 +357,24 @@ function SearchablePlayerSelect({
             placeholder="Buscar jogador..."
             className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
           />
+        ) : selected ? (
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="truncate">{selected.name}</span>
+            {selected.is_banned && (
+              <Badge variant="destructive" className="shrink-0 text-xs">
+                Banido
+              </Badge>
+            )}
+            {!selected.is_banned &&
+              selected.suspended_until &&
+              new Date(selected.suspended_until) > new Date() && (
+                <Badge className="shrink-0 text-xs bg-yellow-100 text-yellow-700 border-transparent">
+                  Suspenso
+                </Badge>
+              )}
+          </div>
         ) : (
-          <span className={selected ? '' : 'text-muted-foreground'}>
-            {selected ? selected.name : 'Selecionar jogador'}
-          </span>
+          <span className="text-muted-foreground">Selecionar jogador</span>
         )}
       </div>
       {open && (
@@ -335,11 +387,23 @@ function SearchablePlayerSelect({
             filtered.map(p => (
               <div
                 key={p.id}
-                className="px-3 py-2 text-sm cursor-pointer hover:bg-muted"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm cursor-pointer hover:bg-muted"
                 onMouseDown={e => e.preventDefault()}
                 onClick={() => handleSelect(p)}
               >
-                {p.name}
+                <span className="truncate">{p.name}</span>
+                {p.is_banned && (
+                  <Badge variant="destructive" className="shrink-0 text-xs">
+                    Banido
+                  </Badge>
+                )}
+                {!p.is_banned &&
+                  p.suspended_until &&
+                  new Date(p.suspended_until) > new Date() && (
+                    <Badge className="shrink-0 text-xs bg-yellow-100 text-yellow-700 border-transparent">
+                      Suspenso
+                    </Badge>
+                  )}
               </div>
             ))
           )}
@@ -356,7 +420,7 @@ function AddExistingPlayerPanel({
   availablePlayers,
 }: {
   gameId: string;
-  availablePlayers: { id: string; name: string }[];
+  availablePlayers: AvailablePlayer[];
 }) {
   const [selectedId, setSelectedId] = useState('');
   const [error, setError] = useState<string | null>(null);

@@ -98,14 +98,29 @@ vi.mock('@/components/ui/select', () => {
   };
 });
 
+const FUTURE_DATE = new Date(Date.now() + 7 * 86400000).toISOString();
+const PAST_DATE = new Date(Date.now() - 86400000).toISOString();
+
 const CONFIRMED = [
   {
     confirmationId: 'c1',
-    player: { id: 'p1', name: 'Carlos Ramos', phone: '(11) 98888-7777' },
+    player: {
+      id: 'p1',
+      name: 'Carlos Ramos',
+      phone: '(11) 98888-7777',
+      is_banned: false,
+      suspended_until: null,
+    },
   },
   {
     confirmationId: 'c2',
-    player: { id: 'p2', name: 'Bruno Lima', phone: '(11) 97777-6666' },
+    player: {
+      id: 'p2',
+      name: 'Bruno Lima',
+      phone: '(11) 97777-6666',
+      is_banned: false,
+      suspended_until: null,
+    },
   },
 ];
 
@@ -113,13 +128,19 @@ const WAITLIST = [
   {
     confirmationId: 'w1',
     position: 1,
-    player: { id: 'p3', name: 'André Costa', phone: '(11) 96666-5555' },
+    player: {
+      id: 'p3',
+      name: 'André Costa',
+      phone: '(11) 96666-5555',
+      is_banned: false,
+      suspended_until: null,
+    },
   },
 ];
 
 const AVAILABLE_PLAYERS = [
-  { id: 'p4', name: 'Diego Santos' },
-  { id: 'p5', name: 'Felipe Souza' },
+  { id: 'p4', name: 'Diego Santos', is_banned: false, suspended_until: null },
+  { id: 'p5', name: 'Felipe Souza', is_banned: false, suspended_until: null },
 ];
 
 describe('GameDetailClient', () => {
@@ -242,12 +263,208 @@ describe('GameDetailClient', () => {
     });
   });
 
+  describe('banned and suspended labels in confirmed list', () => {
+    it('shows "— Banido" next to a banned player in confirmed list', () => {
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={false}
+          confirmed={[
+            {
+              confirmationId: 'c-banned',
+              player: {
+                id: 'p-banned',
+                name: 'João Banido',
+                phone: '(11) 91111-1111',
+                is_banned: true,
+                suspended_until: null,
+              },
+            },
+          ]}
+          waitlist={[]}
+          availablePlayers={[]}
+        />,
+      );
+      expect(screen.getByText('Banido')).toBeInTheDocument();
+    });
+
+    it('shows "— Suspenso" next to a suspended player in confirmed list', () => {
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={false}
+          confirmed={[
+            {
+              confirmationId: 'c-susp',
+              player: {
+                id: 'p-susp',
+                name: 'Pedro Suspenso',
+                phone: '(11) 92222-2222',
+                is_banned: false,
+                suspended_until: FUTURE_DATE,
+              },
+            },
+          ]}
+          waitlist={[]}
+          availablePlayers={[]}
+        />,
+      );
+      expect(screen.getByText('Suspenso')).toBeInTheDocument();
+    });
+
+    it('does not show "— Suspenso" when suspension has expired in confirmed list', () => {
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={false}
+          confirmed={[
+            {
+              confirmationId: 'c-exp',
+              player: {
+                id: 'p-exp',
+                name: 'Lucas Expirado',
+                phone: '(11) 93333-3333',
+                is_banned: false,
+                suspended_until: PAST_DATE,
+              },
+            },
+          ]}
+          waitlist={[]}
+          availablePlayers={[]}
+        />,
+      );
+      expect(screen.queryByText('Suspenso')).not.toBeInTheDocument();
+    });
+
+    it('shows "— Banido" (not "— Suspenso") when player is both banned and suspended in confirmed list', () => {
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={false}
+          confirmed={[
+            {
+              confirmationId: 'c-both',
+              player: {
+                id: 'p-both',
+                name: 'Marcos Ambos',
+                phone: '(11) 94444-4444',
+                is_banned: true,
+                suspended_until: FUTURE_DATE,
+              },
+            },
+          ]}
+          waitlist={[]}
+          availablePlayers={[]}
+        />,
+      );
+      expect(screen.getByText('Banido')).toBeInTheDocument();
+      expect(screen.queryByText('Suspenso')).not.toBeInTheDocument();
+    });
+
+    it('does not show any label for a normal player in confirmed list', () => {
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={false}
+          confirmed={CONFIRMED}
+          waitlist={[]}
+          availablePlayers={[]}
+        />,
+      );
+      expect(screen.queryByText('Banido')).not.toBeInTheDocument();
+      expect(screen.queryByText('Suspenso')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('banned and suspended labels in waitlist', () => {
+    it('shows "— Banido" next to a banned player in waitlist', () => {
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={false}
+          confirmed={[]}
+          waitlist={[
+            {
+              confirmationId: 'w-banned',
+              position: 1,
+              player: {
+                id: 'p-banned',
+                name: 'João Banido',
+                phone: '(11) 91111-1111',
+                is_banned: true,
+                suspended_until: null,
+              },
+            },
+          ]}
+          availablePlayers={[]}
+        />,
+      );
+      expect(screen.getByText('Banido')).toBeInTheDocument();
+    });
+
+    it('shows "— Suspenso" next to a suspended player in waitlist', () => {
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={false}
+          confirmed={[]}
+          waitlist={[
+            {
+              confirmationId: 'w-susp',
+              position: 1,
+              player: {
+                id: 'p-susp',
+                name: 'Pedro Suspenso',
+                phone: '(11) 92222-2222',
+                is_banned: false,
+                suspended_until: FUTURE_DATE,
+              },
+            },
+          ]}
+          availablePlayers={[]}
+        />,
+      );
+      expect(screen.getByText('Suspenso')).toBeInTheDocument();
+    });
+
+    it('does not show "— Suspenso" when suspension has expired in waitlist', () => {
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={false}
+          confirmed={[]}
+          waitlist={[
+            {
+              confirmationId: 'w-exp',
+              position: 1,
+              player: {
+                id: 'p-exp',
+                name: 'Lucas Expirado',
+                phone: '(11) 93333-3333',
+                is_banned: false,
+                suspended_until: PAST_DATE,
+              },
+            },
+          ]}
+          availablePlayers={[]}
+        />,
+      );
+      expect(screen.queryByText('Suspenso')).not.toBeInTheDocument();
+    });
+  });
+
   describe('draw button', () => {
     it("shows 'Rodar sorteio' when draw not done and enough players", () => {
       // Need 15+ players for canDraw=true — use 15 confirmed entries
       const confirmed15 = Array.from({ length: 15 }, (_, i) => ({
         confirmationId: `c${i}`,
-        player: { id: `p${i}`, name: `Player ${i}`, phone: `119999${i}` },
+        player: {
+          id: `p${i}`,
+          name: `Player ${i}`,
+          phone: `119999${i}`,
+          is_banned: false,
+          suspended_until: null,
+        },
       }));
       render(
         <GameDetailClient
@@ -297,7 +514,13 @@ describe('GameDetailClient', () => {
       const user = userEvent.setup();
       const confirmed15 = Array.from({ length: 15 }, (_, i) => ({
         confirmationId: `c${i}`,
-        player: { id: `p${i}`, name: `Player ${i}`, phone: `119999${i}` },
+        player: {
+          id: `p${i}`,
+          name: `Player ${i}`,
+          phone: `119999${i}`,
+          is_banned: false,
+          suspended_until: null,
+        },
       }));
       render(
         <GameDetailClient
@@ -497,6 +720,129 @@ describe('GameDetailClient', () => {
         />,
       );
       expect(screen.getByRole('button', { name: 'Adicionar' })).toBeDisabled();
+    });
+
+    describe('banned and suspended badges in player select dropdown', () => {
+      const BANNED_AVAILABLE = {
+        id: 'banned-av',
+        name: 'Rogério Banido',
+        is_banned: true,
+        suspended_until: null,
+      };
+
+      const SUSPENDED_AVAILABLE = {
+        id: 'suspended-av',
+        name: 'Fábio Suspenso',
+        is_banned: false,
+        suspended_until: new Date(Date.now() + 7 * 86400000).toISOString(),
+      };
+
+      const EXPIRED_AVAILABLE = {
+        id: 'expired-av',
+        name: 'Lucas Expirado',
+        is_banned: false,
+        suspended_until: new Date(Date.now() - 86400000).toISOString(),
+      };
+
+      const BANNED_AND_SUSPENDED_AVAILABLE = {
+        id: 'banned-sus-av',
+        name: 'Márcio BanidoSuspenso',
+        is_banned: true,
+        suspended_until: new Date(Date.now() + 7 * 86400000).toISOString(),
+      };
+
+      it('shows "Banido" badge in dropdown for a banned player', async () => {
+        const user = userEvent.setup();
+        render(
+          <GameDetailClient
+            gameId="game-1"
+            drawDone={false}
+            confirmed={[]}
+            waitlist={[]}
+            availablePlayers={[BANNED_AVAILABLE]}
+          />,
+        );
+        await user.click(screen.getByText('Selecionar jogador'));
+        expect(screen.getByText('Banido')).toBeInTheDocument();
+      });
+
+      it('shows "Suspenso" badge in dropdown for an active suspension', async () => {
+        const user = userEvent.setup();
+        render(
+          <GameDetailClient
+            gameId="game-1"
+            drawDone={false}
+            confirmed={[]}
+            waitlist={[]}
+            availablePlayers={[SUSPENDED_AVAILABLE]}
+          />,
+        );
+        await user.click(screen.getByText('Selecionar jogador'));
+        expect(screen.getByText('Suspenso')).toBeInTheDocument();
+      });
+
+      it('does not show "Suspenso" badge when suspension has expired', async () => {
+        const user = userEvent.setup();
+        render(
+          <GameDetailClient
+            gameId="game-1"
+            drawDone={false}
+            confirmed={[]}
+            waitlist={[]}
+            availablePlayers={[EXPIRED_AVAILABLE]}
+          />,
+        );
+        await user.click(screen.getByText('Selecionar jogador'));
+        expect(screen.queryByText('Suspenso')).not.toBeInTheDocument();
+      });
+
+      it('shows "Banido" (not "Suspenso") when player is both banned and suspended', async () => {
+        const user = userEvent.setup();
+        render(
+          <GameDetailClient
+            gameId="game-1"
+            drawDone={false}
+            confirmed={[]}
+            waitlist={[]}
+            availablePlayers={[BANNED_AND_SUSPENDED_AVAILABLE]}
+          />,
+        );
+        await user.click(screen.getByText('Selecionar jogador'));
+        expect(screen.getByText('Banido')).toBeInTheDocument();
+        expect(screen.queryByText('Suspenso')).not.toBeInTheDocument();
+      });
+
+      it('shows "Banido" badge in selected value after selecting a banned player', async () => {
+        const user = userEvent.setup();
+        render(
+          <GameDetailClient
+            gameId="game-1"
+            drawDone={false}
+            confirmed={[]}
+            waitlist={[]}
+            availablePlayers={[BANNED_AVAILABLE]}
+          />,
+        );
+        await user.click(screen.getByText('Selecionar jogador'));
+        await user.click(screen.getByText('Rogério Banido'));
+        expect(screen.getByText('Banido')).toBeInTheDocument();
+      });
+
+      it('shows "Suspenso" badge in selected value after selecting a suspended player', async () => {
+        const user = userEvent.setup();
+        render(
+          <GameDetailClient
+            gameId="game-1"
+            drawDone={false}
+            confirmed={[]}
+            waitlist={[]}
+            availablePlayers={[SUSPENDED_AVAILABLE]}
+          />,
+        );
+        await user.click(screen.getByText('Selecionar jogador'));
+        await user.click(screen.getByText('Fábio Suspenso'));
+        expect(screen.getByText('Suspenso')).toBeInTheDocument();
+      });
     });
   });
 
