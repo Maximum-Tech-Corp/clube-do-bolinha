@@ -16,6 +16,7 @@ interface Player {
   is_banned: boolean;
   suspended_until: string | null;
   attendanceRate: number | null;
+  waitlistCount: number;
 }
 
 interface Props {
@@ -100,15 +101,27 @@ export function PlayersListClient({ players }: Props) {
                         {staminaLabel[player.stamina]}
                       </p>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-sm font-medium">
-                        {player.attendanceRate !== null
-                          ? `${player.attendanceRate}%`
-                          : '—'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        participação
-                      </p>
+                    <div className="text-right shrink-0 space-y-1">
+                      <div>
+                        <p className="text-sm font-medium">
+                          {player.attendanceRate !== null
+                            ? `${player.attendanceRate}%`
+                            : '—'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          participação
+                        </p>
+                      </div>
+                      {player.waitlistCount > 0 && (
+                        <div>
+                          <p className="text-sm font-medium text-orange-600">
+                            {player.waitlistCount}x
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            fila de espera
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>

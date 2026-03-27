@@ -8,6 +8,7 @@ import { z } from 'zod';
 import {
   cancelGame,
   removeConfirmedPlayer,
+  moveToWaitlist,
   promoteWaitlistPlayer,
   addPlayerToGame,
   createAndAddPlayer,
@@ -139,6 +140,13 @@ function CancelGameButton({ gameId }: { gameId: string }) {
 
 // ── Lista de confirmados ─────────────────────────────────────────────────────
 
+type ConfirmedDialogState = {
+  type: 'remove' | 'move';
+  playerId: string;
+  confirmationId: string;
+  playerName: string;
+} | null;
+
 function ConfirmedList({
   gameId,
   entries,
@@ -149,16 +157,22 @@ function ConfirmedList({
   drawDone: boolean;
 }) {
   const [pending, startTransition] = useTransition();
-  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<ConfirmedDialogState>(null);
   const [error, setError] = useState<string | null>(null);
 
-  function handleRemove(playerId: string) {
+  function handleConfirm() {
+    if (!dialog) return;
     setError(null);
-    setLoadingId(playerId);
     startTransition(async () => {
-      const result = await removeConfirmedPlayer(gameId, playerId);
-      if (result.error) setError(result.error);
-      setLoadingId(null);
+      const result =
+        dialog.type === 'remove'
+          ? await removeConfirmedPlayer(gameId, dialog.playerId)
+          : await moveToWaitlist(dialog.confirmationId, gameId);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setDialog(null);
+      }
     });
   }
 
@@ -172,8 +186,6 @@ function ConfirmedList({
           </span>
         </h2>
       </div>
-
-      {error && <p className="text-sm text-destructive">{error}</p>}
 
       {entries.length === 0 ? (
         <p className="text-sm text-muted-foreground py-2">
@@ -205,24 +217,89 @@ function ConfirmedList({
                 <p className="text-xs text-muted-foreground">{player.phone}</p>
               </div>
               {!drawDone && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive shrink-0"
-                  disabled={pending && loadingId === player.id}
-                  onClick={() => handleRemove(player.id)}
-                >
-                  {pending && loadingId === player.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    'Remover'
-                  )}
-                </Button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-orange-500 hover:text-orange-500 hover:bg-orange-50"
+                    onClick={() =>
+                      setDialog({
+                        type: 'move',
+                        playerId: player.id,
+                        confirmationId,
+                        playerName: player.name,
+                      })
+                    }
+                  >
+                    Espera
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() =>
+                      setDialog({
+                        type: 'remove',
+                        playerId: player.id,
+                        confirmationId,
+                        playerName: player.name,
+                      })
+                    }
+                  >
+                    Remover
+                  </Button>
+                </div>
               )}
             </li>
           ))}
         </ul>
       )}
+
+      <Dialog open={!!dialog} onOpenChange={open => !open && setDialog(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {dialog?.type === 'remove'
+                ? 'Remover jogador?'
+                : 'Mover para a fila de espera?'}
+            </DialogTitle>
+            <DialogDescription>
+              {dialog?.type === 'remove'
+                ? `${dialog.playerName} será removido da lista de confirmados.`
+                : `${dialog?.playerName} será movido para a lista de espera.`}
+            </DialogDescription>
+          </DialogHeader>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <div className="flex gap-2">
+            <Button
+              variant={dialog?.type === 'remove' ? 'destructive' : 'default'}
+              className={
+                dialog?.type === 'move'
+                  ? 'flex-1 bg-orange-500 hover:bg-orange-600'
+                  : 'flex-1'
+              }
+              onClick={handleConfirm}
+              disabled={pending}
+            >
+              {pending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : dialog?.type === 'remove' ? (
+                'Confirmar remoção'
+              ) : (
+                'Confirmar'
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setDialog(null)}
+              disabled={pending}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -232,9 +309,11 @@ function ConfirmedList({
 function WaitlistPanel({
   gameId,
   entries,
+  confirmedCount,
 }: {
   gameId: string;
   entries: WaitlistEntry[];
+  confirmedCount: number;
 }) {
   const [pending, startTransition] = useTransition();
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -296,7 +375,10 @@ function WaitlistPanel({
               variant="outline"
               size="sm"
               className="shrink-0"
-              disabled={pending && loadingId === confirmationId}
+              disabled={
+                confirmedCount >= 25 ||
+                (pending && loadingId === confirmationId)
+              }
               onClick={() => handlePromote(confirmationId)}
             >
               {pending && loadingId === confirmationId ? (
@@ -740,7 +822,11 @@ export function GameDetailClient({
       {waitlist.length > 0 && (
         <>
           <Separator />
-          <WaitlistPanel gameId={gameId} entries={waitlist} />
+          <WaitlistPanel
+            gameId={gameId}
+            entries={waitlist}
+            confirmedCount={confirmed.length}
+          />
         </>
       )}
 

@@ -12,6 +12,7 @@ const {
   toggleTournament,
   listGames,
   removeConfirmedPlayer,
+  moveToWaitlist,
   promoteWaitlistPlayer,
   addPlayerToGame,
   createAndAddPlayer,
@@ -310,25 +311,11 @@ describe('removeConfirmedPlayer', () => {
     expect(result).toEqual({ error: 'Jogo não encontrado.' });
   });
 
-  it('removes player, promotes from waitlist when below 25, revalidates', async () => {
+  it('removes player and revalidates', async () => {
     setupAdminChain();
-    // game found
     mockSupabaseFrom.mockReturnValueOnce(
       createQueryMock({ data: { id: 'game-1' }, error: null }),
     );
-    // mark as removed
-    mockSupabaseFrom.mockReturnValueOnce(
-      createQueryMock({ data: null, error: null }),
-    );
-    // confirmed count after removal = 24 (< 25)
-    mockSupabaseFrom.mockReturnValueOnce(
-      createQueryMock({ data: null, error: null, count: 24 }),
-    );
-    // first waitlist player
-    mockSupabaseFrom.mockReturnValueOnce(
-      createQueryMock({ data: { id: 'conf-2' }, error: null }),
-    );
-    // promote
     mockSupabaseFrom.mockReturnValueOnce(
       createQueryMock({ data: null, error: null }),
     );
@@ -337,41 +324,79 @@ describe('removeConfirmedPlayer', () => {
     expect(result).toEqual({});
     expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/jogos/game-1');
   });
+});
 
-  it('skips promotion when confirmed count is still 25+', async () => {
-    setupAdminChain();
-    mockSupabaseFrom.mockReturnValueOnce(
-      createQueryMock({ data: { id: 'game-1' }, error: null }),
-    );
-    mockSupabaseFrom.mockReturnValueOnce(
-      createQueryMock({ data: null, error: null }), // mark removed
-    );
-    // count = 25 — still full, no promotion
-    mockSupabaseFrom.mockReturnValueOnce(
-      createQueryMock({ data: null, error: null, count: 25 }),
-    );
+// ─── moveToWaitlist ───────────────────────────────────────────────────────────
 
-    const result = await removeConfirmedPlayer('game-1', 'player-1');
-    expect(result).toEqual({});
+describe('moveToWaitlist', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('skips promotion when waitlist is empty', async () => {
+  it('returns unauthorized when no session', async () => {
+    setupUnauthenticated();
+    const result = await moveToWaitlist('conf-1', 'game-1');
+    expect(result).toEqual({ error: 'Não autorizado.' });
+  });
+
+  it('returns error when game not found', async () => {
+    setupAdminChain();
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    const result = await moveToWaitlist('conf-1', 'game-1');
+    expect(result).toEqual({ error: 'Jogo não encontrado.' });
+  });
+
+  it('returns error when update fails', async () => {
     setupAdminChain();
     mockSupabaseFrom.mockReturnValueOnce(
       createQueryMock({ data: { id: 'game-1' }, error: null }),
     );
+    // max waitlist_position query
     mockSupabaseFrom.mockReturnValueOnce(
-      createQueryMock({ data: null, error: null }), // mark removed
+      createQueryMock({ data: null, error: null }),
     );
+    // update fails
     mockSupabaseFrom.mockReturnValueOnce(
-      createQueryMock({ data: null, error: null, count: 20 }), // below 25
+      createQueryMock({ data: null, error: { message: 'db error' } }),
     );
-    // no waitlist player found
+    const result = await moveToWaitlist('conf-1', 'game-1');
+    expect(result).toEqual({ error: 'Erro ao mover jogador para a fila.' });
+  });
+
+  it('moves player to end of waitlist and revalidates', async () => {
+    setupAdminChain();
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { id: 'game-1' }, error: null }),
+    );
+    // max waitlist_position = 2, next = 3
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { waitlist_position: 2 }, error: null }),
+    );
     mockSupabaseFrom.mockReturnValueOnce(
       createQueryMock({ data: null, error: null }),
     );
 
-    const result = await removeConfirmedPlayer('game-1', 'player-1');
+    const result = await moveToWaitlist('conf-1', 'game-1');
+    expect(result).toEqual({});
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/jogos/game-1');
+  });
+
+  it('assigns position 1 when waitlist is empty', async () => {
+    setupAdminChain();
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { id: 'game-1' }, error: null }),
+    );
+    // no existing waitlist entries
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+
+    const result = await moveToWaitlist('conf-1', 'game-1');
     expect(result).toEqual({});
   });
 });
@@ -403,6 +428,10 @@ describe('promoteWaitlistPlayer', () => {
     mockSupabaseFrom.mockReturnValueOnce(
       createQueryMock({ data: { id: 'game-1' }, error: null }),
     );
+    // confirmed count = 24 (below limit)
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null, count: 24 }),
+    );
     mockSupabaseFrom.mockReturnValueOnce(
       createQueryMock({ data: null, error: { message: 'db error' } }),
     );
@@ -410,10 +439,26 @@ describe('promoteWaitlistPlayer', () => {
     expect(result).toEqual({ error: 'Erro ao promover jogador.' });
   });
 
+  it('returns error when confirmed count is already 25', async () => {
+    setupAdminChain();
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { id: 'game-1' }, error: null }),
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null, count: 25 }),
+    );
+    const result = await promoteWaitlistPlayer('conf-1', 'game-1');
+    expect(result).toEqual({ error: 'Limite de 25 confirmados atingido.' });
+  });
+
   it('promotes player and revalidates on success', async () => {
     setupAdminChain();
     mockSupabaseFrom.mockReturnValueOnce(
       createQueryMock({ data: { id: 'game-1' }, error: null }),
+    );
+    // confirmed count = 24 (below limit)
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null, count: 24 }),
     );
     mockSupabaseFrom.mockReturnValueOnce(
       createQueryMock({ data: null, error: null }),

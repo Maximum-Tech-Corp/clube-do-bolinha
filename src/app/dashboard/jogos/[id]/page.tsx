@@ -241,6 +241,29 @@ export default async function GameDetailPage({ params }: Props) {
               </ul>
             )}
           </div>
+          {waitlist.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-muted-foreground">
+                Lista de espera ({waitlist.length}):
+              </p>
+              <ul className="space-y-1">
+                {waitlist.map(({ confirmationId, position, player }) => (
+                  <li
+                    key={confirmationId}
+                    className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm"
+                  >
+                    <span className="text-xs text-muted-foreground w-4 shrink-0">
+                      {position}
+                    </span>
+                    <span className="font-medium">{player.name}</span>
+                    <span className="text-muted-foreground text-xs">
+                      {player.phone}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 

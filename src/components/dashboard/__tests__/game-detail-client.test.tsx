@@ -5,6 +5,7 @@ import { GameDetailClient } from '../game-detail-client';
 
 const mockCancelGame = vi.fn();
 const mockRemoveConfirmedPlayer = vi.fn();
+const mockMoveToWaitlist = vi.fn();
 const mockPromoteWaitlistPlayer = vi.fn();
 const mockAddPlayerToGame = vi.fn();
 const mockCreateAndAddPlayer = vi.fn();
@@ -14,6 +15,7 @@ vi.mock('@/actions/games-admin', () => ({
   cancelGame: (...args: unknown[]) => mockCancelGame(...args),
   removeConfirmedPlayer: (...args: unknown[]) =>
     mockRemoveConfirmedPlayer(...args),
+  moveToWaitlist: (...args: unknown[]) => mockMoveToWaitlist(...args),
   promoteWaitlistPlayer: (...args: unknown[]) =>
     mockPromoteWaitlistPlayer(...args),
   addPlayerToGame: (...args: unknown[]) => mockAddPlayerToGame(...args),
@@ -153,6 +155,7 @@ describe('GameDetailClient', () => {
     vi.clearAllMocks();
     mockCancelGame.mockResolvedValue({});
     mockRemoveConfirmedPlayer.mockResolvedValue({});
+    mockMoveToWaitlist.mockResolvedValue({});
     mockPromoteWaitlistPlayer.mockResolvedValue({});
     mockAddPlayerToGame.mockResolvedValue({});
     mockCreateAndAddPlayer.mockResolvedValue({});
@@ -203,7 +206,7 @@ describe('GameDetailClient', () => {
       expect(screen.getByText('Nenhum confirmado ainda.')).toBeInTheDocument();
     });
 
-    it('calls removeConfirmedPlayer when Remover is clicked', async () => {
+    it('calls removeConfirmedPlayer after confirming the dialog', async () => {
       const user = userEvent.setup();
       render(
         <GameDetailClient
@@ -219,9 +222,78 @@ describe('GameDetailClient', () => {
       const removeButtons = screen.getAllByRole('button', { name: 'Remover' });
       await user.click(removeButtons[0]);
 
+      // dialog opens — confirm
+      await user.click(
+        screen.getByRole('button', { name: 'Confirmar remoção' }),
+      );
+
       await waitFor(() => {
         expect(mockRemoveConfirmedPlayer).toHaveBeenCalledWith('game-1', 'p1');
       });
+    });
+
+    it('does not call removeConfirmedPlayer when dialog is cancelled', async () => {
+      const user = userEvent.setup();
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={false}
+          hasAnyStats={false}
+          confirmed={CONFIRMED}
+          waitlist={[]}
+          availablePlayers={[]}
+        />,
+      );
+
+      const removeButtons = screen.getAllByRole('button', { name: 'Remover' });
+      await user.click(removeButtons[0]);
+      await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+      expect(mockRemoveConfirmedPlayer).not.toHaveBeenCalled();
+    });
+
+    it('calls moveToWaitlist after confirming the Espera dialog', async () => {
+      const user = userEvent.setup();
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={false}
+          hasAnyStats={false}
+          confirmed={CONFIRMED}
+          waitlist={[]}
+          availablePlayers={[]}
+        />,
+      );
+
+      const waitlistButtons = screen.getAllByRole('button', { name: 'Espera' });
+      await user.click(waitlistButtons[0]);
+
+      // dialog opens — confirm
+      await user.click(screen.getByRole('button', { name: 'Confirmar' }));
+
+      await waitFor(() => {
+        expect(mockMoveToWaitlist).toHaveBeenCalledWith('c1', 'game-1');
+      });
+    });
+
+    it('hides Remover and Espera buttons when draw is done', () => {
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={true}
+          hasAnyStats={false}
+          confirmed={CONFIRMED}
+          waitlist={[]}
+          availablePlayers={[]}
+        />,
+      );
+
+      expect(
+        screen.queryByRole('button', { name: 'Remover' }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'Espera' }),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -273,6 +345,31 @@ describe('GameDetailClient', () => {
       await waitFor(() => {
         expect(mockPromoteWaitlistPlayer).toHaveBeenCalledWith('w1', 'game-1');
       });
+    });
+
+    it('disables Promover buttons when confirmed count is 25', () => {
+      const fullConfirmed = Array.from({ length: 25 }, (_, i) => ({
+        confirmationId: `c${i}`,
+        player: {
+          id: `p${i}`,
+          name: `Jogador ${i}`,
+          phone: '',
+          is_banned: false,
+          suspended_until: null,
+        },
+      }));
+      render(
+        <GameDetailClient
+          gameId="game-1"
+          drawDone={false}
+          hasAnyStats={false}
+          confirmed={fullConfirmed}
+          waitlist={WAITLIST}
+          availablePlayers={[]}
+        />,
+      );
+
+      expect(screen.getByRole('button', { name: 'Promover' })).toBeDisabled();
     });
   });
 
@@ -1246,6 +1343,9 @@ describe('GameDetailClient', () => {
 
       const removeButtons = screen.getAllByRole('button', { name: 'Remover' });
       await user.click(removeButtons[0]);
+      await user.click(
+        screen.getByRole('button', { name: 'Confirmar remoção' }),
+      );
 
       await waitFor(() => {
         expect(screen.getByText('Erro ao remover.')).toBeInTheDocument();

@@ -327,7 +327,7 @@ export function TeamsClient({
         return;
       }
       setFinishDialogOpen(false);
-      router.refresh();
+      router.push('/dashboard/jogos');
     });
   }
 

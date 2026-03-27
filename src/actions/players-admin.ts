@@ -39,7 +39,7 @@ export async function listPlayers() {
     finishedGameIds.length > 0 && playerIds.length > 0
       ? await service
           .from('game_confirmations')
-          .select('player_id, game_id')
+          .select('player_id, game_id, status')
           .in('game_id', finishedGameIds)
           .in('player_id', playerIds)
           .in('status', ['confirmed', 'waitlist'])
@@ -50,6 +50,7 @@ export async function listPlayers() {
   // Por jogador:
   // denominador = jogos finalizados ocorridos após o cadastro do jogador
   // numerador = confirmações (confirmed ou waitlist) nesses jogos
+  // waitlistCount = confirmações com status waitlist nesses jogos
   const enriched = players.map(p => {
     const registeredAt = new Date(p.created_at);
     const eligibleGames = finishedGameList.filter(
@@ -58,15 +59,18 @@ export async function listPlayers() {
     const eligibleGameIds = new Set(eligibleGames.map(g => g.id));
     const denominator = eligibleGames.length;
 
-    const numerator = confirmations.filter(
+    const eligible = confirmations.filter(
       c => c.player_id === p.id && eligibleGameIds.has(c.game_id),
-    ).length;
+    );
+    const numerator = eligible.length;
+    const waitlistCount = eligible.filter(c => c.status === 'waitlist').length;
 
     return {
       ...p,
       attendanceCount: numerator,
       attendanceRate:
         denominator > 0 ? Math.round((numerator / denominator) * 100) : null,
+      waitlistCount,
     };
   });
 

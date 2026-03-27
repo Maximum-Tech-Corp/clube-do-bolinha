@@ -17,6 +17,7 @@ const PLAYERS = [
     is_banned: false,
     suspended_until: null,
     attendanceRate: 85,
+    waitlistCount: 2,
   },
   {
     id: '2',
@@ -28,6 +29,7 @@ const PLAYERS = [
     is_banned: false,
     suspended_until: null,
     attendanceRate: 60,
+    waitlistCount: 0,
   },
   {
     id: '3',
@@ -39,6 +41,7 @@ const PLAYERS = [
     is_banned: false,
     suspended_until: null,
     attendanceRate: null,
+    waitlistCount: 0,
   },
 ];
 
@@ -158,6 +161,19 @@ describe('PlayersListClient', () => {
 
       expect(screen.getByText('Bruno Lima')).toBeInTheDocument();
       expect(screen.queryByText('Carlos Ramos')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('waitlist count', () => {
+    it('shows waitlistCount with "x" and "fila de espera" label when count > 0', () => {
+      render(<PlayersListClient players={[PLAYERS[0]]} />);
+      expect(screen.getByText('2x')).toBeInTheDocument();
+      expect(screen.getByText('fila de espera')).toBeInTheDocument();
+    });
+
+    it('does not show waitlist section when waitlistCount is 0', () => {
+      render(<PlayersListClient players={[PLAYERS[1]]} />);
+      expect(screen.queryByText('fila de espera')).not.toBeInTheDocument();
     });
   });
 
