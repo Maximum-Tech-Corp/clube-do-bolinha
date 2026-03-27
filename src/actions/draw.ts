@@ -122,3 +122,70 @@ export async function executeDraw(
   revalidatePath(`/dashboard/jogos/${gameId}`);
   return {};
 }
+
+export async function resetDraw(gameId: string): Promise<{ error?: string }> {
+  const teamId = await getEffectiveTeamId();
+  if (!teamId) return { error: 'Não autorizado.' };
+
+  const service = createServiceClient();
+
+  const { data: game } = await service
+    .from('games')
+    .select('id, status, draw_done')
+    .eq('id', gameId)
+    .eq('team_id', teamId)
+    .maybeSingle();
+
+  if (!game) return { error: 'Jogo não encontrado.' };
+  if (game.status !== 'open') return { error: 'Jogo não está aberto.' };
+  if (!game.draw_done) return { error: 'Nenhum sorteio para resetar.' };
+
+  const { data: gameTeams } = await service
+    .from('game_teams')
+    .select('id')
+    .eq('game_id', gameId);
+
+  const teamIds = (gameTeams ?? []).map(t => t.id);
+
+  if (teamIds.length > 0) {
+    // Safety guard: block if any stat was recorded (UI hides the button, but defense in depth)
+    const { data: statsCheck } = await service
+      .from('game_team_players')
+      .select('id')
+      .in('game_team_id', teamIds)
+      .or('goals.gt.0,assists.gt.0')
+      .limit(1);
+
+    if (statsCheck && statsCheck.length > 0) {
+      return { error: 'Não é possível re-sortear após registrar placares.' };
+    }
+
+    // Also block if any tournament match score has been recorded
+    const { data: tournamentScoreCheck } = await service
+      .from('tournament_matches')
+      .select('id')
+      .eq('game_id', gameId)
+      .not('home_score', 'is', null)
+      .limit(1);
+
+    if (tournamentScoreCheck && tournamentScoreCheck.length > 0) {
+      return { error: 'Não é possível re-sortear após registrar placares.' };
+    }
+
+    // Delete in order to respect foreign key dependencies
+    await service.from('tournament_matches').delete().eq('game_id', gameId);
+    await service
+      .from('game_team_players')
+      .delete()
+      .in('game_team_id', teamIds);
+    await service.from('game_teams').delete().eq('game_id', gameId);
+  }
+
+  await service
+    .from('games')
+    .update({ draw_done: false, is_tournament: false })
+    .eq('id', gameId);
+
+  revalidatePath(`/dashboard/jogos/${gameId}`);
+  return {};
+}

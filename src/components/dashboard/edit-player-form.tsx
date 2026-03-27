@@ -16,12 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { StaminaLevel } from '@/types/database.types';
+import type { StaminaLevel, PlayerPosition } from '@/types/database.types';
 
 const schema = z.object({
   name: z.string().min(2, 'Informe o nome'),
   weight_kg: z.number().min(30).max(250),
   stamina: z.enum(['1', '2', '3', '4plus'] as const),
+  position: z.enum(['zagueiro', 'atacante', 'libero']).nullable(),
   is_star: z.boolean(),
 });
 
@@ -33,6 +34,7 @@ interface Player {
   phone: string;
   weight_kg: number;
   stamina: string;
+  position: PlayerPosition | null;
   is_star: boolean;
 }
 
@@ -52,11 +54,14 @@ export function EditPlayerForm({ player }: { player: Player }) {
       name: player.name,
       weight_kg: player.weight_kg,
       stamina: player.stamina as StaminaLevel,
+      position: player.position,
       is_star: player.is_star,
     },
   });
 
   const isStar = useWatch({ control, name: 'is_star' });
+  const position = useWatch({ control, name: 'position' });
+  const stamina = useWatch({ control, name: 'stamina' });
 
   async function onSubmit(data: FormData) {
     setServerError(null);
@@ -65,6 +70,7 @@ export function EditPlayerForm({ player }: { player: Player }) {
       name: data.name,
       weight_kg: data.weight_kg,
       stamina: data.stamina as StaminaLevel,
+      position: data.position,
       is_star: data.is_star,
     });
 
@@ -109,7 +115,7 @@ export function EditPlayerForm({ player }: { player: Player }) {
       <div className="space-y-1">
         <Label>Resistência</Label>
         <Select
-          defaultValue={player.stamina}
+          value={stamina}
           onValueChange={v => setValue('stamina', v as StaminaLevel)}
         >
           <SelectTrigger>
@@ -120,6 +126,25 @@ export function EditPlayerForm({ player }: { player: Player }) {
             <SelectItem value="2">2 jogos</SelectItem>
             <SelectItem value="3">3 jogos</SelectItem>
             <SelectItem value="4plus">4 ou mais jogos</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-1">
+        <Label>Posição</Label>
+        <Select
+          value={position ?? ''}
+          onValueChange={v =>
+            setValue('position', v === '' ? null : (v as PlayerPosition))
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Não definida" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="zagueiro">Zagueiro</SelectItem>
+            <SelectItem value="atacante">Atacante</SelectItem>
+            <SelectItem value="libero">Líbero</SelectItem>
           </SelectContent>
         </Select>
       </div>

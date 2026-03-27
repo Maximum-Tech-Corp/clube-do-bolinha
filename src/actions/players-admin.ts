@@ -3,7 +3,7 @@
 import { createServiceClient } from '@/lib/supabase/server';
 import { getEffectiveTeamId } from '@/lib/admin-context';
 import { revalidatePath } from 'next/cache';
-import type { StaminaLevel } from '@/types/database.types';
+import type { StaminaLevel, PlayerPosition } from '@/types/database.types';
 
 export async function listPlayers() {
   const teamId = await getEffectiveTeamId();
@@ -39,7 +39,7 @@ export async function listPlayers() {
     finishedGameIds.length > 0 && playerIds.length > 0
       ? await service
           .from('game_confirmations')
-          .select('player_id, game_id')
+          .select('player_id, game_id, status')
           .in('game_id', finishedGameIds)
           .in('player_id', playerIds)
           .in('status', ['confirmed', 'waitlist'])
@@ -50,6 +50,7 @@ export async function listPlayers() {
   // Por jogador:
   // denominador = jogos finalizados ocorridos após o cadastro do jogador
   // numerador = confirmações (confirmed ou waitlist) nesses jogos
+  // waitlistCount = confirmações com status waitlist nesses jogos
   const enriched = players.map(p => {
     const registeredAt = new Date(p.created_at);
     const eligibleGames = finishedGameList.filter(
@@ -58,15 +59,18 @@ export async function listPlayers() {
     const eligibleGameIds = new Set(eligibleGames.map(g => g.id));
     const denominator = eligibleGames.length;
 
-    const numerator = confirmations.filter(
+    const eligible = confirmations.filter(
       c => c.player_id === p.id && eligibleGameIds.has(c.game_id),
-    ).length;
+    );
+    const numerator = eligible.length;
+    const waitlistCount = eligible.filter(c => c.status === 'waitlist').length;
 
     return {
       ...p,
       attendanceCount: numerator,
       attendanceRate:
         denominator > 0 ? Math.round((numerator / denominator) * 100) : null,
+      waitlistCount,
     };
   });
 
@@ -81,7 +85,7 @@ export async function getPlayer(playerId: string) {
   const { data } = await service
     .from('players')
     .select(
-      'id, name, phone, weight_kg, stamina, is_star, is_banned, suspended_until, suspension_reason',
+      'id, name, phone, weight_kg, stamina, position, is_star, is_banned, suspended_until, suspension_reason',
     )
     .eq('id', playerId)
     .eq('team_id', teamId)
@@ -228,6 +232,7 @@ export async function updatePlayer(
     name: string;
     weight_kg: number;
     stamina: StaminaLevel;
+    position: PlayerPosition | null;
     is_star: boolean;
   },
 ): Promise<{ error?: string }> {
@@ -252,6 +257,7 @@ export async function updatePlayer(
       name: params.name,
       weight_kg: params.weight_kg,
       stamina: params.stamina,
+      position: params.position,
       is_star: params.is_star,
     })
     .eq('id', playerId);

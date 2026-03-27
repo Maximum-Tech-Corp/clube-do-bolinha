@@ -262,6 +262,19 @@ describe('signup', () => {
     expect(result).toEqual({ error: 'Erro ao criar conta.' });
   });
 
+  it('returns the auth error message when signUp fails with a generic error', async () => {
+    mockSupabaseAuth.signUp.mockResolvedValue({
+      data: { user: null },
+      error: { message: 'Password should be at least 6 characters.' },
+    });
+
+    const result = await signup(VALID_DATA);
+
+    expect(result).toEqual({
+      error: 'Password should be at least 6 characters.',
+    });
+  });
+
   it('returns error when email already has an admin record (fake success guard)', async () => {
     // Supabase fake success: signUp returns a user but they already have an admins record
     mockSupabaseFrom.mockReturnValueOnce(
@@ -315,6 +328,34 @@ describe('signup', () => {
 
     expect(result).toEqual({ success: true });
     expect(mockRedirect).not.toHaveBeenCalled();
+  });
+
+  it('retries access code generation when a collision is detected', async () => {
+    mockSupabaseFrom
+      .mockReturnValueOnce(
+        // existingAdmin check — no existing admin
+        createQueryMock({ data: null, error: null }),
+      )
+      .mockReturnValueOnce(
+        // admins.insert().select().single() — OK
+        createQueryMock({ data: { id: 'admin-uuid' }, error: null }),
+      )
+      .mockReturnValueOnce(
+        // teams.select().eq().maybeSingle() — collision: code already exists
+        createQueryMock({ data: { id: 'existing-team' }, error: null }),
+      )
+      .mockReturnValueOnce(
+        // teams.select().eq().maybeSingle() — second attempt: no collision
+        createQueryMock({ data: null, error: null }),
+      )
+      .mockReturnValueOnce(
+        // teams.insert() — OK
+        createQueryMock({ data: null, error: null }),
+      );
+
+    const result = await signup(VALID_DATA);
+
+    expect(result).toEqual({ success: true });
   });
 
   it('returns error when team insert fails', async () => {

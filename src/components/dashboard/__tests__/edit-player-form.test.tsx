@@ -3,6 +3,37 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EditPlayerForm } from '../edit-player-form';
 
+// Radix UI Select doesn't work in happy-dom — replace with native <select>
+vi.mock('@/components/ui/select', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const React = require('react');
+  return {
+    Select: ({
+      children,
+      onValueChange,
+    }: {
+      children: unknown;
+      onValueChange?: (v: string) => void;
+    }) =>
+      React.createElement(
+        'select',
+        {
+          onChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
+            onValueChange?.(e.target.value),
+        },
+        children,
+      ),
+    SelectTrigger: ({ children }: { children: unknown }) =>
+      React.createElement(React.Fragment, null, children),
+    SelectValue: ({ placeholder }: { placeholder?: string }) =>
+      React.createElement('option', { value: '' }, placeholder ?? ''),
+    SelectContent: ({ children }: { children: unknown }) =>
+      React.createElement(React.Fragment, null, children),
+    SelectItem: ({ value, children }: { value: string; children: unknown }) =>
+      React.createElement('option', { value }, children),
+  };
+});
+
 const mockUpdatePlayer = vi.fn();
 
 vi.mock('@/actions/players-admin', () => ({
@@ -22,6 +53,7 @@ const BASE_PLAYER = {
   phone: '(11) 99999-9999',
   weight_kg: 75,
   stamina: '3',
+  position: null as null | 'zagueiro' | 'atacante' | 'libero',
   is_star: false,
 };
 
@@ -88,6 +120,56 @@ describe('EditPlayerForm', () => {
         expect(mockUpdatePlayer).toHaveBeenCalledWith(
           'player-1',
           expect.objectContaining({ is_star: true }),
+        );
+      });
+    });
+  });
+
+  describe('position select', () => {
+    it('renders all position options', () => {
+      render(<EditPlayerForm player={BASE_PLAYER} />);
+      expect(
+        screen.getByRole('option', { name: 'Zagueiro' }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('option', { name: 'Atacante' }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('option', { name: 'Líbero' }),
+      ).toBeInTheDocument();
+    });
+
+    it('sends selected position to updatePlayer', async () => {
+      const user = userEvent.setup();
+      render(<EditPlayerForm player={BASE_PLAYER} />);
+
+      // position select is the second combobox (index 1); stamina is index 0
+      const positionSelect = screen.getAllByRole('combobox')[1];
+      await user.selectOptions(positionSelect, 'zagueiro');
+      await user.click(
+        screen.getByRole('button', { name: 'Salvar alterações' }),
+      );
+
+      await waitFor(() => {
+        expect(mockUpdatePlayer).toHaveBeenCalledWith(
+          'player-1',
+          expect.objectContaining({ position: 'zagueiro' }),
+        );
+      });
+    });
+
+    it('sends null when no position is selected', async () => {
+      const user = userEvent.setup();
+      render(<EditPlayerForm player={BASE_PLAYER} />);
+
+      await user.click(
+        screen.getByRole('button', { name: 'Salvar alterações' }),
+      );
+
+      await waitFor(() => {
+        expect(mockUpdatePlayer).toHaveBeenCalledWith(
+          'player-1',
+          expect.objectContaining({ position: null }),
         );
       });
     });

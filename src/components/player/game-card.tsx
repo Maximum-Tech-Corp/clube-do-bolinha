@@ -119,9 +119,15 @@ export function GameCard({
               </p>
               {playerStatusLabel ? (
                 <div className="space-y-2">
-                  <span className="text-sm font-medium text-primary">
-                    {playerStatusLabel}
-                  </span>
+                  {playerStatus === 'waitlist' ? (
+                    <span className="inline-flex items-center text-xs font-medium text-orange-600 border border-orange-300 bg-orange-50 rounded px-2 py-0.5">
+                      Você ficou na fila de espera
+                    </span>
+                  ) : (
+                    <span className="text-sm font-medium text-primary">
+                      {playerStatusLabel}
+                    </span>
+                  )}
                   {canCancel && (
                     <Button
                       size="sm"

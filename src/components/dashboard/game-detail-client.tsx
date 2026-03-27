@@ -1,16 +1,19 @@
 'use client';
 
 import { useState, useTransition, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
   cancelGame,
   removeConfirmedPlayer,
+  moveToWaitlist,
   promoteWaitlistPlayer,
   addPlayerToGame,
   createAndAddPlayer,
 } from '@/actions/games-admin';
+import { resetDraw } from '@/actions/draw';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -64,6 +67,7 @@ interface AvailablePlayer {
 interface Props {
   gameId: string;
   drawDone: boolean;
+  hasAnyStats: boolean;
   confirmed: ConfirmedEntry[];
   waitlist: WaitlistEntry[];
   availablePlayers: AvailablePlayer[];
@@ -136,24 +140,39 @@ function CancelGameButton({ gameId }: { gameId: string }) {
 
 // ── Lista de confirmados ─────────────────────────────────────────────────────
 
+type ConfirmedDialogState = {
+  type: 'remove' | 'move';
+  playerId: string;
+  confirmationId: string;
+  playerName: string;
+} | null;
+
 function ConfirmedList({
   gameId,
   entries,
+  drawDone,
 }: {
   gameId: string;
   entries: ConfirmedEntry[];
+  drawDone: boolean;
 }) {
   const [pending, startTransition] = useTransition();
-  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<ConfirmedDialogState>(null);
   const [error, setError] = useState<string | null>(null);
 
-  function handleRemove(playerId: string) {
+  function handleConfirm() {
+    if (!dialog) return;
     setError(null);
-    setLoadingId(playerId);
     startTransition(async () => {
-      const result = await removeConfirmedPlayer(gameId, playerId);
-      if (result.error) setError(result.error);
-      setLoadingId(null);
+      const result =
+        dialog.type === 'remove'
+          ? await removeConfirmedPlayer(gameId, dialog.playerId)
+          : await moveToWaitlist(dialog.confirmationId, gameId);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setDialog(null);
+      }
     });
   }
 
@@ -167,8 +186,6 @@ function ConfirmedList({
           </span>
         </h2>
       </div>
-
-      {error && <p className="text-sm text-destructive">{error}</p>}
 
       {entries.length === 0 ? (
         <p className="text-sm text-muted-foreground py-2">
@@ -199,23 +216,90 @@ function ConfirmedList({
                 </div>
                 <p className="text-xs text-muted-foreground">{player.phone}</p>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-destructive hover:text-destructive shrink-0"
-                disabled={pending && loadingId === player.id}
-                onClick={() => handleRemove(player.id)}
-              >
-                {pending && loadingId === player.id ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  'Remover'
-                )}
-              </Button>
+              {!drawDone && (
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-orange-500 hover:text-orange-500 hover:bg-orange-50"
+                    onClick={() =>
+                      setDialog({
+                        type: 'move',
+                        playerId: player.id,
+                        confirmationId,
+                        playerName: player.name,
+                      })
+                    }
+                  >
+                    Espera
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() =>
+                      setDialog({
+                        type: 'remove',
+                        playerId: player.id,
+                        confirmationId,
+                        playerName: player.name,
+                      })
+                    }
+                  >
+                    Remover
+                  </Button>
+                </div>
+              )}
             </li>
           ))}
         </ul>
       )}
+
+      <Dialog open={!!dialog} onOpenChange={open => !open && setDialog(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {dialog?.type === 'remove'
+                ? 'Remover jogador?'
+                : 'Mover para a fila de espera?'}
+            </DialogTitle>
+            <DialogDescription>
+              {dialog?.type === 'remove'
+                ? `${dialog.playerName} será removido da lista de confirmados.`
+                : `${dialog?.playerName} será movido para a lista de espera.`}
+            </DialogDescription>
+          </DialogHeader>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <div className="flex gap-2">
+            <Button
+              variant={dialog?.type === 'remove' ? 'destructive' : 'default'}
+              className={
+                dialog?.type === 'move'
+                  ? 'flex-1 bg-orange-500 hover:bg-orange-600'
+                  : 'flex-1'
+              }
+              onClick={handleConfirm}
+              disabled={pending}
+            >
+              {pending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : dialog?.type === 'remove' ? (
+                'Confirmar remoção'
+              ) : (
+                'Confirmar'
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setDialog(null)}
+              disabled={pending}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -225,9 +309,11 @@ function ConfirmedList({
 function WaitlistPanel({
   gameId,
   entries,
+  confirmedCount,
 }: {
   gameId: string;
   entries: WaitlistEntry[];
+  confirmedCount: number;
 }) {
   const [pending, startTransition] = useTransition();
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -289,7 +375,10 @@ function WaitlistPanel({
               variant="outline"
               size="sm"
               className="shrink-0"
-              disabled={pending && loadingId === confirmationId}
+              disabled={
+                confirmedCount >= 25 ||
+                (pending && loadingId === confirmationId)
+              }
               onClick={() => handlePromote(confirmationId)}
             >
               {pending && loadingId === confirmationId ? (
@@ -311,10 +400,12 @@ function SearchablePlayerSelect({
   players,
   value,
   onChange,
+  disabled = false,
 }: {
   players: AvailablePlayer[];
   value: string;
   onChange: (id: string) => void;
+  disabled?: boolean;
 }) {
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
@@ -345,8 +436,8 @@ function SearchablePlayerSelect({
   return (
     <div ref={ref} className="relative flex-1">
       <div
-        className="flex h-9 w-full items-center rounded-md border border-input bg-background px-3 py-1 text-sm cursor-pointer"
-        onClick={() => setOpen(o => !o)}
+        className={`flex h-9 w-full items-center rounded-md border border-input bg-background px-3 py-1 text-sm ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+        onClick={() => !disabled && setOpen(o => !o)}
       >
         {open ? (
           <input
@@ -418,9 +509,11 @@ function SearchablePlayerSelect({
 function AddExistingPlayerPanel({
   gameId,
   availablePlayers,
+  drawDone,
 }: {
   gameId: string;
   availablePlayers: AvailablePlayer[];
+  drawDone: boolean;
 }) {
   const [selectedId, setSelectedId] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -446,8 +539,12 @@ function AddExistingPlayerPanel({
           players={availablePlayers}
           value={selectedId}
           onChange={setSelectedId}
+          disabled={drawDone}
         />
-        <Button onClick={handleAdd} disabled={!selectedId || pending}>
+        <Button
+          onClick={handleAdd}
+          disabled={drawDone || !selectedId || pending}
+        >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Adicionar'}
         </Button>
       </div>
@@ -467,7 +564,13 @@ const newPlayerSchema = z.object({
 
 type NewPlayerData = z.infer<typeof newPlayerSchema>;
 
-function CreateAndAddPlayerPanel({ gameId }: { gameId: string }) {
+function CreateAndAddPlayerPanel({
+  gameId,
+  drawDone,
+}: {
+  gameId: string;
+  drawDone: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -518,6 +621,7 @@ function CreateAndAddPlayerPanel({ gameId }: { gameId: string }) {
         <Button
           className="bg-primary hover:bg-primary/80"
           onClick={() => setOpen(true)}
+          disabled={drawDone}
         >
           <ChevronDown className="mr-1.5 h-4 w-4" />
           Cadastrar novo jogador
@@ -615,12 +719,31 @@ function CreateAndAddPlayerPanel({ gameId }: { gameId: string }) {
 export function GameDetailClient({
   gameId,
   drawDone,
+  hasAnyStats,
   confirmed,
   waitlist,
   availablePlayers,
 }: Props) {
   const [drawModalOpen, setDrawModalOpen] = useState(false);
+  const [redrawDialogOpen, setRedrawDialogOpen] = useState(false);
+  const [redrawError, setRedrawError] = useState<string | null>(null);
+  const [redrawPending, startRedrawTransition] = useTransition();
+  const router = useRouter();
   const drawInfo = getDrawInfo(confirmed.length);
+
+  function handleRedraw() {
+    setRedrawError(null);
+    startRedrawTransition(async () => {
+      const result = await resetDraw(gameId);
+      if (result.error) {
+        setRedrawError(result.error);
+        setRedrawDialogOpen(false);
+        return;
+      }
+      setRedrawDialogOpen(false);
+      router.refresh();
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -635,9 +758,13 @@ export function GameDetailClient({
               Rodar sorteio
             </Button>
           )}
-          {drawDone && (
-            <Button disabled variant="secondary">
-              Sorteio realizado
+          {drawDone && !hasAnyStats && (
+            <Button
+              variant="outline"
+              className="border-yellow-500 text-yellow-600 hover:bg-yellow-50 hover:text-yellow-600"
+              onClick={() => setRedrawDialogOpen(true)}
+            >
+              Desfazer Sorteio
             </Button>
           )}
           <CancelGameButton gameId={gameId} />
@@ -651,18 +778,55 @@ export function GameDetailClient({
             {drawInfo.message}
           </p>
         )}
+        {redrawError && (
+          <p className="text-sm text-destructive">{redrawError}</p>
+        )}
       </div>
+
+      {/* Dialog de confirmação — re-sortear */}
+      <Dialog open={redrawDialogOpen} onOpenChange={setRedrawDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Desfazer Sorteio?</DialogTitle>
+            <DialogDescription>
+              Os times atuais serão descartados e um novo sorteio poderá ser
+              realizado com os mesmos jogadores confirmados.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2">
+            <Button
+              className="flex-1"
+              onClick={handleRedraw}
+              disabled={redrawPending}
+            >
+              {redrawPending ? 'Resetando...' : 'Confirmar'}
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setRedrawDialogOpen(false)}
+              disabled={redrawPending}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Separator />
 
       {/* Confirmados */}
-      <ConfirmedList gameId={gameId} entries={confirmed} />
+      <ConfirmedList gameId={gameId} entries={confirmed} drawDone={drawDone} />
 
       {/* Lista de espera */}
       {waitlist.length > 0 && (
         <>
           <Separator />
-          <WaitlistPanel gameId={gameId} entries={waitlist} />
+          <WaitlistPanel
+            gameId={gameId}
+            entries={waitlist}
+            confirmedCount={confirmed.length}
+          />
         </>
       )}
 
@@ -674,8 +838,9 @@ export function GameDetailClient({
         <AddExistingPlayerPanel
           gameId={gameId}
           availablePlayers={availablePlayers}
+          drawDone={drawDone}
         />
-        <CreateAndAddPlayerPanel gameId={gameId} />
+        <CreateAndAddPlayerPanel gameId={gameId} drawDone={drawDone} />
       </div>
 
       <DrawModal

@@ -22,7 +22,7 @@ vi.mock('@/lib/tournament-utils', () => ({
   computeStandings: vi.fn().mockReturnValue([]),
 }));
 
-const { executeDraw } = await import('@/actions/draw');
+const { executeDraw, resetDraw } = await import('@/actions/draw');
 
 function setupAdminChain(teamId = 'team-1') {
   mockSupabaseAuth.getUser.mockResolvedValue({
@@ -263,7 +263,7 @@ describe('executeDraw', () => {
     expect(result).toEqual({});
   });
 
-  it('skips match creation if group matches already exist (guard)', async () => {
+  it('skips tournament match creation if group matches already exist (guard)', async () => {
     setupAdminChain();
     mockSupabaseFrom.mockReturnValueOnce(
       createQueryMock({
@@ -318,5 +318,166 @@ describe('executeDraw', () => {
     const result = await executeDraw('game-1', true);
 
     expect(result).toEqual({});
+  });
+});
+
+// ─── resetDraw ────────────────────────────────────────────────────────────────
+
+describe('resetDraw', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns unauthorized when no session', async () => {
+    setupUnauthenticated();
+    const result = await resetDraw('game-1');
+    expect(result).toEqual({ error: 'Não autorizado.' });
+  });
+
+  it('returns error when game not found', async () => {
+    setupAdminChain();
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    const result = await resetDraw('game-1');
+    expect(result).toEqual({ error: 'Jogo não encontrado.' });
+  });
+
+  it('returns error when game is not open', async () => {
+    setupAdminChain();
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: { id: 'game-1', status: 'finished', draw_done: true },
+        error: null,
+      }),
+    );
+    const result = await resetDraw('game-1');
+    expect(result).toEqual({ error: 'Jogo não está aberto.' });
+  });
+
+  it('returns error when draw_done is false', async () => {
+    setupAdminChain();
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: { id: 'game-1', status: 'open', draw_done: false },
+        error: null,
+      }),
+    );
+    const result = await resetDraw('game-1');
+    expect(result).toEqual({ error: 'Nenhum sorteio para resetar.' });
+  });
+
+  it('returns error when stats have been recorded', async () => {
+    setupAdminChain();
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: { id: 'game-1', status: 'open', draw_done: true },
+        error: null,
+      }),
+    );
+    // game_teams query
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: [{ id: 'gt1' }], error: null }),
+    );
+    // stats check returns a player with goals
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: [{ id: 'gtp1' }], error: null }),
+    );
+    const result = await resetDraw('game-1');
+    expect(result).toEqual({
+      error: 'Não é possível re-sortear após registrar placares.',
+    });
+  });
+
+  it('returns error when tournament match score has been recorded', async () => {
+    setupAdminChain();
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: { id: 'game-1', status: 'open', draw_done: true },
+        error: null,
+      }),
+    );
+    // game_teams query
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: [{ id: 'gt1' }], error: null }),
+    );
+    // player stats check returns empty
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: [], error: null }),
+    );
+    // tournament score check returns a match with score
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: [{ id: 'tm1' }], error: null }),
+    );
+    const result = await resetDraw('game-1');
+    expect(result).toEqual({
+      error: 'Não é possível re-sortear após registrar placares.',
+    });
+  });
+
+  it('deletes teams and resets game when no stats recorded', async () => {
+    setupAdminChain();
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: { id: 'game-1', status: 'open', draw_done: true },
+        error: null,
+      }),
+    );
+    // game_teams query
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: [{ id: 'gt1' }, { id: 'gt2' }], error: null }),
+    );
+    // player stats check returns empty
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: [], error: null }),
+    );
+    // tournament score check returns empty
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: [], error: null }),
+    );
+    // delete tournament_matches
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    // delete game_team_players
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    // delete game_teams
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    // update games
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+
+    const result = await resetDraw('game-1');
+
+    expect(result).toEqual({});
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/jogos/game-1');
+  });
+
+  it('skips deletes and resets game when no game_teams exist', async () => {
+    setupAdminChain();
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: { id: 'game-1', status: 'open', draw_done: true },
+        error: null,
+      }),
+    );
+    // game_teams query returns empty
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: [], error: null }),
+    );
+    // update games
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+
+    const result = await resetDraw('game-1');
+
+    expect(result).toEqual({});
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/jogos/game-1');
   });
 });

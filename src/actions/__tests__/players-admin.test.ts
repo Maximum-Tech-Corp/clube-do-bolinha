@@ -183,6 +183,7 @@ describe('updatePlayer', () => {
       name: 'X',
       weight_kg: 70,
       stamina: '2',
+      position: null,
       is_star: false,
     });
     expect(result).toEqual({ error: 'Não autorizado.' });
@@ -199,6 +200,7 @@ describe('updatePlayer', () => {
       name: 'X',
       weight_kg: 70,
       stamina: '2',
+      position: null,
       is_star: false,
     });
 
@@ -218,6 +220,7 @@ describe('updatePlayer', () => {
       name: 'X',
       weight_kg: 70,
       stamina: '2',
+      position: null,
       is_star: false,
     });
 
@@ -239,6 +242,7 @@ describe('updatePlayer', () => {
       name: 'João Atualizado',
       weight_kg: 80,
       stamina: '4plus',
+      position: null,
       is_star: true,
     });
 

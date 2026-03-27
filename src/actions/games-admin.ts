@@ -138,7 +138,6 @@ export async function removeConfirmedPlayer(
 
   if (!game) return { error: 'Jogo não encontrado.' };
 
-  // Marca como removido
   await service
     .from('game_confirmations')
     .update({ status: 'removed', waitlist_position: null })
@@ -146,30 +145,45 @@ export async function removeConfirmedPlayer(
     .eq('player_id', playerId)
     .eq('status', 'confirmed');
 
-  // Só promove da fila se após a remoção o total de confirmados ficou abaixo de 25
-  const { count: confirmedAfter } = await service
+  revalidatePath(`/dashboard/jogos/${gameId}`);
+  return {};
+}
+
+export async function moveToWaitlist(
+  confirmationId: string,
+  gameId: string,
+): Promise<{ error?: string }> {
+  const teamId = await getEffectiveTeamId();
+  if (!teamId) return { error: 'Não autorizado.' };
+
+  const service = createServiceClient();
+  const { data: game } = await service
+    .from('games')
+    .select('id')
+    .eq('id', gameId)
+    .eq('team_id', teamId)
+    .maybeSingle();
+
+  if (!game) return { error: 'Jogo não encontrado.' };
+
+  const { data: maxRow } = await service
     .from('game_confirmations')
-    .select('*', { count: 'exact', head: true })
+    .select('waitlist_position')
     .eq('game_id', gameId)
+    .eq('status', 'waitlist')
+    .order('waitlist_position', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const nextPosition = (maxRow?.waitlist_position ?? 0) + 1;
+
+  const { error } = await service
+    .from('game_confirmations')
+    .update({ status: 'waitlist', waitlist_position: nextPosition })
+    .eq('id', confirmationId)
     .eq('status', 'confirmed');
 
-  if ((confirmedAfter ?? 0) < 25) {
-    const { data: first } = await service
-      .from('game_confirmations')
-      .select('id')
-      .eq('game_id', gameId)
-      .eq('status', 'waitlist')
-      .order('waitlist_position', { ascending: true })
-      .limit(1)
-      .maybeSingle();
-
-    if (first) {
-      await service
-        .from('game_confirmations')
-        .update({ status: 'confirmed', waitlist_position: null })
-        .eq('id', first.id);
-    }
-  }
+  if (error) return { error: 'Erro ao mover jogador para a fila.' };
 
   revalidatePath(`/dashboard/jogos/${gameId}`);
   return {};
@@ -191,6 +205,15 @@ export async function promoteWaitlistPlayer(
     .maybeSingle();
 
   if (!game) return { error: 'Jogo não encontrado.' };
+
+  const { count: confirmedCount } = await service
+    .from('game_confirmations')
+    .select('*', { count: 'exact', head: true })
+    .eq('game_id', gameId)
+    .eq('status', 'confirmed');
+
+  if ((confirmedCount ?? 0) >= 25)
+    return { error: 'Limite de 25 confirmados atingido.' };
 
   const { error } = await service
     .from('game_confirmations')

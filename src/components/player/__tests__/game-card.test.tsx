@@ -134,9 +134,18 @@ describe('GameCard', () => {
     ).toBeInTheDocument();
   });
 
-  it("shows 'Na fila de espera' when playerStatus is waitlist", () => {
+  it("shows 'Na fila de espera' badge when playerStatus is waitlist", () => {
     render(<GameCard {...BASE_PROPS} playerStatus="waitlist" />);
-    expect(screen.getByText('Na fila de espera')).toBeInTheDocument();
+    const badge = screen.getByText('Você ficou na fila de espera');
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveClass('text-orange-600');
+  });
+
+  it("shows '✓ Confirmado' text (not orange badge) when playerStatus is confirmed", () => {
+    render(<GameCard {...BASE_PROPS} playerStatus="confirmed" />);
+    const label = screen.getByText('✓ Confirmado');
+    expect(label).toBeInTheDocument();
+    expect(label).not.toHaveClass('text-orange-600');
   });
 
   it("clicking 'Confirmar presença' opens the dialog", async () => {
