@@ -7,8 +7,14 @@ import {
   mockCookieGet,
 } from '@/test/mocks/next';
 
-const { clearPlayerCookie, validateTeamCode, confirmPresence, cancelPresence } =
-  await import('@/actions/player');
+const {
+  clearPlayerCookie,
+  validateTeamCode,
+  confirmPresence,
+  cancelPresence,
+  identifyPlayer,
+  registerPlayer,
+} = await import('@/actions/player');
 
 const TEAM_ID = 'team-uuid';
 const GAME_ID = 'game-uuid';
@@ -24,11 +30,6 @@ describe('clearPlayerCookie', () => {
   it('deletes the player cookie for the given teamId', async () => {
     await clearPlayerCookie(TEAM_ID);
     expect(mockCookieDelete).toHaveBeenCalledWith(`player_${TEAM_ID}`);
-  });
-
-  it('revalidates the /jogador path', async () => {
-    await clearPlayerCookie(TEAM_ID);
-    expect(mockRevalidatePath).toHaveBeenCalledWith('/jogador');
   });
 });
 
@@ -464,5 +465,162 @@ describe('cancelPresence', () => {
 
     expect(result).toEqual({ success: true });
     expect(mockRevalidatePath).toHaveBeenCalledWith('/jogador/[code]', 'page');
+  });
+});
+
+// ─── identifyPlayer ───────────────────────────────────────────────────────────
+
+describe('identifyPlayer', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns { needsRegistration: true } when phone not found', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    const result = await identifyPlayer({ teamId: TEAM_ID, phone: PHONE });
+    expect(result).toEqual({ needsRegistration: true });
+  });
+
+  it('returns { banned: true } when player is banned', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: {
+          id: 'player-1',
+          is_banned: true,
+          suspended_until: null,
+          suspension_reason: null,
+        },
+        error: null,
+      }),
+    );
+    const result = await identifyPlayer({ teamId: TEAM_ID, phone: PHONE });
+    expect(result).toEqual({ banned: true });
+  });
+
+  it('returns { suspended, until, reason } when suspension is active', async () => {
+    const futureDate = new Date(Date.now() + 86400000).toISOString();
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: {
+          id: 'player-1',
+          is_banned: false,
+          suspended_until: futureDate,
+          suspension_reason: 'Teste',
+        },
+        error: null,
+      }),
+    );
+    const result = await identifyPlayer({ teamId: TEAM_ID, phone: PHONE });
+    expect(result).toEqual({
+      suspended: true,
+      until: futureDate,
+      reason: 'Teste',
+    });
+  });
+
+  it('returns { identified: true } and sets cookie for active player', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: {
+          id: 'player-1',
+          is_banned: false,
+          suspended_until: null,
+          suspension_reason: null,
+        },
+        error: null,
+      }),
+    );
+    const result = await identifyPlayer({ teamId: TEAM_ID, phone: PHONE });
+    expect(result).toEqual({ identified: true });
+    expect(mockCookieSet).toHaveBeenCalledWith(
+      `player_${TEAM_ID}`,
+      PHONE,
+      expect.objectContaining({ httpOnly: true }),
+    );
+  });
+
+  it('returns { identified: true } when suspension date is in the past', async () => {
+    const pastDate = new Date(Date.now() - 86400000).toISOString();
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({
+        data: {
+          id: 'player-1',
+          is_banned: false,
+          suspended_until: pastDate,
+          suspension_reason: 'Old reason',
+        },
+        error: null,
+      }),
+    );
+    const result = await identifyPlayer({ teamId: TEAM_ID, phone: PHONE });
+    expect(result).toEqual({ identified: true });
+  });
+});
+
+// ─── registerPlayer ───────────────────────────────────────────────────────────
+
+describe('registerPlayer', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('inserts new player and sets cookie on success', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }), // player not found
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }), // insert success
+    );
+    const result = await registerPlayer({
+      teamId: TEAM_ID,
+      phone: PHONE,
+      name: 'Novo Jogador',
+      weight_kg: 75,
+      stamina: '3',
+    });
+    expect(result).toEqual({ success: true });
+    expect(mockCookieSet).toHaveBeenCalledWith(
+      `player_${TEAM_ID}`,
+      PHONE,
+      expect.objectContaining({ httpOnly: true }),
+    );
+  });
+
+  it('returns { error } when insert fails', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }), // player not found
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: { message: 'db error' } }), // insert fails
+    );
+    const result = await registerPlayer({
+      teamId: TEAM_ID,
+      phone: PHONE,
+      name: 'Novo Jogador',
+      weight_kg: 75,
+      stamina: '3',
+    });
+    expect(result).toEqual({ error: 'Erro ao registrar. Tente novamente.' });
+  });
+
+  it('skips insert and sets cookie when player already exists (race condition)', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { id: 'player-1' }, error: null }), // player already exists
+    );
+    const result = await registerPlayer({
+      teamId: TEAM_ID,
+      phone: PHONE,
+      name: 'Novo Jogador',
+      weight_kg: 75,
+      stamina: '3',
+    });
+    expect(result).toEqual({ success: true });
+    expect(mockCookieSet).toHaveBeenCalledWith(
+      `player_${TEAM_ID}`,
+      PHONE,
+      expect.objectContaining({ httpOnly: true }),
+    );
   });
 });

@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { createServiceClient } from '@/lib/supabase/server';
 import { GameCard } from '@/components/player/game-card';
@@ -22,6 +22,11 @@ export default async function TeamPage({ params }: Props) {
 
   if (!team) notFound();
 
+  // Lê telefone do cookie — sem ele, redireciona para identificação
+  const cookieStore = await cookies();
+  const playerPhone = cookieStore.get(`player_${team.id}`)?.value;
+  if (!playerPhone) redirect(`/jogador/${code.toUpperCase()}/entrar`);
+
   // Jogos em aberto nos próximos 7 dias
   const now = new Date();
   const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -41,10 +46,6 @@ export default async function TeamPage({ params }: Props) {
   const openTournamentGameIds = gameList
     .filter(g => g.is_tournament && g.draw_done)
     .map(g => g.id);
-
-  // Lê telefone do cookie (jogador que já confirmou antes)
-  const cookieStore = await cookies();
-  const playerPhone = cookieStore.get(`player_${team.id}`)?.value ?? undefined;
 
   // Busca dados do jogador, confirmações e partidas de grupo concluídas em paralelo
   const [playerResult, confirmationsResult, startedMatchesResult] =
@@ -212,7 +213,7 @@ export default async function TeamPage({ params }: Props) {
               teamCode={code.toUpperCase()}
               confirmedCount={gameStats[game.id].confirmedCount}
               playerStatus={gameStats[game.id].playerStatus}
-              defaultPhone={playerPhone}
+              phone={playerPhone}
               tournamentStarted={tournamentStartedGameIds.has(game.id)}
             />
           ))}
@@ -230,13 +231,19 @@ export default async function TeamPage({ params }: Props) {
             teamCode={code.toUpperCase()}
             confirmedCount={lastGameConfirmedCount}
             playerStatus="confirmed"
-            defaultPhone={playerPhone}
+            phone={playerPhone}
             detailsHref={`/jogador/${code.toUpperCase()}/historico/${lastGame.id}`}
           />
         </div>
       )}
 
-      {playerData && <PlayerDataSection player={playerData} teamId={team.id} />}
+      {playerData && (
+        <PlayerDataSection
+          player={playerData}
+          teamId={team.id}
+          teamCode={code.toUpperCase()}
+        />
+      )}
 
       <PlayerBottomNav teamCode={code.toUpperCase()} />
     </div>

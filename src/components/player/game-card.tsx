@@ -23,7 +23,7 @@ interface Props {
   teamCode: string;
   confirmedCount: number;
   playerStatus: string | null;
-  defaultPhone?: string;
+  phone: string;
   detailsHref?: string;
   tournamentStarted?: boolean;
 }
@@ -34,7 +34,7 @@ export function GameCard({
   teamCode,
   confirmedCount,
   playerStatus,
-  defaultPhone,
+  phone,
   detailsHref,
   tournamentStarted,
 }: Props) {
@@ -200,7 +200,7 @@ export function GameCard({
       <ConfirmPresenceDialog
         gameId={game.id}
         teamId={teamId}
-        defaultPhone={defaultPhone}
+        phone={phone}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
       />
