@@ -34,6 +34,32 @@ describe('EntrarForm', () => {
     expect(screen.getByRole('button', { name: /Entrar/i })).toBeInTheDocument();
   });
 
+  it('applies phone mask as the user types', async () => {
+    const user = userEvent.setup();
+    render(<EntrarForm {...BASE_PROPS} />);
+
+    await user.type(screen.getByLabelText(/celular/i), '85987257171');
+
+    expect(screen.getByLabelText(/celular/i)).toHaveValue('(85) 98725-7171');
+  });
+
+  it('strips formatting before sending to the action when phone is typed with mask characters', async () => {
+    mockIdentifyPlayer.mockResolvedValue({ identified: true });
+    const user = userEvent.setup();
+    render(<EntrarForm {...BASE_PROPS} />);
+
+    // simulates pasting or typing an already-formatted number
+    await user.type(screen.getByLabelText(/celular/i), '(85) 98725-7171');
+    await user.click(screen.getByRole('button', { name: /Entrar/i }));
+
+    await waitFor(() => {
+      expect(mockIdentifyPlayer).toHaveBeenCalledWith({
+        teamId: 'team-1',
+        phone: '85987257171',
+      });
+    });
+  });
+
   it('shows validation error when phone is too short', async () => {
     const user = userEvent.setup();
     render(<EntrarForm {...BASE_PROPS} />);

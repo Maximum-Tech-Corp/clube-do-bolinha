@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { identifyPlayer, registerPlayer } from '@/actions/player';
@@ -20,8 +20,21 @@ import type { StaminaLevel } from '@/types/database.types';
 
 type Step = 'phone' | 'register' | 'banned' | 'suspended';
 
+function applyPhoneMask(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length === 0) return '';
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10)
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
 const phoneSchema = z.object({
-  phone: z.string().min(10, 'Informe um celular válido'),
+  phone: z
+    .string()
+    .transform(v => v.replace(/\D/g, ''))
+    .pipe(z.string().min(10, 'Informe um celular válido')),
 });
 
 const registerSchema = z.object({
@@ -225,12 +238,22 @@ export function EntrarForm({ teamId, teamCode }: Props) {
     >
       <div className="space-y-1">
         <Label htmlFor="phone">Seu número de celular</Label>
-        <Input
-          id="phone"
-          type="tel"
-          placeholder="(11) 99999-9999"
-          className="h-auto py-2 border-gray-300"
-          {...phoneForm.register('phone')}
+        <Controller
+          control={phoneForm.control}
+          name="phone"
+          render={({ field }) => (
+            <Input
+              id="phone"
+              type="tel"
+              placeholder="(85) 98725-7171"
+              className="h-auto py-2 border-gray-300"
+              value={field.value ?? ''}
+              onBlur={field.onBlur}
+              ref={field.ref}
+              name={field.name}
+              onChange={e => field.onChange(applyPhoneMask(e.target.value))}
+            />
+          )}
         />
         {phoneForm.formState.errors.phone && (
           <p className="text-sm text-destructive">
