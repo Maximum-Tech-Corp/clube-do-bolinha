@@ -122,19 +122,8 @@ export default async function HistoricoDetailPage({ params }: Props) {
     return { name: player?.name ?? '—', goals: p.goals, assists: p.assists };
   });
 
-  const withGoals = allPlayers.filter(p => p.goals > 0);
   const withAssists = allPlayers.filter(p => p.assists > 0);
   const withContrib = allPlayers.filter(p => p.goals + p.assists > 0);
-
-  const topScorer =
-    withGoals.length > 0
-      ? withGoals.reduce((best, p) =>
-          p.goals > best.goals ||
-          (p.goals === best.goals && p.assists > best.assists)
-            ? p
-            : best,
-        )
-      : null;
 
   const topAssister =
     withAssists.length > 0
@@ -193,26 +182,15 @@ export default async function HistoricoDetailPage({ params }: Props) {
       </div>
 
       {/* Destaques */}
-      {(mvp || topScorer || topAssister) && (
+      {(mvp || topAssister) && (
         <div className="rounded-lg border border-border divide-y divide-border">
           {mvp && (
             <div className="flex items-center justify-between px-4 py-2.5 text-sm">
-              <span className="text-muted-foreground">Artilheiro do dia</span>
+              <span className="text-muted-foreground">Craque do racha</span>
               <span className="font-semibold">
                 {mvp.name}
                 <span className="ml-1.5 text-xs font-normal text-muted-foreground">
                   {mvp.goals}G · {mvp.assists}A
-                </span>
-              </span>
-            </div>
-          )}
-          {topScorer && topScorer.name !== mvp?.name && (
-            <div className="flex items-center justify-between px-4 py-2.5 text-sm">
-              <span className="text-muted-foreground">Artilheiro</span>
-              <span className="font-semibold">
-                {topScorer.name}
-                <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                  {topScorer.goals}G
                 </span>
               </span>
             </div>
