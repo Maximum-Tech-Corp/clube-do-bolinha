@@ -13,6 +13,7 @@ interface Props {
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
     weekday: 'long',
     day: '2-digit',
     month: 'long',
