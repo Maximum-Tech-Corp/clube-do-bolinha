@@ -87,7 +87,6 @@ export function ConfirmPresenceDialog({
     });
     if ('error' in result) {
       setServerError(result.error);
-      setStep('error');
       return;
     }
     setStep('waitlisted');

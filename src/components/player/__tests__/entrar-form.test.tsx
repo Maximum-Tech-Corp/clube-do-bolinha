@@ -62,6 +62,19 @@ describe('EntrarForm', () => {
     });
   });
 
+  it('shows server error when identifyPlayer returns an error', async () => {
+    mockIdentifyPlayer.mockResolvedValue({ error: 'Erro interno do servidor' });
+    const user = userEvent.setup();
+    render(<EntrarForm {...BASE_PROPS} />);
+
+    await user.type(screen.getByLabelText(/celular/i), '11999999999');
+    await user.click(screen.getByRole('button', { name: /Entrar/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Erro interno do servidor')).toBeInTheDocument();
+    });
+  });
+
   it('redirects to player page when identified', async () => {
     mockIdentifyPlayer.mockResolvedValue({ identified: true });
     const user = userEvent.setup();
@@ -187,6 +200,67 @@ describe('EntrarForm', () => {
     await waitFor(() => {
       expect(
         screen.getByText('Erro ao registrar. Tente novamente.'),
+      ).toBeInTheDocument();
+    });
+  });
+
+  // ── register form validation errors ──
+
+  async function reachRegisterStep() {
+    mockIdentifyPlayer.mockResolvedValue({ needsRegistration: true });
+    const user = userEvent.setup();
+    render(<EntrarForm {...BASE_PROPS} />);
+    await user.type(screen.getByLabelText(/celular/i), '11999999999');
+    await user.click(screen.getByRole('button', { name: /Entrar/i }));
+    await waitFor(() =>
+      expect(screen.getByText('Primeiro acesso')).toBeInTheDocument(),
+    );
+    return user;
+  }
+
+  it('shows name validation error when name is too short', async () => {
+    const user = await reachRegisterStep();
+
+    await user.type(screen.getByLabelText(/Nome ou apelido/i), 'A');
+    await user.type(screen.getByLabelText(/Peso/i), '75');
+    await user.click(screen.getByRole('button', { name: /Entrar/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Informe seu nome')).toBeInTheDocument();
+    });
+  });
+
+  it('shows weight validation error when weight is below minimum', async () => {
+    const user = await reachRegisterStep();
+
+    await user.type(screen.getByLabelText(/Nome ou apelido/i), 'João');
+    await user.type(screen.getByLabelText(/Peso/i), '10');
+    await user.click(screen.getByRole('button', { name: /Entrar/i }));
+
+    await waitFor(() => {
+      expect(
+        screen
+          .getByLabelText(/Peso/i)
+          .closest('.space-y-1')!
+          .querySelector('p'),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('shows stamina validation error when stamina is not selected', async () => {
+    const user = await reachRegisterStep();
+
+    await user.type(screen.getByLabelText(/Nome ou apelido/i), 'João');
+    await user.type(screen.getByLabelText(/Peso/i), '75');
+    // deliberately skip stamina selection
+    await user.click(screen.getByRole('button', { name: /Entrar/i }));
+
+    await waitFor(() => {
+      expect(
+        screen
+          .getByText(/Resistência/)
+          .closest('.space-y-1')!
+          .querySelector('p'),
       ).toBeInTheDocument();
     });
   });
