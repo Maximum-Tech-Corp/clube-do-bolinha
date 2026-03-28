@@ -42,6 +42,7 @@ const BASE_PROPS = {
   teamCode: 'BOLA-ABC123',
   confirmedCount: 12,
   playerStatus: null,
+  phone: '11999999999',
 };
 
 describe('GameCard', () => {

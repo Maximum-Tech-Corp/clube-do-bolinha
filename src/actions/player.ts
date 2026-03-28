@@ -41,7 +41,90 @@ export async function cancelPresence(params: {
 export async function clearPlayerCookie(teamId: string): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(`player_${teamId}`);
-  revalidatePath(`/jogador`);
+}
+
+type IdentifyPlayerResult =
+  | { identified: true }
+  | { needsRegistration: true }
+  | { banned: true }
+  | { suspended: true; until: string; reason: string | null }
+  | { error: string };
+
+export async function identifyPlayer(params: {
+  teamId: string;
+  phone: string;
+}): Promise<IdentifyPlayerResult> {
+  const { teamId, phone } = params;
+  const service = createServiceClient();
+
+  const { data: player } = await service
+    .from('players')
+    .select('id, is_banned, suspended_until, suspension_reason')
+    .eq('team_id', teamId)
+    .eq('phone', phone)
+    .maybeSingle();
+
+  if (!player) return { needsRegistration: true };
+
+  if (player.is_banned) return { banned: true };
+
+  if (player.suspended_until && new Date(player.suspended_until) > new Date()) {
+    return {
+      suspended: true,
+      until: player.suspended_until,
+      reason: player.suspension_reason,
+    };
+  }
+
+  const cookieStore = await cookies();
+  cookieStore.set(`player_${teamId}`, phone, {
+    maxAge: 60 * 60 * 24 * 365,
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+  });
+
+  return { identified: true };
+}
+
+export async function registerPlayer(params: {
+  teamId: string;
+  phone: string;
+  name: string;
+  weight_kg: number;
+  stamina: StaminaLevel;
+}): Promise<{ success: true } | { error: string }> {
+  const { teamId, phone, name, weight_kg, stamina } = params;
+  const service = createServiceClient();
+
+  // Guard against race condition: phone registered from another device
+  const { data: existing } = await service
+    .from('players')
+    .select('id')
+    .eq('team_id', teamId)
+    .eq('phone', phone)
+    .maybeSingle();
+
+  if (!existing) {
+    const { error } = await service.from('players').insert({
+      team_id: teamId,
+      name,
+      phone,
+      weight_kg,
+      stamina,
+    });
+    if (error) return { error: 'Erro ao registrar. Tente novamente.' };
+  }
+
+  const cookieStore = await cookies();
+  cookieStore.set(`player_${teamId}`, phone, {
+    maxAge: 60 * 60 * 24 * 365,
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+  });
+
+  return { success: true };
 }
 
 export async function validateTeamCode(

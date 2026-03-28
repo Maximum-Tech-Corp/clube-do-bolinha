@@ -20,14 +20,15 @@ interface Props {
     is_star: boolean;
   };
   teamId: string;
+  teamCode: string;
 }
 
-export function PlayerDataSection({ player, teamId }: Props) {
+export function PlayerDataSection({ player, teamId, teamCode }: Props) {
   const router = useRouter();
 
   async function handleNotMe() {
     await clearPlayerCookie(teamId);
-    router.refresh();
+    router.push(`/jogador/${teamCode}/entrar`);
   }
 
   return (
