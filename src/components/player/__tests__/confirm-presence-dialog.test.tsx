@@ -111,6 +111,28 @@ describe('ConfirmPresenceDialog', () => {
     });
   });
 
+  it('resets state and calls onOpenChange when dialog is dismissed via close button', async () => {
+    mockConfirmPresence.mockResolvedValue({ status: 'confirmed' });
+    const onOpenChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ConfirmPresenceDialog {...BASE_PROPS} onOpenChange={onOpenChange} />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText('Presença confirmada!')).toBeInTheDocument(),
+    );
+
+    // Click the Radix UI X close button (triggers handleDialogOpenChange)
+    await user.click(screen.getByRole('button', { name: 'Close' }));
+
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    // step resets to 'confirming' — dialog shows "Confirmando..." (open=true controlled by parent)
+    await waitFor(() =>
+      expect(screen.getByText('Confirmando...')).toBeInTheDocument(),
+    );
+  });
+
   it('calls confirmPresence again when dialog is reopened', async () => {
     mockConfirmPresence.mockResolvedValue({ status: 'confirmed' });
     const { rerender } = render(<ConfirmPresenceDialog {...BASE_PROPS} />);
@@ -156,7 +178,7 @@ describe('ConfirmPresenceDialog', () => {
       });
     });
 
-    it('shows error step when joining waitlist fails', async () => {
+    it('shows inline error when joining waitlist fails', async () => {
       const user = await openWaitlistOfferStep();
       mockConfirmPresence.mockResolvedValue({
         error: 'Erro ao entrar na fila.',
@@ -168,6 +190,10 @@ describe('ConfirmPresenceDialog', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Erro ao entrar na fila.')).toBeInTheDocument();
+        // stays on waitlist_offer so the user can retry
+        expect(
+          screen.getByRole('button', { name: /Entrar na lista de espera/ }),
+        ).toBeInTheDocument();
       });
     });
 
