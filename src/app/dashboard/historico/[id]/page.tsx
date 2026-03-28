@@ -126,37 +126,29 @@ export default async function HistoricoDetailPage({ params }: Props) {
   const withAssists = allPlayers.filter(p => p.assists > 0);
   const withContrib = allPlayers.filter(p => p.goals + p.assists > 0);
 
-  const topScorer =
-    withGoals.length > 0
-      ? withGoals.reduce((best, p) =>
-          p.goals > best.goals ||
-          (p.goals === best.goals && p.assists > best.assists)
-            ? p
-            : best,
-        )
-      : null;
-
-  const topAssister =
-    withAssists.length > 0
-      ? withAssists.reduce((best, p) =>
-          p.assists > best.assists ||
-          (p.assists === best.assists && p.goals > best.goals)
-            ? p
-            : best,
-        )
-      : null;
-
-  // MVP = maior contribuição total (gols + assists), desempate por gols
-  const mvp =
+  const maxContrib =
     withContrib.length > 0
-      ? withContrib.reduce((best, p) => {
-          const bTotal = best.goals + best.assists;
-          const pTotal = p.goals + p.assists;
-          return pTotal > bTotal || (pTotal === bTotal && p.goals > best.goals)
-            ? p
-            : best;
-        })
-      : null;
+      ? Math.max(...withContrib.map(p => p.goals + p.assists))
+      : 0;
+  const mvpCandidates = withContrib.filter(
+    p => p.goals + p.assists === maxContrib,
+  );
+  const mvp = mvpCandidates.length === 1 ? mvpCandidates[0] : null;
+  const mvpTied = withContrib.length > 0 && mvpCandidates.length > 1;
+
+  const maxGoals =
+    withGoals.length > 0 ? Math.max(...withGoals.map(p => p.goals)) : 0;
+  const scorerCandidates = withGoals.filter(p => p.goals === maxGoals);
+  const topScorer = scorerCandidates.length === 1 ? scorerCandidates[0] : null;
+  const topScorerTied = withGoals.length > 0 && scorerCandidates.length > 1;
+
+  const maxAssists =
+    withAssists.length > 0 ? Math.max(...withAssists.map(p => p.assists)) : 0;
+  const assisterCandidates = withAssists.filter(p => p.assists === maxAssists);
+  const topAssister =
+    assisterCandidates.length === 1 ? assisterCandidates[0] : null;
+  const topAssisterTied =
+    withAssists.length > 0 && assisterCandidates.length > 1;
 
   // Dados do campeonato
   const matches = (matchesRaw ?? []) as MatchRow[];
@@ -193,40 +185,69 @@ export default async function HistoricoDetailPage({ params }: Props) {
       </div>
 
       {/* Destaques */}
-      {(mvp || topScorer || topAssister) && (
+      {(mvp ||
+        mvpTied ||
+        topScorer ||
+        topScorerTied ||
+        topAssister ||
+        topAssisterTied) && (
         <div className="rounded-lg border border-border divide-y divide-border">
-          {mvp && (
+          {(mvp || mvpTied) && (
             <div className="flex items-center justify-between px-4 py-2.5 text-sm">
               <span className="text-muted-foreground">Craque do racha</span>
               <span className="font-semibold">
-                {mvp.name}
-                <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                  {mvp.goals}G · {mvp.assists}A
-                </span>
+                {mvpTied ? (
+                  <span className="font-normal text-muted-foreground">
+                    Houve empate
+                  </span>
+                ) : (
+                  <>
+                    {mvp?.name}
+                    <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                      {mvp?.goals}G · {mvp?.assists}A
+                    </span>
+                  </>
+                )}
               </span>
             </div>
           )}
-          {topScorer && topScorer.name !== mvp?.name && (
+          {(topScorer || topScorerTied) && (
             <div className="flex items-center justify-between px-4 py-2.5 text-sm">
               <span className="text-muted-foreground">Artilheiro</span>
               <span className="font-semibold">
-                {topScorer.name}
-                <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                  {topScorer.goals}G
-                </span>
+                {topScorerTied ? (
+                  <span className="font-normal text-muted-foreground">
+                    Houve empate
+                  </span>
+                ) : (
+                  <>
+                    {topScorer?.name}
+                    <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                      {topScorer?.goals}G
+                    </span>
+                  </>
+                )}
               </span>
             </div>
           )}
-          {topAssister && topAssister.name !== mvp?.name && (
+          {(topAssister || topAssisterTied) && (
             <div className="flex items-center justify-between px-4 py-2.5 text-sm">
               <span className="text-muted-foreground">
                 Líder em assistências
               </span>
               <span className="font-semibold">
-                {topAssister.name}
-                <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                  {topAssister.assists}A
-                </span>
+                {topAssisterTied ? (
+                  <span className="font-normal text-muted-foreground">
+                    Houve empate
+                  </span>
+                ) : (
+                  <>
+                    {topAssister?.name}
+                    <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                      {topAssister?.assists}A
+                    </span>
+                  </>
+                )}
               </span>
             </div>
           )}
