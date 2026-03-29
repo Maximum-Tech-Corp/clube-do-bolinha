@@ -9,14 +9,6 @@ import { signup } from '@/actions/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 
 const schema = z
   .object({
@@ -36,7 +28,6 @@ type FormData = z.infer<typeof schema>;
 
 export function CadastroForm() {
   const [serverError, setServerError] = useState<string | null>(null);
-  const [showEmailModal, setShowEmailModal] = useState(false);
   const router = useRouter();
 
   const {
@@ -53,32 +44,12 @@ export function CadastroForm() {
     if ('error' in result) {
       setServerError(result.error);
     } else {
-      setShowEmailModal(true);
+      router.push('/pagamento-pendente');
     }
-  }
-
-  function handleEmailModalConfirm() {
-    setShowEmailModal(false);
-    router.push('/pagamento-pendente');
   }
 
   return (
     <>
-      <Dialog open={showEmailModal} onOpenChange={() => {}}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Verifique seu e-mail</DialogTitle>
-            <DialogDescription>
-              Enviamos um link de confirmação para o seu e-mail. Confirme seu
-              cadastro antes de fazer login.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={handleEmailModalConfirm}>Ok</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <p className="text-sm text-muted-foreground">
           Crie sua conta para organizar sua turma de futebol

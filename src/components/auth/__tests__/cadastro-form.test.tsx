@@ -186,10 +186,6 @@ describe('CadastroForm', () => {
       expect(
         screen.getByRole('button', { name: 'Criando conta...' }),
       ).toBeDisabled();
-
-      await waitFor(() => {
-        expect(screen.getByText('Verifique seu e-mail')).toBeInTheDocument();
-      });
     });
 
     it('clears server error on new submission attempt', async () => {
@@ -214,7 +210,7 @@ describe('CadastroForm', () => {
       });
     });
 
-    it('shows email confirmation modal on successful signup', async () => {
+    it('navigates to /pagamento-pendente on successful signup', async () => {
       const user = userEvent.setup();
       render(<CadastroForm />);
 
@@ -222,27 +218,8 @@ describe('CadastroForm', () => {
       await user.click(screen.getByRole('button', { name: 'Criar conta' }));
 
       await waitFor(() => {
-        expect(screen.getByText('Verifique seu e-mail')).toBeInTheDocument();
-        expect(
-          screen.getByText(/Confirme seu cadastro antes de fazer login/),
-        ).toBeInTheDocument();
+        expect(mockPush).toHaveBeenCalledWith('/pagamento-pendente');
       });
-    });
-
-    it('navigates to /pagamento-pendente after confirming email modal', async () => {
-      const user = userEvent.setup();
-      render(<CadastroForm />);
-
-      await fillValidForm(user);
-      await user.click(screen.getByRole('button', { name: 'Criar conta' }));
-
-      await waitFor(() => {
-        expect(screen.getByText('Verifique seu e-mail')).toBeInTheDocument();
-      });
-
-      await user.click(screen.getByRole('button', { name: 'Ok' }));
-
-      expect(mockPush).toHaveBeenCalledWith('/pagamento-pendente');
     });
   });
 });
