@@ -13,9 +13,9 @@
 
 🌐 **Resend Dashboard**
 
-1. Acesse [resend.com](https://resend.com) e crie uma conta
-2. Confirme o email de verificação
-3. No onboarding, escolha **"Add a domain"**
+1. Acesse [resend.com](https://resend.com) e crie uma conta (login com GitHub funciona normalmente)
+2. O onboarding exibe uma tela "Send your first email" com um campo "Add an API Key" — **ignore esse fluxo**
+3. Vá direto pelo menu lateral em **"Domains"** para iniciar pela verificação do domínio
 
 ---
 
@@ -23,16 +23,22 @@
 
 🌐 **Resend Dashboard → Domains → Add Domain**
 
-1. Informe o domínio do app (ex: `clubedobolinha.com.br`)
-2. O Resend exibirá registros DNS para adicionar:
-   - **SPF** — autoriza o Resend a enviar pelo seu domínio
-   - **DKIM** — assinatura criptográfica para evitar spam
-   - **DMARC** — política de autenticação (opcional mas recomendado)
-3. Adicione os registros no painel do seu registrador de domínio (Registro.br, GoDaddy, Cloudflare, etc.)
-4. Volte no Resend e clique em **"Verify DNS Records"**
-5. Aguarde a propagação (pode levar de 1 min a 1 hora)
+1. Informe o domínio do app: `clube-do-bolinha.app.br`
+2. Escolha o modo **"Manual"** (o domínio está no Registro.br, mas os nameservers apontam para a Vercel)
+3. O Resend exibirá 4 registros DNS para adicionar (DKIM, MX, SPF, DMARC)
+4. **Os registros DNS são gerenciados na Vercel**, não no Registro.br — porque os nameservers do domínio são `ns1.vercel-dns.com` e `ns2.vercel-dns.com`
+5. Para acessar o gerenciador de DNS da Vercel: **Vercel → projeto → Settings → Domains → clique em "Edit" no domínio `www.clube-do-bolinha.app.br` → "View DNS Records & More for clube-do-bolinha.app.br →"**
+6. Nessa tela há uma seção **"DNS Records"** com os campos Name, Type, Value, TTL, Priority — adicione os 4 registros:
 
-> **Se não tiver domínio próprio ainda:** o Resend oferece um domínio de teste (`@resend.dev`) para uso temporário. Funciona para produção inicial, mas o ideal é ter domínio próprio.
+   | Name | Type | Value | Priority |
+   |---|---|---|---|
+   | `resend._domainkey` | `TXT` | `p=MIGfMA0G...` (valor gerado pelo Resend) | — |
+   | `send` | `MX` | `feedback-smtp.sa-east-1.amazonses.com` | `10` |
+   | `send` | `TXT` | `v=spf1 include:amazonses.com ~all` | — |
+   | `_dmarc` | `TXT` | `v=DMARC1; p=none;` | — |
+
+7. Volte no Resend e clique em **"Verify DNS Records"**
+8. Aguarde a propagação (pode levar de 1 min a 1 hora)
 
 ---
 
@@ -42,8 +48,9 @@
 
 1. Dê um nome descritivo: `clube-do-bolinha-supabase-smtp`
 2. Permissão: **"Sending access"** (não precisa de full access)
-3. Copie a key gerada — ela só aparece uma vez
-4. Guarde em local seguro (vai para as variáveis de ambiente)
+3. Domain: selecione `clube-do-bolinha.app.br` (vincula a key ao domínio verificado)
+4. Copie a key gerada — ela só aparece uma vez, começa com `re_`
+5. Guarde em local seguro (vai para as variáveis de ambiente)
 
 ---
 
@@ -60,7 +67,7 @@ Preencha com as seguintes credenciais do Resend:
 | **Port** | `465` |
 | **Username** | `resend` |
 | **Password** | A API Key gerada no STEP 3 |
-| **Sender email** | `noreply@clubedobolinha.com.br` (seu domínio verificado) |
+| **Sender email** | `noreply@clube-do-bolinha.app.br` |
 | **Sender name** | `Clube do Bolinha` |
 
 Clique em **"Save"**.
@@ -194,7 +201,7 @@ export async function sendSupportEmail(data: {
   `;
 
   const { error } = await resend.emails.send({
-    from: 'suporte@clubedobolinha.com.br',
+    from: 'suporte@clube-do-bolinha.app.br',
     to: process.env.SUPPORT_EMAIL!,
     replyTo: user.email,
     subject,
