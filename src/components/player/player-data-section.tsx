@@ -1,7 +1,6 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { clearPlayerCookie } from '@/actions/player';
 
 const STAMINA_LABEL: Record<string, string> = {
@@ -32,11 +31,8 @@ export function PlayerDataSection({ player, teamId, teamCode }: Props) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Meus dados</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2 text-sm">
+    <div className="rounded-lg shadow-md bg-gray-50 px-3 py-4 space-y-2 text-sm">
+      <p className="text-base font-semibold">Meus dados</p>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Nome</span>
           <span className="font-medium">{player.name}</span>
@@ -70,7 +66,6 @@ export function PlayerDataSection({ player, teamId, teamCode }: Props) {
             Eu não sou esse jogador
           </button>
         </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 }

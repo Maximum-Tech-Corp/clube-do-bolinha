@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ConfirmPresenceDialog } from './confirm-presence-dialog';
 import { cancelPresence } from '@/actions/player';
@@ -78,8 +77,7 @@ export function GameCard({
 
   return (
     <>
-      <Card className={isCancelled ? 'opacity-60' : ''}>
-        <CardContent className="py-4 space-y-3">
+      <div className={`rounded-lg shadow-md bg-gray-50 px-3 py-4 space-y-3${isCancelled ? ' opacity-60' : ''}`}>
           <div className="flex items-start justify-between gap-2">
             <div className="space-y-0.5">
               <p className="font-semibold capitalize">{dateStr}</p>
@@ -130,9 +128,8 @@ export function GameCard({
                   )}
                   {canCancel && (
                     <Button
-                      size="sm"
                       variant="destructive"
-                      className="w-full"
+                      className="w-full py-5"
                       disabled={cancelling}
                       onClick={handleCancel}
                     >
@@ -143,8 +140,7 @@ export function GameCard({
               ) : (
                 isOpen && (
                   <Button
-                    size="sm"
-                    className="w-full"
+                    className="w-full py-5"
                     onClick={() => setDialogOpen(true)}
                   >
                     Confirmar presença
@@ -157,7 +153,7 @@ export function GameCard({
           {isOpen && !game.draw_done && (
             <Link
               href={`/jogador/${teamCode}/lista/${game.id}`}
-              className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-1.5 hover:bg-primary/10 transition-colors"
+              className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-2.5 hover:bg-primary/10 transition-colors"
             >
               Ver lista
             </Link>
@@ -169,7 +165,7 @@ export function GameCard({
             tournamentStarted && (
               <Link
                 href={`/jogador/${teamCode}/campeonato/${game.id}`}
-                className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-1.5 hover:bg-primary/10 transition-colors"
+                className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-2.5 hover:bg-primary/10 transition-colors"
               >
                 Acompanhar Jogos
               </Link>
@@ -180,7 +176,7 @@ export function GameCard({
             (!game.is_tournament || !tournamentStarted) && (
               <Link
                 href={`/jogador/${teamCode}/times/${game.id}`}
-                className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-1.5 hover:bg-primary/10 transition-colors"
+                className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-2.5 hover:bg-primary/10 transition-colors"
               >
                 Ver times sorteados
               </Link>
@@ -189,13 +185,12 @@ export function GameCard({
           {isFinished && detailsHref && (
             <Link
               href={detailsHref}
-              className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-1.5 hover:bg-primary/10 transition-colors"
+              className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-2.5 hover:bg-primary/10 transition-colors"
             >
               Ver detalhes
             </Link>
           )}
-        </CardContent>
-      </Card>
+      </div>
 
       <ConfirmPresenceDialog
         gameId={game.id}

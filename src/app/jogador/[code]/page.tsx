@@ -162,12 +162,18 @@ export default async function TeamPage({ params }: Props) {
     new Date(playerData.suspended_until) > new Date();
 
   return (
-    <div className="max-w-md mx-auto p-4 pb-24 space-y-4">
-      <div className="flex flex-col items-center gap-1">
-        <AppLogo size="sm" />
-        <h1 className="text-base font-bold">{team.name}</h1>
-        <p className="text-sm text-muted-foreground">Próximos 7 dias</p>
+    <div className="min-h-screen flex flex-col bg-background">
+      <div
+        className="w-full flex flex-col items-center pt-12 pb-10 px-8"
+        style={{ backgroundColor: '#fed015' }}
+      >
+        <AppLogo size="md" />
+        <p className="text-sm mt-4 font-bold" style={{ color: '#002776' }}>
+          {team.name}
+        </p>
       </div>
+
+      <div className="flex-1 w-full max-w-sm mx-auto px-4 pt-6 pb-24 space-y-4">
 
       {isBanned && (
         <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 text-sm space-y-1">
@@ -205,6 +211,9 @@ export default async function TeamPage({ params }: Props) {
         </p>
       ) : (
         <div className="space-y-3">
+          <p className="text-sm font-semibold text-center text-foreground">
+            Próximos 7 dias
+          </p>
           {gameList.map(game => (
             <GameCard
               key={game.id}
@@ -246,6 +255,7 @@ export default async function TeamPage({ params }: Props) {
       )}
 
       <PlayerBottomNav teamCode={code.toUpperCase()} />
+      </div>
     </div>
   );
 }
