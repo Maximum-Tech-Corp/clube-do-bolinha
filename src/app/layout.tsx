@@ -3,6 +3,7 @@ import { Geist } from 'next/font/google';
 import './globals.css';
 import { ServiceWorkerRegistration } from '@/components/service-worker-registration';
 import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const geistSans = Geist({
   variable: '--font-sans',
@@ -43,6 +44,7 @@ export default function RootLayout({
         {children}
         <ServiceWorkerRegistration />
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
