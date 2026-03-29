@@ -1,16 +1,17 @@
 import { NewGameForm } from '@/components/dashboard/new-game-form';
+import { AdminPageHeader } from '@/components/dashboard/admin-page-header';
 
 export default function NovoJogoPage() {
   return (
-    <div className="max-w-md mx-auto p-4 space-y-4">
-      <div>
-        <h1 className="text-xl font-bold">Novo jogo</h1>
+    <>
+      <AdminPageHeader title="Novo jogo" backHref="/dashboard/jogos" />
+      <div className="max-w-md mx-auto p-4 space-y-4">
         <p className="text-sm text-muted-foreground">
           Agende uma partida para a turma
         </p>
-      </div>
 
-      <NewGameForm />
-    </div>
+        <NewGameForm />
+      </div>
+    </>
   );
 }

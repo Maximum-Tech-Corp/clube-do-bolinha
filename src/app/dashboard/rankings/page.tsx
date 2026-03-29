@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { createServiceClient } from '@/lib/supabase/server';
 import { getAdminContext } from '@/lib/admin-context';
 import { YearSelect } from '@/components/dashboard/year-select';
+import { AdminPageHeader } from '@/components/dashboard/admin-page-header';
 
 interface Props {
   searchParams: Promise<{ ano?: string }>;
@@ -324,58 +325,60 @@ export default async function RankingsPage({ searchParams }: Props) {
   });
 
   return (
-    <div className="max-w-2xl mx-auto p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Rankings</h1>
-        <YearSelect years={availableYears} current={year} />
+    <>
+      <AdminPageHeader title="Rankings" />
+      <div className="max-w-2xl mx-auto p-4 space-y-4">
+        <div className="flex justify-end">
+          <YearSelect years={availableYears} current={year} />
+        </div>
+
+        {totalFinishedGames === 0 ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">
+            Nenhum jogo finalizado em {year}.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            <RankingTable
+              title="Artilheiros"
+              rows={rankings}
+              sortKey="goals"
+              tieKey="assists"
+              label="Gols"
+              tieLabel="Assists"
+            />
+            <RankingTable
+              title="Assistências"
+              rows={rankings}
+              sortKey="assists"
+              tieKey="goals"
+              label="Assists"
+              tieLabel="Gols"
+            />
+            <GeneralStatsTable rows={rankings} />
+          </div>
+        )}
+
+        {totalFinishedGames === 0 && adjustmentsInYear.length > 0 && (
+          <div className="space-y-4">
+            <RankingTable
+              title="Artilheiros (retroativo)"
+              rows={rankings}
+              sortKey="goals"
+              tieKey="assists"
+              label="Gols"
+              tieLabel="Assists"
+            />
+            <RankingTable
+              title="Assistências (retroativo)"
+              rows={rankings}
+              sortKey="assists"
+              tieKey="goals"
+              label="Assists"
+              tieLabel="Gols"
+            />
+          </div>
+        )}
       </div>
-
-      {totalFinishedGames === 0 ? (
-        <p className="text-sm text-muted-foreground py-8 text-center">
-          Nenhum jogo finalizado em {year}.
-        </p>
-      ) : (
-        <div className="space-y-4">
-          <RankingTable
-            title="Artilheiros"
-            rows={rankings}
-            sortKey="goals"
-            tieKey="assists"
-            label="Gols"
-            tieLabel="Assists"
-          />
-          <RankingTable
-            title="Assistências"
-            rows={rankings}
-            sortKey="assists"
-            tieKey="goals"
-            label="Assists"
-            tieLabel="Gols"
-          />
-          <GeneralStatsTable rows={rankings} />
-        </div>
-      )}
-
-      {totalFinishedGames === 0 && adjustmentsInYear.length > 0 && (
-        <div className="space-y-4">
-          <RankingTable
-            title="Artilheiros (retroativo)"
-            rows={rankings}
-            sortKey="goals"
-            tieKey="assists"
-            label="Gols"
-            tieLabel="Assists"
-          />
-          <RankingTable
-            title="Assistências (retroativo)"
-            rows={rankings}
-            sortKey="assists"
-            tieKey="goals"
-            label="Assists"
-            tieLabel="Gols"
-          />
-        </div>
-      )}
-    </div>
+    </>
   );
 }

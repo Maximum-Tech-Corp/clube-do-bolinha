@@ -1,12 +1,11 @@
 import { notFound, redirect } from 'next/navigation';
-import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
 import { createServiceClient } from '@/lib/supabase/server';
 import { getAdminContext } from '@/lib/admin-context';
 import { TournamentClient } from '@/components/dashboard/tournament-client';
 import { MatchTimer } from '@/components/dashboard/match-timer';
 import { computeStandings, buildGroupMatchOrder } from '@/lib/tournament-utils';
 import type { MatchRow } from '@/lib/tournament-utils';
+import { AdminPageHeader } from '@/components/dashboard/admin-page-header';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -112,37 +111,32 @@ export default async function CampeonatoPage({ params }: Props) {
   }));
 
   return (
-    <div className="max-w-2xl mx-auto p-4 space-y-4">
-      <div className="flex items-center gap-2">
-        <Link
-          href={`/dashboard/jogos/${gameId}`}
-          className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground shrink-0"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </Link>
-        <div>
-          <h1 className="text-xl font-bold">Campeonato</h1>
-          <p className="text-sm text-muted-foreground">
-            {gameTeams.length} times
-          </p>
-        </div>
-      </div>
-
-      {game.status !== 'finished' && (
-        <MatchTimer
-          gameId={`${gameId}_camp`}
-          defaultMinutes={team.match_duration_minutes ?? 10}
-        />
-      )}
-
-      <TournamentClient
-        gameId={gameId}
-        nTeams={gameTeams.length}
-        teams={teamsData}
-        matches={matchesData}
-        standings={standingsData}
-        isFinished={game.status === 'finished'}
+    <>
+      <AdminPageHeader
+        title="Campeonato"
+        backHref={`/dashboard/jogos/${gameId}`}
       />
-    </div>
+      <div className="max-w-2xl mx-auto p-4 space-y-4">
+        <p className="text-sm text-muted-foreground">
+          {gameTeams.length} times
+        </p>
+
+        {game.status !== 'finished' && (
+          <MatchTimer
+            gameId={`${gameId}_camp`}
+            defaultMinutes={team.match_duration_minutes ?? 10}
+          />
+        )}
+
+        <TournamentClient
+          gameId={gameId}
+          nTeams={gameTeams.length}
+          teams={teamsData}
+          matches={matchesData}
+          standings={standingsData}
+          isFinished={game.status === 'finished'}
+        />
+      </div>
+    </>
   );
 }
