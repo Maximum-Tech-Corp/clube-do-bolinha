@@ -5,6 +5,7 @@ import { getAdminContext } from '@/lib/admin-context';
 import { GameDetailClient } from '@/components/dashboard/game-detail-client';
 import { TournamentToggle } from '@/components/dashboard/tournament-toggle';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { AdminPageHeader } from '@/components/dashboard/admin-page-header';
 
 interface Props {
@@ -172,7 +173,9 @@ export default async function GameDetailPage({ params }: Props) {
         <div className="flex items-start justify-between gap-2">
           <p className="text-sm text-muted-foreground">
             {game.location ?? 'Local não definido'}
-            {game.is_tournament && ' · Campeonato'}
+            {game.draw_done &&
+              game.status !== 'cancelled' &&
+              ' · Sorteio realizado'}
           </p>
           <Badge
             variant={
@@ -189,29 +192,31 @@ export default async function GameDetailPage({ params }: Props) {
         </div>
 
         {game.draw_done && game.status !== 'cancelled' && (
-          <div className="rounded-lg border border-border p-3 space-y-3">
-            <p className="text-sm text-muted-foreground">Sorteio realizado.</p>
+          <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Link
                 href={`/dashboard/jogos/${gameId}/times`}
-                className="flex-1 inline-flex items-center justify-center rounded-lg border border-border bg-background text-sm font-medium h-9 hover:bg-muted/50 transition-colors"
+                className="flex-1 inline-flex items-center justify-center rounded-lg border border-primary/40 bg-primary/5 text-primary text-sm font-medium py-2.5 hover:bg-primary/10 transition-colors"
               >
                 Ver times
               </Link>
               {game.is_tournament && (
                 <Link
                   href={`/dashboard/jogos/${gameId}/campeonato`}
-                  className="flex-1 inline-flex items-center justify-center rounded-lg border border-primary/40 bg-primary/5 text-primary text-sm font-medium h-9 hover:bg-primary/10 transition-colors"
+                  className="flex-1 inline-flex items-center justify-center rounded-lg border border-primary/40 bg-primary/5 text-primary text-sm font-medium py-2.5 hover:bg-primary/10 transition-colors"
                 >
                   Ver campeonato
                 </Link>
               )}
             </div>
             {game.status === 'open' && teamCount >= 4 && (
-              <TournamentToggle
-                gameId={gameId}
-                isTournament={game.is_tournament}
-              />
+              <>
+                <TournamentToggle
+                  gameId={gameId}
+                  isTournament={game.is_tournament}
+                />
+                <Separator />
+              </>
             )}
           </div>
         )}
