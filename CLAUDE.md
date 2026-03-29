@@ -88,15 +88,19 @@ When a test breaks:
 ```
 src/
   app/
-    (auth)/               # Login + signup pages
+    (auth)/               # Login, signup, password reset pages
     api/webhooks/stripe/  # Stripe webhook handler
     checkout/sucesso/     # Post-payment success page
-    dashboard/            # Admin area (protected)
+    pagamento-pendente/   # Subscription required gate page
+    dashboard/            # Admin area (protected by proxy + subscription check)
       jogadores/          # Player management
       jogos/              # Game management + draw + teams + tournament
       historico/          # Finished games history
       rankings/           # Goals, assists, attendance rankings
+      co-admin/           # Co-admin management (create/remove)
+    jogador/              # Team code input (public)
     jogador/[code]/       # Player public area (access via team code)
+      entrar/             # Phone identification
       lista/[gameId]      # Pre-draw confirmed players list
       times/[gameId]      # Post-draw teams view
       historico/[gameId]  # Finished game detail
@@ -109,6 +113,8 @@ src/
     ui/                   # shadcn/ui primitives
   lib/
     supabase/             # Supabase client helpers (server + client)
+    admin-context.ts      # Role resolution (main admin vs co-admin), getEffectiveTeamId()
+    access-code.ts        # Team code generation (XXXX-XXXXXX format)
     draw-algorithm.ts     # Team balancing algorithm
     tournament-utils.ts   # Tournament standings + match ordering
   types/
@@ -145,7 +151,20 @@ Migrations in `supabase/migrations/`. Applied manually via Supabase SQL Editor.
 - Player access via team `access_code` in URL (`/jogador/[code]`) — no login required
 - Player identity stored in cookie `player_{teamId}` = phone number
 - Proxy (`src/proxy.ts`) protects `/dashboard/*` routes and redirects logged-in users away from `/login`
-- Subscription gating: `admins.subscription_status` must be `active` to access dashboard (checked per-page, not in proxy)
+- Subscription gating: `admins.subscription_status` must be `active` or `trialing` to access dashboard — checked in `dashboard/layout.tsx`, not in proxy
+
+---
+
+## Co-Admin
+
+- Each team can have one co-admin, created by the main admin at `/dashboard/co-admin`
+- Co-admin is a regular Supabase auth user with `admins.co_admin_of = main_admin_id`
+- `getAdminContext()` in `src/lib/admin-context.ts` resolves the effective admin ID:
+  - Main admin → `effectiveAdminId = own ID`
+  - Co-admin → `effectiveAdminId = co_admin_of` (the main admin's ID)
+- `getEffectiveTeamId()` fetches the team owned by `effectiveAdminId` — both roles see the same data
+- Co-admin cannot create another co-admin; main admin can remove the co-admin at any time
+- Co-admin is granted `subscription_status = 'active'` on creation (inherits access via main admin's subscription)
 
 ---
 
@@ -161,7 +180,7 @@ Migrations in `supabase/migrations/`. Applied manually via Supabase SQL Editor.
 
 ## Draw Algorithm (`src/lib/draw-algorithm.ts`)
 
-Balances teams by `weight_kg` + `stamina` + `is_star` distribution. Supports 2–5 teams. One team may be incomplete (odd player count). `getDrawInfo(n)` returns `{ canDraw, canBeTournament, message }`.
+Balances teams by `weight_kg` + `stamina` + `is_star` distribution. Supports 3–5 teams (minimum 15 confirmed players). One team may be incomplete. `getDrawInfo(n)` returns `{ canDraw, canBeTournament, message }`. Tournament requires 4 or 5 full teams.
 
 ---
 
@@ -195,6 +214,5 @@ NEXT_PUBLIC_APP_URL
 ## Deployment
 
 - Hosted on Vercel (Hobby plan)
-- Stripe in test mode during E2E validation; switch to live keys in Step 17b
 - After any env var change in Vercel → Redeploy required
 - Supabase Authentication → URL Configuration must include production URL in Redirect URLs

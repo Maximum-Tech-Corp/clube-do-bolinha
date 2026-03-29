@@ -1,5 +1,5 @@
 -- ============================================================
--- Clube do Bolinha — Schema inicial
+-- Clube do Bolinha — Schema completo (migration única)
 -- ============================================================
 
 -- Extensões
@@ -28,30 +28,36 @@ CREATE TABLE admins (
   stripe_customer_id      TEXT,
   stripe_subscription_id  TEXT,
   subscription_status     subscription_status NOT NULL DEFAULT 'inactive',
+  co_admin_of             UUID REFERENCES admins(id) ON DELETE CASCADE,
   created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(user_id)
 );
 
 -- Turmas: cada admin possui uma turma
 CREATE TABLE teams (
-  id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  admin_id            UUID NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
-  name                TEXT NOT NULL,
-  access_code         TEXT NOT NULL UNIQUE,   -- código completo (único, imutável)
-  access_code_prefix  TEXT NOT NULL,          -- parte editável pelo admin
-  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id                      UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  admin_id                UUID NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
+  name                    TEXT NOT NULL,
+  access_code             TEXT NOT NULL UNIQUE,
+  access_code_prefix      TEXT NOT NULL,
+  match_duration_minutes  INTEGER NOT NULL DEFAULT 10,
+  created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Jogadores: identificados pelo telefone dentro de cada turma
 CREATE TABLE players (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  team_id     UUID NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
-  name        TEXT NOT NULL,
-  phone       TEXT NOT NULL,
-  weight_kg   DECIMAL(5,2) NOT NULL,
-  stamina     stamina_level NOT NULL,
-  is_star     BOOLEAN NOT NULL DEFAULT FALSE,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  team_id             UUID NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+  name                TEXT NOT NULL,
+  phone               TEXT NOT NULL,
+  weight_kg           DECIMAL(5,2) NOT NULL,
+  stamina             stamina_level NOT NULL,
+  is_star             BOOLEAN NOT NULL DEFAULT FALSE,
+  is_banned           BOOLEAN NOT NULL DEFAULT FALSE,
+  suspended_until     TIMESTAMPTZ,
+  suspension_reason   TEXT CHECK (char_length(suspension_reason) <= 100),
+  position            TEXT CHECK (position IN ('zagueiro', 'atacante', 'libero')),
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(team_id, phone)
 );
 
@@ -84,7 +90,7 @@ CREATE TABLE game_confirmations (
   game_id           UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
   player_id         UUID NOT NULL REFERENCES players(id) ON DELETE CASCADE,
   status            confirmation_status NOT NULL DEFAULT 'confirmed',
-  waitlist_position INTEGER,                -- posição na fila (null se confirmado)
+  waitlist_position INTEGER,
   confirmed_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(game_id, player_id)
 );
@@ -94,6 +100,7 @@ CREATE TABLE game_teams (
   id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   game_id     UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
   team_number INTEGER NOT NULL,
+  custom_name TEXT,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(game_id, team_number)
 );
@@ -127,15 +134,15 @@ CREATE TABLE tournament_matches (
 -- Estratégia: operações do admin usam o cliente autenticado (anon key + RLS).
 -- Operações do jogador (sem auth) usam Server Actions com service_role no servidor.
 
-ALTER TABLE admins               ENABLE ROW LEVEL SECURITY;
-ALTER TABLE teams                ENABLE ROW LEVEL SECURITY;
-ALTER TABLE players              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admins                  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE teams                   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE players                 ENABLE ROW LEVEL SECURITY;
 ALTER TABLE player_stat_adjustments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE games                ENABLE ROW LEVEL SECURITY;
-ALTER TABLE game_confirmations   ENABLE ROW LEVEL SECURITY;
-ALTER TABLE game_teams           ENABLE ROW LEVEL SECURITY;
-ALTER TABLE game_team_players    ENABLE ROW LEVEL SECURITY;
-ALTER TABLE tournament_matches   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE games                   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE game_confirmations      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE game_teams              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE game_team_players       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tournament_matches      ENABLE ROW LEVEL SECURITY;
 
 -- ---- admins ----
 CREATE POLICY "admin: lê próprio registro"
