@@ -55,6 +55,16 @@ When a test breaks:
 - Content area: `flex-1 w-full max-w-sm mx-auto px-6 pt-8`
 - Footer nav card: `max-w-sm mx-auto p-4 mt-1`, `<Card className="bg-primary/5 ring-0">`, `ArrowLeft` icon inside `bg-muted` box, title + subtitle
 
+**Admin inner pages header** (all `/dashboard/*` pages except `/dashboard` itself):
+- Use `<AdminPageHeader title="..." backHref="..." />` from `@/components/dashboard/admin-page-header`
+- Compact yellow bar: full-width `#fed015` background, `py-4 px-4`, content constrained to `max-w-2xl mx-auto`
+- Title: left-aligned, `text-lg font-bold`, `style={{ color: '#002776' }}`
+- `DashboardMenu` (⋮) always on the right — it fetches its own data internally
+- `backHref` only on sub-pages (e.g. game detail, player detail, new game form); omit on primary nav pages (Jogos, Jogadores, Histórico, Rankings)
+- Page JSX must be a React fragment `<>...</>` with `AdminPageHeader` first, then the content `div`
+- Action buttons (e.g. "+ Novo jogo", "Adicionar jogador") go in the content area below the header, not in the header itself
+- For pages whose title is dynamic (game date, player name), format and pass the value as the `title` prop from the page component
+
 **Forms:**
 - No Card wrapper — loose form with `className="space-y-4"`
 - Inputs: `className="h-auto py-2 border-gray-300"`

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { createServiceClient } from '@/lib/supabase/server';
 import { getAdminContext } from '@/lib/admin-context';
 import { Badge } from '@/components/ui/badge';
+import { AdminPageHeader } from '@/components/dashboard/admin-page-header';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString('pt-BR', {
@@ -39,39 +40,40 @@ export default async function HistoricoPage() {
   const finishedGames = games ?? [];
 
   return (
-    <div className="max-w-2xl mx-auto p-4 space-y-4">
-      <h1 className="text-xl font-bold">Histórico</h1>
-
-      {finishedGames.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-8 text-center">
-          Nenhum jogo finalizado ainda.
-        </p>
-      ) : (
-        <ul className="space-y-2">
-          {finishedGames.map(game => (
-            <li key={game.id}>
-              <Link
-                href={`/dashboard/historico/${game.id}`}
-                className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 hover:bg-muted/50 transition-colors"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium">
-                    {formatDate(game.scheduled_at)}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {game.location ?? 'Local não definido'}
-                  </p>
-                </div>
-                {game.is_tournament && (
-                  <Badge variant="secondary" className="shrink-0">
-                    Campeonato
-                  </Badge>
-                )}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    <>
+      <AdminPageHeader title="Histórico" />
+      <div className="max-w-2xl mx-auto p-4 space-y-4">
+        {finishedGames.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">
+            Nenhum jogo finalizado ainda.
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {finishedGames.map(game => (
+              <li key={game.id}>
+                <Link
+                  href={`/dashboard/historico/${game.id}`}
+                  className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">
+                      {formatDate(game.scheduled_at)}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {game.location ?? 'Local não definido'}
+                    </p>
+                  </div>
+                  {game.is_tournament && (
+                    <Badge variant="secondary" className="shrink-0">
+                      Campeonato
+                    </Badge>
+                  )}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </>
   );
 }
