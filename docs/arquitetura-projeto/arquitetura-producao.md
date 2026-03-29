@@ -47,6 +47,8 @@ Não usamos: Storage, Edge Functions, Realtime.
 
 **Quando migrar para o Pro ($25/mês):** no primeiro admin pagante real. O Pro remove a pausa por inatividade e inclui backup diário automático. Com 2 assinantes o Pro já está pago.
 
+> ⚠️ **Ao migrar para o Pro:** ativar **Authentication → Sign In / Up → Prevent use of leaked passwords** — recurso indisponível no Free que bloqueia cadastros com senhas vazadas.
+
 ---
 
 ### Resend (Free)

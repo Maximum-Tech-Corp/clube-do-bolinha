@@ -42,7 +42,17 @@ E o pior: isso acontece exatamente no **momento mais crítico** — o cadastro, 
 
 ---
 
-## 2. Tamanho do banco — não é problema
+## 2. Proteção contra senhas vazadas desativada — risco leve
+
+O Supabase oferece a opção **"Prevent use of leaked passwords"**, que bloqueia o cadastro com senhas que aparecem em bases de vazamentos conhecidos (HaveIBeenPwned.org). Esse recurso é exclusivo do plano Pro.
+
+**Impacto real:** afeta apenas novos cadastros. Usuários existentes com senhas fracas ou vazadas não são notificados e continuam conseguindo logar normalmente. Para o volume inicial do Clube do Bolinha (poucos admins), o risco é baixo — mas é uma camada de segurança que vale ter assim que o Pro for ativado.
+
+**Resolução:** ativar em **Supabase → Authentication → Sign In / Up → Prevent use of leaked passwords** assim que migrar para o Pro.
+
+---
+
+## 3. Tamanho do banco — não é problema
 
 Para o perfil do Clube do Bolinha, o crescimento de dados é muito lento:
 
@@ -56,7 +66,7 @@ O free tier aguenta facilmente **mais de 1 milhão de linhas** de dados simples.
 
 ---
 
-## 3. Conexões simultâneas — não é problema
+## 4. Conexões simultâneas — não é problema
 
 O limite do pooler só seria relevante se dezenas de usuários acessassem o app **ao mesmo tempo, no mesmo instante**. Para um SaaS de peladas, esse cenário simplesmente não existe.
 
