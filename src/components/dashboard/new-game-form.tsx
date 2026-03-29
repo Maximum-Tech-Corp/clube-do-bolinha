@@ -52,6 +52,7 @@ export function NewGameForm() {
           value={dateTime}
           onChange={e => setDateTime(e.target.value)}
           required
+          className="h-auto py-2 border-gray-300"
         />
       </div>
 
@@ -62,12 +63,17 @@ export function NewGameForm() {
           placeholder="Ex: Quadra do Parque, Ginásio Municipal"
           value={location}
           onChange={e => setLocation(e.target.value)}
+          className="h-auto py-2 border-gray-300"
         />
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <Button type="submit" className="w-full" disabled={!dateTime || loading}>
+      <Button
+        type="submit"
+        className="w-full py-5"
+        disabled={!dateTime || loading}
+      >
         {loading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
