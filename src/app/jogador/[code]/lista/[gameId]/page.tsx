@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { createServiceClient } from '@/lib/supabase/server';
 import { PlayerBottomNav } from '@/components/player/player-bottom-nav';
 
@@ -9,11 +9,13 @@ interface Props {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('pt-BR', {
+  return new Date(iso).toLocaleString('pt-BR', {
     timeZone: 'America/Sao_Paulo',
     weekday: 'long',
     day: '2-digit',
     month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
@@ -66,45 +68,45 @@ export default async function PlayerListaPage({ params }: Props) {
   const players = playersRaw ?? [];
 
   return (
-    <div className="max-w-md mx-auto p-4 pb-24 space-y-4">
-      <div className="flex items-center gap-2">
-        <Link
-          href={`/jogador/${upperCode}`}
-          className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </Link>
-        <div>
-          <h1 className="text-xl font-bold">Lista de confirmados</h1>
-          <p className="text-sm text-muted-foreground capitalize">
-            {formatDate(game.scheduled_at)}
-            {game.location ? ` · ${game.location}` : ''}
-          </p>
+    <>
+      <div className="w-full" style={{ backgroundColor: '#fed015' }}>
+        <div className="flex items-center gap-3 px-4 py-4 max-w-2xl mx-auto">
+          <Link href={`/jogador/${upperCode}`} aria-label="Voltar" className="shrink-0">
+            <ArrowLeft className="w-5 h-5" style={{ color: '#002776' }} />
+          </Link>
+          <h1 className="text-lg font-bold flex-1" style={{ color: '#002776' }}>
+            Lista de confirmados
+          </h1>
         </div>
       </div>
 
-      {players.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-12">
-          Nenhum jogador confirmado ainda.
+      <div className="max-w-2xl mx-auto p-4 pb-24 space-y-4">
+        <p className="text-sm text-muted-foreground capitalize">
+          {formatDate(game.scheduled_at)}
+          {game.location ? ` · ${game.location}` : ''}
         </p>
-      ) : (
-        <div className="rounded-lg border border-border overflow-hidden">
-          <div className="px-4 py-2 bg-muted/50">
+
+        {players.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-12">
+            Nenhum jogador confirmado ainda.
+          </p>
+        ) : (
+          <div className="space-y-2">
             <p className="text-sm font-semibold">
               {players.length} confirmado{players.length !== 1 ? 's' : ''}
             </p>
+            <ul className="space-y-2">
+              {players.map(player => (
+                <li key={player.id} className="rounded-lg shadow-md bg-gray-50 px-3 py-2 text-sm font-medium">
+                  {player.name}
+                </li>
+              ))}
+            </ul>
           </div>
-          <ul className="divide-y divide-border">
-            {players.map(player => (
-              <li key={player.id} className="px-4 py-2.5 text-sm font-medium">
-                {player.name}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+        )}
+      </div>
 
       <PlayerBottomNav teamCode={upperCode} />
-    </div>
+    </>
   );
 }
