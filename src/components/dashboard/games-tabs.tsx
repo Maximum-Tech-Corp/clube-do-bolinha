@@ -26,15 +26,16 @@ const statusClassName: Record<GameStatus, string> = {
 };
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString('pt-BR', {
+  const formatted = new Date(iso).toLocaleString('pt-BR', {
     timeZone: 'America/Sao_Paulo',
-    weekday: 'short',
+    weekday: 'long',
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   });
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
 export interface Game {
