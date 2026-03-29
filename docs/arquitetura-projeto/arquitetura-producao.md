@@ -8,7 +8,9 @@
 
 ### Visão geral
 
-O app está em fase pré-lançamento. Estratégia: custo zero enquanto não há clientes pagantes, mitigando riscos do free tier com ferramentas alternativas.
+**Lançamento em produção: 29 de março de 2026.**
+
+Estratégia: custo zero enquanto não há clientes pagantes, mitigando riscos do free tier com ferramentas alternativas.
 
 | Camada | Serviço | Plano |
 |---|---|---|
