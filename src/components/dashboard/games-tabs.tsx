@@ -51,7 +51,7 @@ function GameRow({ game }: { game: Game }) {
   return (
     <Link
       href={`/dashboard/jogos/${game.id}`}
-      className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 hover:bg-muted/50 transition-colors"
+      className="flex items-center justify-between gap-2 rounded-lg shadow-md bg-gray-50 p-3 hover:bg-gray-100 transition-colors"
     >
       <div className="min-w-0">
         <p className="text-sm font-medium">{formatDate(game.scheduled_at)}</p>

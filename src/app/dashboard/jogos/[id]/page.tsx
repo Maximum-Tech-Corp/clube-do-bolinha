@@ -12,7 +12,7 @@ interface Props {
 }
 
 function formatDateShort(iso: string) {
-  return new Date(iso).toLocaleString('pt-BR', {
+  const formatted = new Date(iso).toLocaleString('pt-BR', {
     timeZone: 'America/Sao_Paulo',
     weekday: 'short',
     day: '2-digit',
@@ -21,6 +21,7 @@ function formatDateShort(iso: string) {
     hour: '2-digit',
     minute: '2-digit',
   });
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
 export default async function GameDetailPage({ params }: Props) {

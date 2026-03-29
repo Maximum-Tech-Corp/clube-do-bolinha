@@ -2,23 +2,19 @@
 
 import { useState, useTransition, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import {
   cancelGame,
   removeConfirmedPlayer,
   moveToWaitlist,
   promoteWaitlistPlayer,
   addPlayerToGame,
-  createAndAddPlayer,
 } from '@/actions/games-admin';
 import { resetDraw } from '@/actions/draw';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -26,15 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Loader2, ChevronDown, ChevronUp } from 'lucide-react';
-import type { StaminaLevel } from '@/types/database.types';
+import { Loader2, Shuffle, RotateCcw, XCircle, UserCheck } from 'lucide-react';
 import { getDrawInfo } from '@/lib/draw-algorithm';
 import { DrawModal } from '@/components/dashboard/draw-modal';
 
@@ -75,6 +63,15 @@ interface Props {
 
 // ── Botão cancelar jogo ──────────────────────────────────────────────────────
 
+function formatPhone(phone: string) {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 11)
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  if (digits.length === 10)
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return phone;
+}
+
 function CancelGameButton({ gameId }: { gameId: string }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +91,12 @@ function CancelGameButton({ gameId }: { gameId: string }) {
 
   return (
     <>
-      <Button variant="destructive" onClick={() => setOpen(true)}>
+      <Button
+        variant="destructive"
+        className="py-5"
+        onClick={() => setOpen(true)}
+      >
+        <XCircle className="h-4 w-4" />
         Cancelar jogo
       </Button>
 
@@ -178,25 +180,16 @@ function ConfirmedList({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <h2 className="font-semibold">
-          Confirmados{' '}
-          <span className="text-muted-foreground font-normal text-sm">
-            ({entries.length}/25)
-          </span>
-        </h2>
-      </div>
-
       {entries.length === 0 ? (
         <p className="text-sm text-muted-foreground py-2">
           Nenhum confirmado ainda.
         </p>
       ) : (
-        <ul className="space-y-1">
+        <ul className="space-y-2">
           {entries.map(({ confirmationId, player }) => (
             <li
               key={confirmationId}
-              className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2"
+              className="flex items-center justify-between gap-2 rounded-lg shadow-md bg-gray-50 px-3 py-2"
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
@@ -214,7 +207,9 @@ function ConfirmedList({
                       </Badge>
                     )}
                 </div>
-                <p className="text-xs text-muted-foreground">{player.phone}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatPhone(player.phone)}
+                </p>
               </div>
               {!drawDone && (
                 <div className="flex items-center gap-1 shrink-0">
@@ -342,11 +337,11 @@ function WaitlistPanel({
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <ul className="space-y-1">
+      <ul className="space-y-2">
         {entries.map(({ confirmationId, position, player }) => (
           <li
             key={confirmationId}
-            className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2"
+            className="flex items-center justify-between gap-2 rounded-lg shadow-md bg-gray-50 px-3 py-2"
           >
             <div className="flex items-center gap-2 min-w-0">
               <span className="text-xs text-muted-foreground w-4 shrink-0">
@@ -368,7 +363,9 @@ function WaitlistPanel({
                       </Badge>
                     )}
                 </div>
-                <p className="text-xs text-muted-foreground">{player.phone}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatPhone(player.phone)}
+                </p>
               </div>
             </div>
             <Button
@@ -436,7 +433,7 @@ function SearchablePlayerSelect({
   return (
     <div ref={ref} className="relative flex-1">
       <div
-        className={`flex h-9 w-full items-center rounded-md border border-input bg-background px-3 py-1 text-sm ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+        className={`flex h-auto w-full items-center rounded-md border border-input bg-background px-3 py-2.5 text-sm ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
         onClick={() => !disabled && setOpen(o => !o)}
       >
         {open ? (
@@ -533,7 +530,7 @@ function AddExistingPlayerPanel({
 
   return (
     <div className="space-y-2">
-      <Label>Adicionar jogador da turma</Label>
+      <Label>Confirmar jogador manualmente</Label>
       <div className="flex gap-2">
         <SearchablePlayerSelect
           players={availablePlayers}
@@ -542,174 +539,21 @@ function AddExistingPlayerPanel({
           disabled={drawDone}
         />
         <Button
+          className="py-5"
           onClick={handleAdd}
           disabled={drawDone || !selectedId || pending}
         >
-          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Adicionar'}
+          {pending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>
+              <UserCheck className="h-4 w-4" />
+              Confirmar
+            </>
+          )}
         </Button>
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-    </div>
-  );
-}
-
-// ── Cadastrar e adicionar novo jogador ───────────────────────────────────────
-
-const newPlayerSchema = z.object({
-  name: z.string().min(2, 'Informe o nome'),
-  phone: z.string().min(10, 'Informe um celular válido'),
-  weight_kg: z.number().min(30).max(250),
-  stamina: z.enum(['1', '2', '3', '4plus'] as const),
-});
-
-type NewPlayerData = z.infer<typeof newPlayerSchema>;
-
-function CreateAndAddPlayerPanel({
-  gameId,
-  drawDone,
-}: {
-  gameId: string;
-  drawDone: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
-
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<NewPlayerData>({
-    resolver: zodResolver(newPlayerSchema),
-  });
-
-  async function onSubmit(data: NewPlayerData) {
-    setServerError(null);
-    const result = await createAndAddPlayer(gameId, {
-      name: data.name,
-      phone: data.phone,
-      weight_kg: data.weight_kg,
-      stamina: data.stamina as StaminaLevel,
-    });
-
-    if (result.error) {
-      setServerError(result.error);
-      return;
-    }
-
-    reset();
-    setOpen(false);
-  }
-
-  return (
-    <div>
-      {open ? (
-        <Button
-          variant="outline"
-          className="border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
-          onClick={() => {
-            setOpen(false);
-            reset();
-            setServerError(null);
-          }}
-        >
-          <ChevronUp className="mr-1.5 h-4 w-4" />
-          Não Cadastrar
-        </Button>
-      ) : (
-        <Button
-          className="bg-primary hover:bg-primary/80"
-          onClick={() => setOpen(true)}
-          disabled={drawDone}
-        >
-          <ChevronDown className="mr-1.5 h-4 w-4" />
-          Cadastrar novo jogador
-        </Button>
-      )}
-
-      {open && (
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-3 space-y-3">
-          <div className="space-y-1">
-            <Label htmlFor="cn-name">Nome</Label>
-            <Input
-              id="cn-name"
-              placeholder="Nome ou apelido"
-              {...register('name')}
-            />
-            {errors.name && (
-              <p className="text-xs text-destructive">{errors.name.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-1">
-            <Label htmlFor="cn-phone">Celular</Label>
-            <Input
-              id="cn-phone"
-              type="tel"
-              placeholder="(11) 99999-9999"
-              {...register('phone')}
-            />
-            {errors.phone && (
-              <p className="text-xs text-destructive">{errors.phone.message}</p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1">
-              <Label htmlFor="cn-weight">Peso (kg)</Label>
-              <Input
-                id="cn-weight"
-                type="number"
-                placeholder="75"
-                {...register('weight_kg', { valueAsNumber: true })}
-              />
-              {errors.weight_kg && (
-                <p className="text-xs text-destructive">
-                  {errors.weight_kg.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-1">
-              <Label>Resistência</Label>
-              <Select
-                onValueChange={v => setValue('stamina', v as StaminaLevel)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Jogos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">1 jogo</SelectItem>
-                  <SelectItem value="2">2 jogos</SelectItem>
-                  <SelectItem value="3">3 jogos</SelectItem>
-                  <SelectItem value="4plus">4+</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.stamina && (
-                <p className="text-xs text-destructive">
-                  {errors.stamina.message}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {serverError && (
-            <p className="text-sm text-destructive">{serverError}</p>
-          )}
-
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Cadastrando...
-              </>
-            ) : (
-              'Cadastrar e confirmar presença'
-            )}
-          </Button>
-        </form>
-      )}
     </div>
   );
 }
@@ -749,21 +593,24 @@ export function GameDetailClient({
     <div className="space-y-6">
       {/* Ações principais */}
       <div className="space-y-2">
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap justify-end">
           {!drawDone && (
             <Button
+              className="py-5"
               disabled={!drawInfo.canDraw}
               onClick={() => setDrawModalOpen(true)}
             >
+              <Shuffle className="h-4 w-4" />
               Rodar sorteio
             </Button>
           )}
           {drawDone && !hasAnyStats && (
             <Button
               variant="outline"
-              className="border-yellow-500 text-yellow-600 hover:bg-yellow-50 hover:text-yellow-600"
+              className="py-5 border-yellow-500 text-yellow-600 hover:bg-yellow-50 hover:text-yellow-600"
               onClick={() => setRedrawDialogOpen(true)}
             >
+              <RotateCcw className="h-4 w-4" />
               Desfazer Sorteio
             </Button>
           )}
@@ -771,7 +618,7 @@ export function GameDetailClient({
         </div>
         {!drawDone && drawInfo.message && (
           <p
-            className={`text-sm ${
+            className={`text-xs text-right ${
               drawInfo.isWarning ? 'text-yellow-600' : 'text-destructive'
             }`}
           >
@@ -779,7 +626,7 @@ export function GameDetailClient({
           </p>
         )}
         {redrawError && (
-          <p className="text-sm text-destructive">{redrawError}</p>
+          <p className="text-xs text-right text-destructive">{redrawError}</p>
         )}
       </div>
 
@@ -813,35 +660,45 @@ export function GameDetailClient({
         </DialogContent>
       </Dialog>
 
-      <Separator />
+      <Tabs defaultValue="confirmados">
+        <TabsList variant="line" className="w-full border-b border-border pb-0">
+          <TabsTrigger value="confirmados" className="flex-1 pb-2">
+            Confirmados
+            <span className="ml-1.5 text-xs text-muted-foreground font-normal">
+              ({confirmed.length}/25)
+            </span>
+          </TabsTrigger>
+          <TabsTrigger value="adicionar" className="flex-1 pb-2">
+            Confirmar manualmente
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Confirmados */}
-      <ConfirmedList gameId={gameId} entries={confirmed} drawDone={drawDone} />
-
-      {/* Lista de espera */}
-      {waitlist.length > 0 && (
-        <>
-          <Separator />
-          <WaitlistPanel
+        <TabsContent value="confirmados" className="mt-3 space-y-4">
+          <ConfirmedList
             gameId={gameId}
-            entries={waitlist}
-            confirmedCount={confirmed.length}
+            entries={confirmed}
+            drawDone={drawDone}
           />
-        </>
-      )}
+          {waitlist.length > 0 && (
+            <>
+              <Separator />
+              <WaitlistPanel
+                gameId={gameId}
+                entries={waitlist}
+                confirmedCount={confirmed.length}
+              />
+            </>
+          )}
+        </TabsContent>
 
-      <Separator />
-
-      {/* Adicionar jogadores */}
-      <div className="space-y-4">
-        <h2 className="font-semibold">Adicionar jogador</h2>
-        <AddExistingPlayerPanel
-          gameId={gameId}
-          availablePlayers={availablePlayers}
-          drawDone={drawDone}
-        />
-        <CreateAndAddPlayerPanel gameId={gameId} drawDone={drawDone} />
-      </div>
+        <TabsContent value="adicionar" className="mt-3">
+          <AddExistingPlayerPanel
+            gameId={gameId}
+            availablePlayers={availablePlayers}
+            drawDone={drawDone}
+          />
+        </TabsContent>
+      </Tabs>
 
       <DrawModal
         gameId={gameId}

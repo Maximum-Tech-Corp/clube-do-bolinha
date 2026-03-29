@@ -65,6 +65,11 @@ When a test breaks:
 - Action buttons (e.g. "+ Novo jogo", "Adicionar jogador") go in the content area below the header, not in the header itself
 - For pages whose title is dynamic (game date, player name), format and pass the value as the `title` prop from the page component
 
+**List item cards** (player rows, game rows, any repeated item in a list):
+- `className="rounded-lg shadow-md bg-gray-50 px-3 py-2"`
+- No border — shadow replaces the visual separation
+- List wrapper: `className="space-y-2"` for consistent gap between cards
+
 **Forms:**
 - No Card wrapper — loose form with `className="space-y-4"`
 - Inputs: `className="h-auto py-2 border-gray-300"`

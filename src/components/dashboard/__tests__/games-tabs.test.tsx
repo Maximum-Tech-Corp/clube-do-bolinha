@@ -20,8 +20,12 @@ describe('GamesTabs', () => {
   describe('rendering', () => {
     it('renders both tab triggers', () => {
       render(<GamesTabs upcoming={[]} past={[]} />);
-      expect(screen.getByRole('tab', { name: /próximos jogos/i })).toBeInTheDocument();
-      expect(screen.getByRole('tab', { name: /jogos recentes/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('tab', { name: /próximos jogos/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('tab', { name: /jogos recentes/i }),
+      ).toBeInTheDocument();
     });
 
     it('"Próximos jogos" tab is active by default', () => {
@@ -68,18 +72,25 @@ describe('GamesTabs', () => {
     });
 
     it('shows "Campeonato" label for tournament games', () => {
-      render(<GamesTabs upcoming={[makeGame({ is_tournament: true })]} past={[]} />);
+      render(
+        <GamesTabs upcoming={[makeGame({ is_tournament: true })]} past={[]} />,
+      );
       expect(screen.getByText(/campeonato/i)).toBeInTheDocument();
     });
 
     it('shows "Sorteio feito" badge when draw is done', () => {
-      render(<GamesTabs upcoming={[makeGame({ draw_done: true })]} past={[]} />);
+      render(
+        <GamesTabs upcoming={[makeGame({ draw_done: true })]} past={[]} />,
+      );
       expect(screen.getByText('Sorteio feito')).toBeInTheDocument();
     });
 
     it('links each game to its detail page', () => {
       render(<GamesTabs upcoming={[makeGame({ id: 'abc123' })]} past={[]} />);
-      expect(screen.getByRole('link')).toHaveAttribute('href', '/dashboard/jogos/abc123');
+      expect(screen.getByRole('link')).toHaveAttribute(
+        'href',
+        '/dashboard/jogos/abc123',
+      );
     });
   });
 
@@ -93,7 +104,9 @@ describe('GamesTabs', () => {
 
     it('renders game rows for past games after switching tabs', async () => {
       const user = userEvent.setup();
-      const past = [makeGame({ id: '9', location: 'Quadra Velha', status: 'finished' })];
+      const past = [
+        makeGame({ id: '9', location: 'Quadra Velha', status: 'finished' }),
+      ];
       render(<GamesTabs upcoming={[]} past={past} />);
       await user.click(screen.getByRole('tab', { name: /jogos recentes/i }));
       expect(screen.getByText('Quadra Velha')).toBeInTheDocument();
