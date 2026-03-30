@@ -233,7 +233,9 @@ export default async function PlayerHistoricoDetailPage({ params }: Props) {
           <div className="rounded-lg shadow-md bg-gray-50 divide-y divide-gray-200">
             {(mvp || mvpTied) && (
               <div className="flex items-center justify-between px-4 py-2.5 text-sm">
-                <span className="text-primary font-medium">Craque do racha</span>
+                <span className="text-primary font-medium">
+                  Craque do racha
+                </span>
                 <span className="font-semibold">
                   {mvpTied ? (
                     <span className="font-normal text-muted-foreground">
