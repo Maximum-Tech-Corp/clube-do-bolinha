@@ -139,6 +139,21 @@ export async function validateTeamCode(
   return { valid: !!data };
 }
 
+export async function saveLastTeamCode(code: string): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.set('last_team_code', code, {
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365,
+    httpOnly: false,
+    sameSite: 'lax',
+  });
+}
+
+export async function clearLastTeamCode(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete('last_team_code');
+}
+
 type ConfirmPresenceResult =
   | { needsRegistration: true }
   | { gameFull: true }

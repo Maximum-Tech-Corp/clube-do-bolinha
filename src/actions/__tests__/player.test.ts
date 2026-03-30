@@ -14,11 +14,43 @@ const {
   cancelPresence,
   identifyPlayer,
   registerPlayer,
+  saveLastTeamCode,
+  clearLastTeamCode,
 } = await import('@/actions/player');
 
 const TEAM_ID = 'team-uuid';
 const GAME_ID = 'game-uuid';
 const PHONE = '11999999999';
+
+// ─── saveLastTeamCode ─────────────────────────────────────────────────────────
+
+describe('saveLastTeamCode', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('sets the last_team_code cookie with the given code', async () => {
+    await saveLastTeamCode('ABCD-XYZ123');
+    expect(mockCookieSet).toHaveBeenCalledWith(
+      'last_team_code',
+      'ABCD-XYZ123',
+      expect.objectContaining({ path: '/' }),
+    );
+  });
+});
+
+// ─── clearLastTeamCode ────────────────────────────────────────────────────────
+
+describe('clearLastTeamCode', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('deletes the last_team_code cookie', async () => {
+    await clearLastTeamCode();
+    expect(mockCookieDelete).toHaveBeenCalledWith('last_team_code');
+  });
+});
 
 // ─── clearPlayerCookie ────────────────────────────────────────────────────────
 
