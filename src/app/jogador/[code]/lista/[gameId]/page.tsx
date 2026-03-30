@@ -71,7 +71,11 @@ export default async function PlayerListaPage({ params }: Props) {
     <>
       <div className="w-full" style={{ backgroundColor: '#fed015' }}>
         <div className="flex items-center gap-3 px-4 py-4 max-w-2xl mx-auto">
-          <Link href={`/jogador/${upperCode}`} aria-label="Voltar" className="shrink-0">
+          <Link
+            href={`/jogador/${upperCode}`}
+            aria-label="Voltar"
+            className="shrink-0"
+          >
             <ArrowLeft className="w-5 h-5" style={{ color: '#002776' }} />
           </Link>
           <h1 className="text-lg font-bold flex-1" style={{ color: '#002776' }}>
@@ -97,7 +101,10 @@ export default async function PlayerListaPage({ params }: Props) {
             </p>
             <ul className="space-y-2">
               {players.map(player => (
-                <li key={player.id} className="rounded-lg shadow-md bg-gray-50 px-3 py-2 text-sm font-medium">
+                <li
+                  key={player.id}
+                  className="rounded-lg shadow-md bg-gray-50 px-3 py-2 text-sm font-medium"
+                >
                   {player.name}
                 </li>
               ))}

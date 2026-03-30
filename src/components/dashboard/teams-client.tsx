@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Pencil, Check, X } from 'lucide-react';
+import { Accordion } from '@base-ui/react/accordion';
+import { Pencil, Check, X, ChevronDown } from 'lucide-react';
 import { updateStat, finishGame, renameGameTeam } from '@/actions/game-stats';
 import { Button } from '@/components/ui/button';
 import {
@@ -53,12 +54,12 @@ function StatCounter({
   disabled: boolean;
 }) {
   return (
-    <div className="flex items-center gap-1">
-      <span className="text-xs text-muted-foreground w-12">{label}</span>
+    <div className="flex items-center gap-1.5">
+      <span className="text-xs text-muted-foreground w-20">{label}</span>
       <button
         onClick={onDecrement}
         disabled={disabled || value === 0}
-        className="w-7 h-7 rounded border border-border text-sm font-bold disabled:opacity-30 hover:bg-muted transition-colors"
+        className="w-11 h-11 rounded border border-border text-base font-bold disabled:opacity-30 hover:bg-muted transition-colors"
       >
         −
       </button>
@@ -68,7 +69,7 @@ function StatCounter({
       <button
         onClick={onIncrement}
         disabled={disabled}
-        className="w-7 h-7 rounded border border-border text-sm font-bold disabled:opacity-30 hover:bg-muted transition-colors"
+        className="w-11 h-11 rounded border border-border text-base font-bold disabled:opacity-30 hover:bg-muted transition-colors"
       >
         +
       </button>
@@ -76,9 +77,9 @@ function StatCounter({
   );
 }
 
-// ── Time individual ──────────────────────────────────────────────────────────
+// ── Item do accordion (time individual) ──────────────────────────────────────
 
-function TeamCard({
+function TeamAccordionItem({
   team,
   stats,
   isFinished,
@@ -101,7 +102,8 @@ function TeamCard({
     0,
   );
 
-  function handleEditStart() {
+  function handleEditStart(e: React.MouseEvent) {
+    e.stopPropagation();
     setDraft(team.customName ?? '');
     setRenameError(null);
     setEditing(true);
@@ -127,112 +129,122 @@ function TeamCard({
     }
   }
 
+  const displayName = team.customName ?? `Time ${team.teamNumber}`;
+
   return (
-    <div className="rounded-lg border border-border overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2 bg-muted/50">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          {editing ? (
-            <input
-              className="text-sm font-semibold bg-transparent border-b border-border focus:outline-none w-1/2"
-              value={draft}
-              onChange={e => setDraft(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') handleSave();
-                if (e.key === 'Escape') handleCancel();
-              }}
-              autoFocus
-              disabled={renaming}
-              aria-label="Nome do time"
-            />
-          ) : (
-            <h2 className="font-semibold text-sm truncate">
-              {team.customName ?? `Time ${team.teamNumber}`}
-            </h2>
-          )}
+    <Accordion.Item
+      value={team.id}
+      className="rounded-lg shadow-md bg-gray-50 overflow-hidden"
+    >
+      <Accordion.Header className="flex">
+        <Accordion.Trigger className="flex flex-1 items-center justify-between px-4 py-3 text-left hover:bg-gray-100 transition-colors [&[data-open]>svg]:rotate-180">
+          <span className="font-semibold text-sm">{displayName}</span>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs text-muted-foreground">
+              {totalGoals} gol{totalGoals !== 1 ? 's' : ''}
+            </span>
+            <ChevronDown className="w-5 h-5 text-foreground transition-transform duration-200" />
+          </div>
+        </Accordion.Trigger>
+      </Accordion.Header>
 
-          {!isFinished && !editing && (
-            <button
-              onClick={handleEditStart}
-              className="text-muted-foreground hover:text-foreground transition-colors shrink-0 font-bold"
-              aria-label="Renomear time"
-            >
-              <Pencil className="w-4 h-4" strokeWidth={2.5} />
-            </button>
-          )}
-
-          {editing && (
-            <div className="flex items-center gap-3 shrink-0">
-              <button
-                onClick={handleSave}
-                disabled={renaming}
-                className="text-green-600 hover:text-green-700 disabled:opacity-40 transition-colors font-bold"
-                aria-label="Salvar nome"
-              >
-                <Check className="w-6 h-6" strokeWidth={2.5} />
-              </button>
-              <button
-                onClick={handleCancel}
-                disabled={renaming}
-                className="text-destructive hover:text-destructive/80 disabled:opacity-40 transition-colors font-bold"
-                aria-label="Cancelar"
-              >
-                <X className="w-6 h-6" strokeWidth={2.5} />
-              </button>
-            </div>
-          )}
-        </div>
-
-        <span className="text-xs text-muted-foreground ml-2 shrink-0">
-          {totalGoals} gol{totalGoals !== 1 ? 's' : ''}
-        </span>
-      </div>
-
-      {renameError && (
-        <p className="px-4 py-1 text-xs text-destructive">{renameError}</p>
-      )}
-
-      <ul className="divide-y divide-border">
-        {team.players.map(player => {
-          const current = stats.get(player.gameTeamPlayerId) ?? {
-            goals: player.goals,
-            assists: player.assists,
-          };
-
-          return (
-            <li key={player.gameTeamPlayerId} className="px-4 py-3 space-y-2">
-              <p className="text-sm font-medium">
-                {player.isStar && <span className="mr-1">⭐</span>}
-                {player.name}
-              </p>
-              <div className="flex flex-col gap-1.5">
-                <StatCounter
-                  label="Gols"
-                  value={current.goals}
-                  onIncrement={() =>
-                    onUpdate(player.gameTeamPlayerId, 'goals', 1)
-                  }
-                  onDecrement={() =>
-                    onUpdate(player.gameTeamPlayerId, 'goals', -1)
-                  }
-                  disabled={isFinished}
+      <Accordion.Panel className="px-4 pb-4 space-y-3">
+        {/* Renomear time */}
+        {!isFinished && (
+          <div className="pt-3 border-t border-border">
+            {editing ? (
+              <div className="space-y-2">
+                <input
+                  className="w-full text-sm bg-transparent border-b border-border focus:outline-none py-1"
+                  value={draft}
+                  onChange={e => setDraft(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleSave();
+                    if (e.key === 'Escape') handleCancel();
+                  }}
+                  autoFocus
+                  disabled={renaming}
+                  aria-label="Nome do time"
+                  placeholder="Nome do time"
                 />
-                <StatCounter
-                  label="Assists"
-                  value={current.assists}
-                  onIncrement={() =>
-                    onUpdate(player.gameTeamPlayerId, 'assists', 1)
-                  }
-                  onDecrement={() =>
-                    onUpdate(player.gameTeamPlayerId, 'assists', -1)
-                  }
-                  disabled={isFinished}
-                />
+                {renameError && (
+                  <p className="text-xs text-destructive">{renameError}</p>
+                )}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleSave}
+                    disabled={renaming}
+                    className="text-green-600 hover:text-green-700 disabled:opacity-40 transition-colors"
+                    aria-label="Salvar nome"
+                  >
+                    <Check className="w-5 h-5" strokeWidth={2.5} />
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    disabled={renaming}
+                    className="text-destructive hover:text-destructive/80 disabled:opacity-40 transition-colors"
+                    aria-label="Cancelar"
+                  >
+                    <X className="w-5 h-5" strokeWidth={2.5} />
+                  </button>
+                </div>
               </div>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
+            ) : (
+              <button
+                onClick={handleEditStart}
+                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Pencil className="w-4 h-4" strokeWidth={2.5} />
+                Mudar nome do time
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Lista de jogadores */}
+        <ul className="space-y-3">
+          {team.players.map(player => {
+            const current = stats.get(player.gameTeamPlayerId) ?? {
+              goals: player.goals,
+              assists: player.assists,
+            };
+
+            return (
+              <li key={player.gameTeamPlayerId} className="space-y-2">
+                <p className="text-sm font-medium">
+                  {player.isStar && <span className="mr-1">⭐</span>}
+                  {player.name}
+                </p>
+                <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                  <StatCounter
+                    label="Gols"
+                    value={current.goals}
+                    onIncrement={() =>
+                      onUpdate(player.gameTeamPlayerId, 'goals', 1)
+                    }
+                    onDecrement={() =>
+                      onUpdate(player.gameTeamPlayerId, 'goals', -1)
+                    }
+                    disabled={isFinished}
+                  />
+                  <StatCounter
+                    label="Assistências"
+                    value={current.assists}
+                    onIncrement={() =>
+                      onUpdate(player.gameTeamPlayerId, 'assists', 1)
+                    }
+                    onDecrement={() =>
+                      onUpdate(player.gameTeamPlayerId, 'assists', -1)
+                    }
+                    disabled={isFinished}
+                  />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </Accordion.Panel>
+    </Accordion.Item>
   );
 }
 
@@ -245,12 +257,10 @@ export function TeamsClient({
   isTournament,
   tournamentCompleted,
 }: Props) {
-  // Mapa local de stats para atualização otimista
   const [localStats, setLocalStats] = useState<
     Map<string, { goals: number; assists: number }>
   >(new Map());
 
-  // Mapa local de nomes customizados para atualização otimista
   const [localNames, setLocalNames] = useState<Map<string, string | null>>(
     new Map(teams.map(t => [t.id, t.customName])),
   );
@@ -265,7 +275,6 @@ export function TeamsClient({
     field: 'goals' | 'assists',
     delta: 1 | -1,
   ) {
-    // Busca valor atual (local ou original)
     const player = teams
       .flatMap(t => t.players)
       .find(p => p.gameTeamPlayerId === gtpId);
@@ -279,18 +288,14 @@ export function TeamsClient({
     const currentValue = field === 'goals' ? current.goals : current.assists;
     const newValue = Math.max(0, currentValue + delta);
 
-    // Atualização otimista
     setLocalStats(prev => {
       const next = new Map(prev);
       next.set(gtpId, { ...current, [field]: newValue });
       return next;
     });
 
-    // Persiste no banco (fire and forget — erros são silenciosos pois o
-    // reload do servidor sincroniza caso haja inconsistência)
     updateStat(gtpId, field, delta).then(result => {
       if (result.error) {
-        // Reverte em caso de erro
         setLocalStats(prev => {
           const next = new Map(prev);
           next.set(gtpId, { ...current });
@@ -350,25 +355,25 @@ export function TeamsClient({
         </p>
       )}
 
-      {/* Times */}
-      {teamsWithNames.map(team => (
-        <TeamCard
-          key={team.id}
-          team={team}
-          stats={localStats}
-          isFinished={isFinished}
-          onUpdate={handleUpdate}
-          onRename={handleRename}
-        />
-      ))}
+      <Accordion.Root className="space-y-2">
+        {teamsWithNames.map(team => (
+          <TeamAccordionItem
+            key={team.id}
+            team={team}
+            stats={localStats}
+            isFinished={isFinished}
+            onUpdate={handleUpdate}
+            onRename={handleRename}
+          />
+        ))}
+      </Accordion.Root>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      {/* Finalizar jogo */}
       {!isFinished && (
         <div className="space-y-1 pt-2">
           <Button
-            className="w-full"
+            className="w-full py-5"
             disabled={!canFinish}
             onClick={() => setFinishDialogOpen(true)}
           >
@@ -382,7 +387,6 @@ export function TeamsClient({
         </div>
       )}
 
-      {/* Dialog de confirmação — finalizar */}
       <Dialog open={finishDialogOpen} onOpenChange={setFinishDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -393,7 +397,7 @@ export function TeamsClient({
           </DialogHeader>
           <div className="flex gap-2">
             <Button
-              className="flex-1"
+              className="flex-1 py-5"
               onClick={handleFinish}
               disabled={finishPending}
             >
@@ -401,7 +405,7 @@ export function TeamsClient({
             </Button>
             <Button
               variant="outline"
-              className="flex-1"
+              className="flex-1 py-5 border-primary text-primary hover:bg-primary/5 hover:text-primary"
               onClick={() => setFinishDialogOpen(false)}
             >
               Cancelar

@@ -174,87 +174,86 @@ export default async function TeamPage({ params }: Props) {
       </div>
 
       <div className="flex-1 w-full max-w-sm mx-auto px-4 pt-6 pb-24 space-y-4">
-
-      {isBanned && (
-        <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 text-sm space-y-1">
-          <p className="font-semibold text-destructive">Acesso bloqueado</p>
-          <p className="text-muted-foreground">
-            Você foi banido desta turma e não pode confirmar presença nos jogos.
-            Em caso de dúvidas, entre em contato com o organizador.
-          </p>
-        </div>
-      )}
-
-      {!isBanned && isActivelySuspended && (
-        <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 text-sm space-y-1">
-          <p className="font-semibold text-destructive">
-            Suspenso até{' '}
-            {new Date(playerData!.suspended_until!).toLocaleDateString(
-              'pt-BR',
-              { day: '2-digit', month: '2-digit', year: 'numeric' },
-            )}
-          </p>
-          {playerData?.suspension_reason && (
+        {isBanned && (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 text-sm space-y-1">
+            <p className="font-semibold text-destructive">Acesso bloqueado</p>
             <p className="text-muted-foreground">
-              {playerData.suspension_reason}
+              Você foi banido desta turma e não pode confirmar presença nos
+              jogos. Em caso de dúvidas, entre em contato com o organizador.
             </p>
-          )}
-          <p className="text-muted-foreground">
-            Você não pode confirmar presença durante este período.
-          </p>
-        </div>
-      )}
+          </div>
+        )}
 
-      {gameList.length === 0 ? (
-        <p className="text-muted-foreground text-sm text-center py-12">
-          Nenhum jogo marcado para os próximos 7 dias.
-        </p>
-      ) : (
-        <div className="space-y-3">
-          <p className="text-sm font-semibold text-center text-foreground">
-            Próximos 7 dias
+        {!isBanned && isActivelySuspended && (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 text-sm space-y-1">
+            <p className="font-semibold text-destructive">
+              Suspenso até{' '}
+              {new Date(playerData!.suspended_until!).toLocaleDateString(
+                'pt-BR',
+                { day: '2-digit', month: '2-digit', year: 'numeric' },
+              )}
+            </p>
+            {playerData?.suspension_reason && (
+              <p className="text-muted-foreground">
+                {playerData.suspension_reason}
+              </p>
+            )}
+            <p className="text-muted-foreground">
+              Você não pode confirmar presença durante este período.
+            </p>
+          </div>
+        )}
+
+        {gameList.length === 0 ? (
+          <p className="text-muted-foreground text-sm text-center py-12">
+            Nenhum jogo marcado para os próximos 7 dias.
           </p>
-          {gameList.map(game => (
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm font-semibold text-center text-foreground">
+              Próximos 7 dias
+            </p>
+            {gameList.map(game => (
+              <GameCard
+                key={game.id}
+                game={game}
+                teamId={team.id}
+                teamCode={code.toUpperCase()}
+                confirmedCount={gameStats[game.id].confirmedCount}
+                playerStatus={gameStats[game.id].playerStatus}
+                phone={playerPhone}
+                tournamentStarted={tournamentStartedGameIds.has(game.id)}
+              />
+            ))}
+          </div>
+        )}
+
+        {lastGame && (
+          <div className="space-y-2">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Último jogo
+            </h2>
             <GameCard
-              key={game.id}
-              game={game}
+              game={lastGame}
               teamId={team.id}
               teamCode={code.toUpperCase()}
-              confirmedCount={gameStats[game.id].confirmedCount}
-              playerStatus={gameStats[game.id].playerStatus}
+              confirmedCount={lastGameConfirmedCount}
+              playerStatus="confirmed"
               phone={playerPhone}
-              tournamentStarted={tournamentStartedGameIds.has(game.id)}
+              detailsHref={`/jogador/${code.toUpperCase()}/historico/${lastGame.id}`}
             />
-          ))}
-        </div>
-      )}
+          </div>
+        )}
 
-      {lastGame && (
-        <div className="space-y-2">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Último jogo
-          </h2>
-          <GameCard
-            game={lastGame}
+        {playerData && (
+          <PlayerDataSection
+            player={playerData}
             teamId={team.id}
             teamCode={code.toUpperCase()}
-            confirmedCount={lastGameConfirmedCount}
-            playerStatus="confirmed"
-            phone={playerPhone}
-            detailsHref={`/jogador/${code.toUpperCase()}/historico/${lastGame.id}`}
           />
-        </div>
-      )}
+        )}
 
-      {playerData && (
-        <PlayerDataSection
-          player={playerData}
-          teamId={team.id}
-          teamCode={code.toUpperCase()}
-        />
-      )}
-
-      <PlayerBottomNav teamCode={code.toUpperCase()} />
+        <PlayerBottomNav teamCode={code.toUpperCase()} />
       </div>
     </div>
   );
