@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { createServiceClient } from '@/lib/supabase/server';
 import { PlayerBottomNav } from '@/components/player/player-bottom-nav';
 
@@ -9,12 +9,15 @@ interface Props {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('pt-BR', {
+  const formatted = new Date(iso).toLocaleString('pt-BR', {
     timeZone: 'America/Sao_Paulo',
     weekday: 'long',
     day: '2-digit',
     month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
   });
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
 export default async function PlayerTimesPage({ params }: Props) {
@@ -60,60 +63,75 @@ export default async function PlayerTimesPage({ params }: Props) {
 
   const { data: playersRaw } =
     playerIds.length > 0
-      ? await service.from('players').select('id, name').in('id', playerIds)
+      ? await service
+          .from('players')
+          .select('id, name, is_star')
+          .in('id', playerIds)
       : { data: [] };
 
-  const playerMap = new Map((playersRaw ?? []).map(p => [p.id, p.name]));
+  const playerMap = new Map(
+    (playersRaw ?? []).map(p => [p.id, { name: p.name, isStar: p.is_star }]),
+  );
 
   const teamsData = (gameTeams ?? []).map(gt => ({
     teamNumber: gt.team_number,
     customName: gt.custom_name,
     players: (teamPlayersRaw ?? [])
       .filter(tp => tp.game_team_id === gt.id)
-      .map(tp => playerMap.get(tp.player_id) ?? '—'),
+      .map(tp => playerMap.get(tp.player_id) ?? { name: '—', isStar: false }),
   }));
 
   return (
-    <div className="max-w-md mx-auto p-4 pb-24 space-y-4">
-      <div className="flex items-center gap-2">
-        <Link
-          href={`/jogador/${upperCode}`}
-          className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </Link>
-        <div>
-          <h1 className="text-xl font-bold">Times sorteados</h1>
-          <p className="text-sm text-muted-foreground capitalize">
-            {formatDate(game.scheduled_at)}
-            {game.location ? ` · ${game.location}` : ''}
-          </p>
+    <>
+      <div className="w-full" style={{ backgroundColor: '#fed015' }}>
+        <div className="flex items-center gap-3 px-4 py-4 max-w-2xl mx-auto">
+          <Link
+            href={`/jogador/${upperCode}`}
+            aria-label="Voltar"
+            className="shrink-0"
+          >
+            <ArrowLeft className="w-5 h-5" style={{ color: '#002776' }} />
+          </Link>
+          <h1 className="text-lg font-bold flex-1" style={{ color: '#002776' }}>
+            Times sorteados
+          </h1>
         </div>
       </div>
 
-      <div className="space-y-3">
-        {teamsData.map(team => (
-          <div
-            key={team.teamNumber}
-            className="rounded-lg border border-border overflow-hidden"
-          >
-            <div className="px-4 py-2 bg-muted/50">
-              <h2 className="font-semibold text-sm">
-                {team.customName ?? `Time ${team.teamNumber}`}
-              </h2>
+      <div className="max-w-2xl mx-auto p-4 pb-24 space-y-4">
+        <p className="text-sm text-muted-foreground">
+          {formatDate(game.scheduled_at)}
+          {game.location ? ` · ${game.location}` : ''}
+        </p>
+
+        <div className="space-y-3">
+          {teamsData.map(t => (
+            <div
+              key={t.teamNumber}
+              className="rounded-lg shadow-md bg-gray-50 overflow-hidden"
+            >
+              <div className="px-4 py-2 bg-primary/10">
+                <h2 className="font-semibold text-sm text-primary">
+                  {t.customName ?? `Time ${t.teamNumber}`}
+                </h2>
+              </div>
+              <ul className="divide-y divide-gray-200">
+                {t.players.map((player, i) => (
+                  <li
+                    key={i}
+                    className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium"
+                  >
+                    {player.isStar && <span>⭐</span>}
+                    {player.name}
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul className="divide-y divide-border">
-              {team.players.map((name, i) => (
-                <li key={i} className="px-4 py-2.5 text-sm font-medium">
-                  {name}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       <PlayerBottomNav teamCode={upperCode} />
-    </div>
+    </>
   );
 }
