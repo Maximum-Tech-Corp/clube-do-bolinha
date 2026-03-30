@@ -1,8 +1,9 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { createServiceClient } from '@/lib/supabase/server';
 import { PlayerBottomNav } from '@/components/player/player-bottom-nav';
+import { PlayerCampeonatoAccordion } from '@/components/player/player-campeonato-accordion';
 import { computeStandings } from '@/lib/tournament-utils';
 import type { MatchRow } from '@/lib/tournament-utils';
 import type { TournamentPhase } from '@/types/database.types';
@@ -11,16 +12,17 @@ interface Props {
   params: Promise<{ code: string; gameId: string }>;
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleString('pt-BR', {
+function formatDateShort(iso: string) {
+  const formatted = new Date(iso).toLocaleString('pt-BR', {
     timeZone: 'America/Sao_Paulo',
-    weekday: 'long',
+    weekday: 'short',
     day: '2-digit',
-    month: 'long',
+    month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   });
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
 const phaseLabel: Record<TournamentPhase, string> = {
@@ -94,23 +96,7 @@ export default async function PlayerHistoricoDetailPage({ params }: Props) {
     gameTeams.map(t => [t.id, t.custom_name ?? `Time ${t.team_number}`]),
   );
 
-  const teamsData = gameTeams.map(gt => ({
-    teamNumber: gt.team_number,
-    customName: gt.custom_name,
-    players: gtp
-      .filter(p => p.game_team_id === gt.id)
-      .map(p => {
-        const player = playerMap.get(p.player_id);
-        return {
-          name: player?.name ?? '—',
-          isStar: player?.is_star ?? false,
-          goals: p.goals,
-          assists: p.assists,
-        };
-      })
-      .sort((a, b) => b.goals - a.goals || b.assists - a.assists),
-  }));
-
+  // Destaques
   const allPlayers = gtp.map(p => {
     const player = playerMap.get(p.player_id);
     return { name: player?.name ?? '—', goals: p.goals, assists: p.assists };
@@ -144,6 +130,7 @@ export default async function PlayerHistoricoDetailPage({ params }: Props) {
   const topAssisterTied =
     withAssists.length > 0 && assisterCandidates.length > 1;
 
+  // Campeonato
   const matches = (matchesRaw ?? []) as MatchRow[];
   const groupMatches = matches.filter(m => m.phase === 'group');
   const standings = game.is_tournament
@@ -157,242 +144,162 @@ export default async function PlayerHistoricoDetailPage({ params }: Props) {
     }))
     .filter(({ matches: ms }) => ms.length > 0);
 
+  // Dados para PlayerCampeonatoAccordion
+  const teamsForAccordion = gameTeams.map(gt => ({
+    id: gt.id,
+    teamNumber: gt.team_number,
+    customName: gt.custom_name,
+    players: gtp
+      .filter(p => p.game_team_id === gt.id)
+      .map(p => {
+        const player = playerMap.get(p.player_id);
+        return {
+          name: player?.name ?? '—',
+          isStar: player?.is_star ?? false,
+          goals: p.goals,
+          assists: p.assists,
+        };
+      })
+      .sort((a, b) => b.goals - a.goals || b.assists - a.assists),
+  }));
+
+  const standingsForAccordion = standings.map((s, i) => ({
+    rank: i + 1,
+    name: nameMap.get(s.teamId) ?? `Time ${s.teamNumber}`,
+    played: s.played,
+    wins: s.wins,
+    draws: s.draws,
+    losses: s.losses,
+    goalDiff: s.goalDiff,
+    points: s.points,
+  }));
+
+  const matchesForAccordion = matchesByPhase.map(({ phase, matches: ms }) => ({
+    phase,
+    label: phaseLabel[phase],
+    matches: ms.map(m => ({
+      id: m.id,
+      homeTeam: nameMap.get(m.home_team_id) ?? '?',
+      awayTeam: nameMap.get(m.away_team_id) ?? '?',
+      homeScore: m.home_score,
+      awayScore: m.away_score,
+      completed: m.completed,
+    })),
+  }));
+
   return (
-    <div className="max-w-2xl mx-auto p-4 pb-24 space-y-6">
-      {/* Cabeçalho */}
-      <div className="flex items-start gap-2">
-        <Link
-          href={`/jogador/${upperCode}`}
-          className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground shrink-0 mt-0.5"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </Link>
-        <div className="space-y-1">
-          <div className="flex items-start justify-between gap-2">
-            <h1 className="text-xl font-bold leading-tight">
-              {formatDate(game.scheduled_at)}
-            </h1>
-            <div className="flex items-center gap-2 shrink-0">
-              {game.is_tournament && (
-                <span className="text-xs font-medium border border-border rounded px-2 py-0.5 text-muted-foreground">
-                  Campeonato
-                </span>
-              )}
-              <span className="text-xs font-medium border border-border rounded px-2 py-0.5 text-muted-foreground">
-                Finalizado
-              </span>
-            </div>
-          </div>
-          {game.location && (
-            <p className="text-sm text-muted-foreground">{game.location}</p>
-          )}
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* Header amarelo com seta de voltar */}
+      <div className="w-full" style={{ backgroundColor: '#fed015' }}>
+        <div className="flex items-center gap-3 px-4 py-4 max-w-2xl mx-auto">
+          <Link
+            href={`/jogador/${upperCode}`}
+            aria-label="Voltar"
+            className="shrink-0"
+          >
+            <ArrowLeft className="w-5 h-5" style={{ color: '#002776' }} />
+          </Link>
+          <h1 className="text-lg font-bold flex-1" style={{ color: '#002776' }}>
+            {formatDateShort(game.scheduled_at)}
+          </h1>
         </div>
       </div>
 
-      {/* Destaques */}
-      {(mvp ||
-        mvpTied ||
-        topScorer ||
-        topScorerTied ||
-        topAssister ||
-        topAssisterTied) && (
-        <div className="rounded-lg border border-border divide-y divide-border">
-          {(mvp || mvpTied) && (
-            <div className="flex items-center justify-between px-4 py-2.5 text-sm">
-              <span className="text-muted-foreground">Craque do racha</span>
-              <span className="font-semibold">
-                {mvpTied ? (
-                  <span className="font-normal text-muted-foreground">
-                    Houve empate
-                  </span>
-                ) : (
-                  <>
-                    {mvp?.name}
-                    <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                      {mvp?.goals}G · {mvp?.assists}A
-                    </span>
-                  </>
-                )}
+      <div className="flex-1 w-full max-w-2xl mx-auto px-4 pt-6 pb-24 space-y-6">
+        {/* Local e badges */}
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-sm text-muted-foreground">
+            {game.location ?? 'Local não definido'}
+          </p>
+          <div className="flex items-center gap-2 shrink-0">
+            {game.is_tournament && (
+              <span className="text-xs font-medium border border-border rounded px-2 py-0.5 text-muted-foreground">
+                Campeonato
               </span>
-            </div>
-          )}
-          {(topScorer || topScorerTied) && (
-            <div className="flex items-center justify-between px-4 py-2.5 text-sm">
-              <span className="text-muted-foreground">Artilheiro</span>
-              <span className="font-semibold">
-                {topScorerTied ? (
-                  <span className="font-normal text-muted-foreground">
-                    Houve empate
-                  </span>
-                ) : (
-                  <>
-                    {topScorer?.name}
-                    <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                      {topScorer?.goals}G
-                    </span>
-                  </>
-                )}
-              </span>
-            </div>
-          )}
-          {(topAssister || topAssisterTied) && (
-            <div className="flex items-center justify-between px-4 py-2.5 text-sm">
-              <span className="text-muted-foreground">
-                Líder em assistências
-              </span>
-              <span className="font-semibold">
-                {topAssisterTied ? (
-                  <span className="font-normal text-muted-foreground">
-                    Houve empate
-                  </span>
-                ) : (
-                  <>
-                    {topAssister?.name}
-                    <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                      {topAssister?.assists}A
-                    </span>
-                  </>
-                )}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Times e stats */}
-      {teamsData.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Times
-          </h2>
-          {teamsData.map(team => {
-            const totalGoals = team.players.reduce((s, p) => s + p.goals, 0);
-            return (
-              <div
-                key={team.teamNumber}
-                className="rounded-lg border border-border overflow-hidden"
-              >
-                <div className="flex items-center justify-between px-4 py-2 bg-muted/50">
-                  <h3 className="font-semibold text-sm">
-                    {team.customName ?? `Time ${team.teamNumber}`}
-                  </h3>
-                  <span className="text-xs text-muted-foreground">
-                    {totalGoals} gol{totalGoals !== 1 ? 's' : ''}
-                  </span>
-                </div>
-                <ul className="divide-y divide-border">
-                  {team.players.map((player, i) => (
-                    <li
-                      key={i}
-                      className="flex items-center justify-between px-4 py-2.5 text-sm"
-                    >
-                      <span className="font-medium">
-                        {player.isStar && <span className="mr-1">⭐</span>}
-                        {player.name}
-                      </span>
-                      <span className="text-xs text-muted-foreground tabular-nums">
-                        {player.goals}G · {player.assists}A
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
-        </section>
-      )}
-
-      {/* Campeonato */}
-      {game.is_tournament && (
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Campeonato
-          </h2>
-
-          <div className="rounded-lg border border-border overflow-hidden">
-            <div className="px-4 py-2 bg-muted/50">
-              <h3 className="font-semibold text-sm">Classificação</h3>
-            </div>
-            <div className="px-4 py-3">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-muted-foreground text-xs border-b border-border">
-                    <th className="text-left py-1.5 w-6">#</th>
-                    <th className="text-left py-1.5">Time</th>
-                    <th className="text-center py-1.5 w-8">J</th>
-                    <th className="text-center py-1.5 w-8">V</th>
-                    <th className="text-center py-1.5 w-8">E</th>
-                    <th className="text-center py-1.5 w-8">D</th>
-                    <th className="text-center py-1.5 w-10">SG</th>
-                    <th className="text-center py-1.5 w-8 font-semibold">
-                      Pts
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {standings.map((s, i) => (
-                    <tr key={s.teamId}>
-                      <td className="py-2 text-muted-foreground text-xs">
-                        {i + 1}
-                      </td>
-                      <td className="py-2 font-medium">
-                        {nameMap.get(s.teamId) ?? `Time ${s.teamNumber}`}
-                      </td>
-                      <td className="py-2 text-center tabular-nums">
-                        {s.played}
-                      </td>
-                      <td className="py-2 text-center tabular-nums">
-                        {s.wins}
-                      </td>
-                      <td className="py-2 text-center tabular-nums">
-                        {s.draws}
-                      </td>
-                      <td className="py-2 text-center tabular-nums">
-                        {s.losses}
-                      </td>
-                      <td className="py-2 text-center tabular-nums">
-                        {s.goalDiff > 0 ? `+${s.goalDiff}` : s.goalDiff}
-                      </td>
-                      <td className="py-2 text-center tabular-nums font-semibold">
-                        {s.points}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            )}
+            <span className="text-xs font-medium border border-border rounded px-2 py-0.5 text-muted-foreground">
+              Finalizado
+            </span>
           </div>
+        </div>
 
-          {matchesByPhase.map(({ phase, matches: phaseMatches }) => (
-            <div
-              key={phase}
-              className="rounded-lg border border-border overflow-hidden"
-            >
-              <div className="px-4 py-2 bg-muted/50">
-                <h3 className="font-semibold text-sm">{phaseLabel[phase]}</h3>
+        {/* Destaques */}
+        {(mvp ||
+          mvpTied ||
+          topScorer ||
+          topScorerTied ||
+          topAssister ||
+          topAssisterTied) && (
+          <div className="rounded-lg shadow-md bg-gray-50 divide-y divide-gray-200">
+            {(mvp || mvpTied) && (
+              <div className="flex items-center justify-between px-4 py-2.5 text-sm">
+                <span className="text-primary font-medium">Craque do racha</span>
+                <span className="font-semibold">
+                  {mvpTied ? (
+                    <span className="font-normal text-muted-foreground">
+                      Houve empate
+                    </span>
+                  ) : (
+                    <>
+                      {mvp?.name}
+                      <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                        {mvp?.goals}G · {mvp?.assists}A
+                      </span>
+                    </>
+                  )}
+                </span>
               </div>
-              <ul className="divide-y divide-border">
-                {phaseMatches.map(m => (
-                  <li
-                    key={m.id}
-                    className="flex items-center gap-3 px-4 py-3 text-sm"
-                  >
-                    <span className="font-medium">
-                      {nameMap.get(m.home_team_id) ?? '?'}
+            )}
+            {(topScorer || topScorerTied) && (
+              <div className="flex items-center justify-between px-4 py-2.5 text-sm">
+                <span className="text-primary font-medium">Artilheiro</span>
+                <span className="font-semibold">
+                  {topScorerTied ? (
+                    <span className="font-normal text-muted-foreground">
+                      Houve empate
                     </span>
-                    <span className="tabular-nums font-bold text-base">
-                      {m.home_score ?? '—'} × {m.away_score ?? '—'}
+                  ) : (
+                    <>
+                      {topScorer?.name}
+                      <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                        {topScorer?.goals}G
+                      </span>
+                    </>
+                  )}
+                </span>
+              </div>
+            )}
+            {(topAssister || topAssisterTied) && (
+              <div className="flex items-center justify-between px-4 py-2.5 text-sm">
+                <span className="text-primary font-medium">
+                  Líder em assistências
+                </span>
+                <span className="font-semibold">
+                  {topAssisterTied ? (
+                    <span className="font-normal text-muted-foreground">
+                      Houve empate
                     </span>
-                    <span className="font-medium">
-                      {nameMap.get(m.away_team_id) ?? '?'}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </section>
-      )}
+                  ) : (
+                    <>
+                      {topAssister?.name}
+                      <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                        {topAssister?.assists}A
+                      </span>
+                    </>
+                  )}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Times + Campeonato em accordions */}
+        <PlayerCampeonatoAccordion
+          teamsData={teamsForAccordion}
+          standingsData={standingsForAccordion}
+          matchesData={matchesForAccordion}
+        />
+      </div>
 
       <PlayerBottomNav teamCode={upperCode} />
     </div>

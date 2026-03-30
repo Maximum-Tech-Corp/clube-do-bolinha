@@ -6,13 +6,14 @@ import { computeStandings } from '@/lib/tournament-utils';
 import type { MatchRow } from '@/lib/tournament-utils';
 import type { TournamentPhase } from '@/types/database.types';
 import { AdminPageHeader } from '@/components/dashboard/admin-page-header';
+import { PlayerCampeonatoAccordion } from '@/components/player/player-campeonato-accordion';
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
 function formatDateShort(iso: string) {
-  return new Date(iso).toLocaleString('pt-BR', {
+  const formatted = new Date(iso).toLocaleString('pt-BR', {
     timeZone: 'America/Sao_Paulo',
     weekday: 'short',
     day: '2-digit',
@@ -21,6 +22,7 @@ function formatDateShort(iso: string) {
     hour: '2-digit',
     minute: '2-digit',
   });
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
 const phaseLabel: Record<TournamentPhase, string> = {
@@ -54,7 +56,6 @@ export default async function HistoricoDetailPage({ params }: Props) {
   if (!game) notFound();
   if (game.status !== 'finished') redirect(`/dashboard/jogos/${gameId}`);
 
-  // Busca times e partidas em paralelo
   const [{ data: gameTeamsRaw }, { data: matchesRaw }] = await Promise.all([
     service
       .from('game_teams')
@@ -73,7 +74,6 @@ export default async function HistoricoDetailPage({ params }: Props) {
   const gameTeams = gameTeamsRaw ?? [];
   const teamIds = gameTeams.map(t => t.id);
 
-  // Busca players de cada time e seus stats
   const { data: gtpRaw } =
     teamIds.length > 0
       ? await service
@@ -98,24 +98,6 @@ export default async function HistoricoDetailPage({ params }: Props) {
   const nameMap = new Map(
     gameTeams.map(t => [t.id, t.custom_name ?? `Time ${t.team_number}`]),
   );
-
-  // Monta dados dos times
-  const teamsData = gameTeams.map(gt => ({
-    teamNumber: gt.team_number,
-    customName: gt.custom_name,
-    players: gtp
-      .filter(p => p.game_team_id === gt.id)
-      .map(p => {
-        const player = playerMap.get(p.player_id);
-        return {
-          name: player?.name ?? '—',
-          isStar: player?.is_star ?? false,
-          goals: p.goals,
-          assists: p.assists,
-        };
-      })
-      .sort((a, b) => b.goals - a.goals || b.assists - a.assists),
-  }));
 
   // Destaques do jogo
   const allPlayers = gtp.map(p => {
@@ -165,6 +147,49 @@ export default async function HistoricoDetailPage({ params }: Props) {
     }))
     .filter(({ matches: ms }) => ms.length > 0);
 
+  // Monta dados para o PlayerCampeonatoAccordion
+  const teamsForAccordion = gameTeams.map(gt => ({
+    id: gt.id,
+    teamNumber: gt.team_number,
+    customName: gt.custom_name,
+    players: gtp
+      .filter(p => p.game_team_id === gt.id)
+      .map(p => {
+        const player = playerMap.get(p.player_id);
+        return {
+          name: player?.name ?? '—',
+          isStar: player?.is_star ?? false,
+          goals: p.goals,
+          assists: p.assists,
+        };
+      })
+      .sort((a, b) => b.goals - a.goals || b.assists - a.assists),
+  }));
+
+  const standingsForAccordion = standings.map((s, i) => ({
+    rank: i + 1,
+    name: nameMap.get(s.teamId) ?? `Time ${s.teamNumber}`,
+    played: s.played,
+    wins: s.wins,
+    draws: s.draws,
+    losses: s.losses,
+    goalDiff: s.goalDiff,
+    points: s.points,
+  }));
+
+  const matchesForAccordion = matchesByPhase.map(({ phase, matches: ms }) => ({
+    phase,
+    label: phaseLabel[phase],
+    matches: ms.map(m => ({
+      id: m.id,
+      homeTeam: nameMap.get(m.home_team_id) ?? '?',
+      awayTeam: nameMap.get(m.away_team_id) ?? '?',
+      homeScore: m.home_score,
+      awayScore: m.away_score,
+      completed: m.completed,
+    })),
+  }));
+
   return (
     <>
       <AdminPageHeader
@@ -192,10 +217,10 @@ export default async function HistoricoDetailPage({ params }: Props) {
           topScorerTied ||
           topAssister ||
           topAssisterTied) && (
-          <div className="rounded-lg border border-border divide-y divide-border">
+          <div className="rounded-lg shadow-md bg-gray-50 divide-y divide-gray-200">
             {(mvp || mvpTied) && (
               <div className="flex items-center justify-between px-4 py-2.5 text-sm">
-                <span className="text-muted-foreground">Craque do racha</span>
+                <span className="text-primary font-medium">Craque do racha</span>
                 <span className="font-semibold">
                   {mvpTied ? (
                     <span className="font-normal text-muted-foreground">
@@ -214,7 +239,7 @@ export default async function HistoricoDetailPage({ params }: Props) {
             )}
             {(topScorer || topScorerTied) && (
               <div className="flex items-center justify-between px-4 py-2.5 text-sm">
-                <span className="text-muted-foreground">Artilheiro</span>
+                <span className="text-primary font-medium">Artilheiro</span>
                 <span className="font-semibold">
                   {topScorerTied ? (
                     <span className="font-normal text-muted-foreground">
@@ -233,7 +258,7 @@ export default async function HistoricoDetailPage({ params }: Props) {
             )}
             {(topAssister || topAssisterTied) && (
               <div className="flex items-center justify-between px-4 py-2.5 text-sm">
-                <span className="text-muted-foreground">
+                <span className="text-primary font-medium">
                   Líder em assistências
                 </span>
                 <span className="font-semibold">
@@ -255,140 +280,12 @@ export default async function HistoricoDetailPage({ params }: Props) {
           </div>
         )}
 
-        {/* Times e stats */}
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Times
-          </h2>
-          {teamsData.map(team => {
-            const totalGoals = team.players.reduce((s, p) => s + p.goals, 0);
-            return (
-              <div
-                key={team.teamNumber}
-                className="rounded-lg border border-border overflow-hidden"
-              >
-                <div className="flex items-center justify-between px-4 py-2 bg-muted/50">
-                  <h3 className="font-semibold text-sm">
-                    {team.customName ?? `Time ${team.teamNumber}`}
-                  </h3>
-                  <span className="text-xs text-muted-foreground">
-                    {totalGoals} gol{totalGoals !== 1 ? 's' : ''}
-                  </span>
-                </div>
-                <ul className="divide-y divide-border">
-                  {team.players.map((player, i) => (
-                    <li
-                      key={i}
-                      className="flex items-center justify-between px-4 py-2.5 text-sm"
-                    >
-                      <span className="font-medium">
-                        {player.isStar && <span className="mr-1">⭐</span>}
-                        {player.name}
-                      </span>
-                      <span className="text-xs text-muted-foreground tabular-nums">
-                        {player.goals}G · {player.assists}A
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
-        </section>
-
-        {/* Campeonato */}
-        {game.is_tournament && (
-          <section className="space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              Campeonato
-            </h2>
-
-            {/* Classificação final */}
-            <div className="rounded-lg border border-border overflow-hidden">
-              <div className="px-4 py-2 bg-muted/50">
-                <h3 className="font-semibold text-sm">Classificação</h3>
-              </div>
-              <div className="px-4 py-3">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-muted-foreground text-xs border-b border-border">
-                      <th className="text-left py-1.5 w-6">#</th>
-                      <th className="text-left py-1.5">Time</th>
-                      <th className="text-center py-1.5 w-8">J</th>
-                      <th className="text-center py-1.5 w-8">V</th>
-                      <th className="text-center py-1.5 w-8">E</th>
-                      <th className="text-center py-1.5 w-8">D</th>
-                      <th className="text-center py-1.5 w-10">SG</th>
-                      <th className="text-center py-1.5 w-8 font-semibold">
-                        Pts
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {standings.map((s, i) => (
-                      <tr key={s.teamId}>
-                        <td className="py-2 text-muted-foreground text-xs">
-                          {i + 1}
-                        </td>
-                        <td className="py-2 font-medium">
-                          {nameMap.get(s.teamId) ?? `Time ${s.teamNumber}`}
-                        </td>
-                        <td className="py-2 text-center tabular-nums">
-                          {s.played}
-                        </td>
-                        <td className="py-2 text-center tabular-nums">
-                          {s.wins}
-                        </td>
-                        <td className="py-2 text-center tabular-nums">
-                          {s.draws}
-                        </td>
-                        <td className="py-2 text-center tabular-nums">
-                          {s.losses}
-                        </td>
-                        <td className="py-2 text-center tabular-nums">
-                          {s.goalDiff > 0 ? `+${s.goalDiff}` : s.goalDiff}
-                        </td>
-                        <td className="py-2 text-center tabular-nums font-semibold">
-                          {s.points}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Partidas por fase */}
-            {matchesByPhase.map(({ phase, matches: phaseMatches }) => (
-              <div
-                key={phase}
-                className="rounded-lg border border-border overflow-hidden"
-              >
-                <div className="px-4 py-2 bg-muted/50">
-                  <h3 className="font-semibold text-sm">{phaseLabel[phase]}</h3>
-                </div>
-                <ul className="divide-y divide-border">
-                  {phaseMatches.map(m => (
-                    <li
-                      key={m.id}
-                      className="flex items-center gap-3 px-4 py-3 text-sm"
-                    >
-                      <span className="font-medium">
-                        {nameMap.get(m.home_team_id) ?? '?'}
-                      </span>
-                      <span className="tabular-nums font-bold text-base">
-                        {m.home_score ?? '—'} × {m.away_score ?? '—'}
-                      </span>
-                      <span className="font-medium">
-                        {nameMap.get(m.away_team_id) ?? '?'}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </section>
-        )}
+        {/* Times + Campeonato em accordions */}
+        <PlayerCampeonatoAccordion
+          teamsData={teamsForAccordion}
+          standingsData={standingsForAccordion}
+          matchesData={matchesForAccordion}
+        />
       </div>
     </>
   );
