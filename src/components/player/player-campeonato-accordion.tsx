@@ -155,16 +155,24 @@ export function PlayerCampeonatoAccordion({
               <tbody className="divide-y divide-border">
                 {standingsData.map(s => (
                   <tr key={s.rank}>
-                    <td className="py-2 text-muted-foreground text-xs">{s.rank}</td>
+                    <td className="py-2 text-muted-foreground text-xs">
+                      {s.rank}
+                    </td>
                     <td className="py-2 font-medium">{s.name}</td>
-                    <td className="py-2 text-center tabular-nums">{s.played}</td>
+                    <td className="py-2 text-center tabular-nums">
+                      {s.played}
+                    </td>
                     <td className="py-2 text-center tabular-nums">{s.wins}</td>
                     <td className="py-2 text-center tabular-nums">{s.draws}</td>
-                    <td className="py-2 text-center tabular-nums">{s.losses}</td>
+                    <td className="py-2 text-center tabular-nums">
+                      {s.losses}
+                    </td>
                     <td className="py-2 text-center tabular-nums">
                       {s.goalDiff > 0 ? `+${s.goalDiff}` : s.goalDiff}
                     </td>
-                    <td className="py-2 text-center tabular-nums font-semibold">{s.points}</td>
+                    <td className="py-2 text-center tabular-nums font-semibold">
+                      {s.points}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -182,7 +190,9 @@ export function PlayerCampeonatoAccordion({
                 key={m.id}
                 className="flex items-center gap-3 px-4 py-3 text-sm"
               >
-                <span className="font-medium flex-1 text-right">{m.homeTeam}</span>
+                <span className="font-medium flex-1 text-right">
+                  {m.homeTeam}
+                </span>
                 <span className="tabular-nums font-bold text-base shrink-0">
                   {m.completed
                     ? `${m.homeScore ?? 0} × ${m.awayScore ?? 0}`

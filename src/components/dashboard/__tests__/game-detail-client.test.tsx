@@ -856,10 +856,10 @@ describe('GameDetailClient', () => {
         />,
       );
       await user.click(
-        screen.getByRole('tab', { name: /confirmar jogadores/i }),
+        screen.getByRole('tab', { name: /confirmar manualmente/i }),
       );
       expect(
-        screen.getByText('Adicionar jogador da turma'),
+        screen.getByText('Confirmar jogador manualmente'),
       ).toBeInTheDocument();
     });
 
@@ -876,10 +876,10 @@ describe('GameDetailClient', () => {
         />,
       );
       await user.click(
-        screen.getByRole('tab', { name: /confirmar jogadores/i }),
+        screen.getByRole('tab', { name: /confirmar manualmente/i }),
       );
       expect(
-        screen.queryByText('Adicionar jogador da turma'),
+        screen.queryByText('Confirmar jogador manualmente'),
       ).not.toBeInTheDocument();
     });
 
@@ -896,11 +896,11 @@ describe('GameDetailClient', () => {
         />,
       );
       await user.click(
-        screen.getByRole('tab', { name: /confirmar jogadores/i }),
+        screen.getByRole('tab', { name: /confirmar manualmente/i }),
       );
       expect(screen.getByText('Selecionar jogador')).toBeInTheDocument();
       expect(
-        screen.getByRole('button', { name: 'Adicionar' }),
+        screen.getByRole('button', { name: 'Confirmar' }),
       ).toBeInTheDocument();
     });
 
@@ -917,7 +917,7 @@ describe('GameDetailClient', () => {
         />,
       );
       await user.click(
-        screen.getByRole('tab', { name: /confirmar jogadores/i }),
+        screen.getByRole('tab', { name: /confirmar manualmente/i }),
       );
 
       // Select trigger should not open dropdown when disabled
@@ -925,7 +925,7 @@ describe('GameDetailClient', () => {
       expect(screen.queryByText('Diego Santos')).not.toBeInTheDocument();
 
       // Adicionar button should be disabled
-      expect(screen.getByRole('button', { name: 'Adicionar' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Confirmar' })).toBeDisabled();
     });
 
     it('opens SearchablePlayerSelect on click and allows player selection', async () => {
@@ -941,7 +941,7 @@ describe('GameDetailClient', () => {
         />,
       );
       await user.click(
-        screen.getByRole('tab', { name: /confirmar jogadores/i }),
+        screen.getByRole('tab', { name: /confirmar manualmente/i }),
       );
 
       // Click the select trigger to open
@@ -967,7 +967,7 @@ describe('GameDetailClient', () => {
         />,
       );
       await user.click(
-        screen.getByRole('tab', { name: /confirmar jogadores/i }),
+        screen.getByRole('tab', { name: /confirmar manualmente/i }),
       );
 
       // Open select and click Diego Santos
@@ -975,7 +975,7 @@ describe('GameDetailClient', () => {
       await user.click(screen.getByText('Diego Santos'));
 
       // Now Adicionar should be enabled
-      await user.click(screen.getByRole('button', { name: 'Adicionar' }));
+      await user.click(screen.getByRole('button', { name: 'Confirmar' }));
 
       await waitFor(() => {
         expect(mockAddPlayerToGame).toHaveBeenCalledWith('game-1', 'p4');
@@ -996,12 +996,12 @@ describe('GameDetailClient', () => {
         />,
       );
       await user.click(
-        screen.getByRole('tab', { name: /confirmar jogadores/i }),
+        screen.getByRole('tab', { name: /confirmar manualmente/i }),
       );
 
       await user.click(screen.getByText('Selecionar jogador'));
       await user.click(screen.getByText('Diego Santos'));
-      await user.click(screen.getByRole('button', { name: 'Adicionar' }));
+      await user.click(screen.getByRole('button', { name: 'Confirmar' }));
 
       await waitFor(() => {
         expect(screen.getByText('Erro ao adicionar.')).toBeInTheDocument();
@@ -1021,9 +1021,9 @@ describe('GameDetailClient', () => {
         />,
       );
       await user.click(
-        screen.getByRole('tab', { name: /confirmar jogadores/i }),
+        screen.getByRole('tab', { name: /confirmar manualmente/i }),
       );
-      expect(screen.getByRole('button', { name: 'Adicionar' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Confirmar' })).toBeDisabled();
     });
 
     describe('banned and suspended badges in player select dropdown', () => {
@@ -1068,7 +1068,7 @@ describe('GameDetailClient', () => {
           />,
         );
         await user.click(
-          screen.getByRole('tab', { name: /confirmar jogadores/i }),
+          screen.getByRole('tab', { name: /confirmar manualmente/i }),
         );
         await user.click(screen.getByText('Selecionar jogador'));
         expect(screen.getByText('Banido')).toBeInTheDocument();
@@ -1087,7 +1087,7 @@ describe('GameDetailClient', () => {
           />,
         );
         await user.click(
-          screen.getByRole('tab', { name: /confirmar jogadores/i }),
+          screen.getByRole('tab', { name: /confirmar manualmente/i }),
         );
         await user.click(screen.getByText('Selecionar jogador'));
         expect(screen.getByText('Suspenso')).toBeInTheDocument();
@@ -1106,7 +1106,7 @@ describe('GameDetailClient', () => {
           />,
         );
         await user.click(
-          screen.getByRole('tab', { name: /confirmar jogadores/i }),
+          screen.getByRole('tab', { name: /confirmar manualmente/i }),
         );
         await user.click(screen.getByText('Selecionar jogador'));
         expect(screen.queryByText('Suspenso')).not.toBeInTheDocument();
@@ -1125,7 +1125,7 @@ describe('GameDetailClient', () => {
           />,
         );
         await user.click(
-          screen.getByRole('tab', { name: /confirmar jogadores/i }),
+          screen.getByRole('tab', { name: /confirmar manualmente/i }),
         );
         await user.click(screen.getByText('Selecionar jogador'));
         expect(screen.getByText('Banido')).toBeInTheDocument();
@@ -1145,7 +1145,7 @@ describe('GameDetailClient', () => {
           />,
         );
         await user.click(
-          screen.getByRole('tab', { name: /confirmar jogadores/i }),
+          screen.getByRole('tab', { name: /confirmar manualmente/i }),
         );
         await user.click(screen.getByText('Selecionar jogador'));
         await user.click(screen.getByText('Rogério Banido'));
@@ -1165,7 +1165,7 @@ describe('GameDetailClient', () => {
           />,
         );
         await user.click(
-          screen.getByRole('tab', { name: /confirmar jogadores/i }),
+          screen.getByRole('tab', { name: /confirmar manualmente/i }),
         );
         await user.click(screen.getByText('Selecionar jogador'));
         await user.click(screen.getByText('Fábio Suspenso'));
@@ -1243,7 +1243,7 @@ describe('GameDetailClient', () => {
         />,
       );
       await user.click(
-        screen.getByRole('tab', { name: /confirmar jogadores/i }),
+        screen.getByRole('tab', { name: /confirmar manualmente/i }),
       );
       await user.click(screen.getByText('Selecionar jogador'));
       await user.type(screen.getByPlaceholderText('Buscar jogador...'), 'ZZZ');
@@ -1266,7 +1266,7 @@ describe('GameDetailClient', () => {
         />,
       );
       await user.click(
-        screen.getByRole('tab', { name: /confirmar jogadores/i }),
+        screen.getByRole('tab', { name: /confirmar manualmente/i }),
       );
 
       // Open the select
