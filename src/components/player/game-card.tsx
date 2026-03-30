@@ -173,9 +173,19 @@ export function GameCard({
             </Link>
           )}
 
+        {isOpen && game.draw_done && !game.is_tournament && (
+          <Link
+            href={`/jogador/${teamCode}/acompanhar/${game.id}`}
+            className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-2.5 hover:bg-primary/10 transition-colors"
+          >
+            Ver times e gols
+          </Link>
+        )}
+
         {isOpen &&
           game.draw_done &&
-          (!game.is_tournament || !tournamentStarted) && (
+          game.is_tournament &&
+          !tournamentStarted && (
             <Link
               href={`/jogador/${teamCode}/times/${game.id}`}
               className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-2.5 hover:bg-primary/10 transition-colors"
