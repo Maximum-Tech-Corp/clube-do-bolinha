@@ -110,7 +110,7 @@ describe('PlayerDataSection', () => {
     expect(screen.getByText(/Estrela/)).toBeInTheDocument();
   });
 
-  it("renders 'Eu não sou esse jogador' button", () => {
+  it("renders 'Sair e entrar como outro Jogador' button", () => {
     render(
       <PlayerDataSection
         player={BASE_PLAYER}
@@ -119,11 +119,11 @@ describe('PlayerDataSection', () => {
       />,
     );
     expect(
-      screen.getByRole('button', { name: /Eu não sou esse jogador/ }),
+      screen.getByRole('button', { name: /Sair e entrar como outro Jogador/ }),
     ).toBeInTheDocument();
   });
 
-  it("clicking 'Eu não sou esse jogador' calls clearPlayerCookie with teamId", async () => {
+  it("clicking 'Sair e entrar como outro Jogador' calls clearPlayerCookie with teamId", async () => {
     const user = userEvent.setup();
     render(
       <PlayerDataSection
@@ -134,7 +134,7 @@ describe('PlayerDataSection', () => {
     );
 
     await user.click(
-      screen.getByRole('button', { name: /Eu não sou esse jogador/ }),
+      screen.getByRole('button', { name: /Sair e entrar como outro Jogador/ }),
     );
 
     expect(mockClearPlayerCookie).toHaveBeenCalledWith('team-1');

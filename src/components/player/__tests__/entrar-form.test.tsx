@@ -284,7 +284,7 @@ describe('EntrarForm', () => {
     await waitFor(() => {
       expect(
         screen
-          .getByText(/Resistência/)
+          .getByText(/Quantos jogos você aguenta seguidos/)
           .closest('.space-y-1')!
           .querySelector('p'),
       ).toBeInTheDocument();

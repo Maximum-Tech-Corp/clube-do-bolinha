@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { createServiceClient } from '@/lib/supabase/server';
 import { PlayerBottomNav } from '@/components/player/player-bottom-nav';
+import { PlayerCampeonatoAccordion } from '@/components/player/player-campeonato-accordion';
 
 interface Props {
   params: Promise<{ code: string; gameId: string }>;
@@ -20,7 +21,7 @@ function formatDate(iso: string) {
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
-export default async function PlayerTimesPage({ params }: Props) {
+export default async function PlayerAcompanharPage({ params }: Props) {
   const { code, gameId } = await params;
   const upperCode = code.toUpperCase();
 
@@ -36,12 +37,13 @@ export default async function PlayerTimesPage({ params }: Props) {
 
   const { data: game } = await service
     .from('games')
-    .select('id, scheduled_at, location, status, draw_done')
+    .select('id, scheduled_at, location, status, draw_done, is_tournament')
     .eq('id', gameId)
     .eq('team_id', team.id)
     .maybeSingle();
 
-  if (!game || !game.draw_done || game.status !== 'open') notFound();
+  if (!game || !game.draw_done || game.status !== 'open' || game.is_tournament)
+    notFound();
 
   const { data: gameTeams } = await service
     .from('game_teams')
@@ -55,7 +57,7 @@ export default async function PlayerTimesPage({ params }: Props) {
     teamIds.length > 0
       ? await service
           .from('game_team_players')
-          .select('game_team_id, player_id')
+          .select('game_team_id, player_id, goals, assists')
           .in('game_team_id', teamIds)
       : { data: [] };
 
@@ -69,16 +71,24 @@ export default async function PlayerTimesPage({ params }: Props) {
           .in('id', playerIds)
       : { data: [] };
 
-  const playerMap = new Map(
-    (playersRaw ?? []).map(p => [p.id, { name: p.name, isStar: p.is_star }]),
-  );
+  const playerMap = new Map((playersRaw ?? []).map(p => [p.id, p]));
 
   const teamsData = (gameTeams ?? []).map(gt => ({
+    id: gt.id,
     teamNumber: gt.team_number,
     customName: gt.custom_name,
     players: (teamPlayersRaw ?? [])
       .filter(tp => tp.game_team_id === gt.id)
-      .map(tp => playerMap.get(tp.player_id) ?? { name: '—', isStar: false }),
+      .map(tp => {
+        const player = playerMap.get(tp.player_id);
+        return {
+          name: player?.name ?? '—',
+          isStar: player?.is_star ?? false,
+          goals: tp.goals,
+          assists: tp.assists,
+        };
+      })
+      .sort((a, b) => b.goals - a.goals || b.assists - a.assists),
   }));
 
   return (
@@ -93,7 +103,7 @@ export default async function PlayerTimesPage({ params }: Props) {
             <ArrowLeft className="w-5 h-5" style={{ color: '#002776' }} />
           </Link>
           <h1 className="text-lg font-bold flex-1" style={{ color: '#002776' }}>
-            Times sorteados
+            Ver times e gols
           </h1>
         </div>
       </div>
@@ -104,31 +114,11 @@ export default async function PlayerTimesPage({ params }: Props) {
           {game.location ? ` · ${game.location}` : ''}
         </p>
 
-        <div className="space-y-3">
-          {teamsData.map(t => (
-            <div
-              key={t.teamNumber}
-              className="rounded-lg shadow-md bg-gray-50 overflow-hidden"
-            >
-              <div className="px-4 py-2 bg-primary/10">
-                <h2 className="font-semibold text-sm text-primary">
-                  {t.customName ?? `Time ${t.teamNumber}`}
-                </h2>
-              </div>
-              <ul className="divide-y divide-gray-200">
-                {t.players.map((player, i) => (
-                  <li
-                    key={i}
-                    className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium"
-                  >
-                    {player.isStar && <span>⭐</span>}
-                    {player.name}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
+        <PlayerCampeonatoAccordion
+          teamsData={teamsData}
+          standingsData={[]}
+          matchesData={[]}
+        />
       </div>
 
       <PlayerBottomNav teamCode={upperCode} />

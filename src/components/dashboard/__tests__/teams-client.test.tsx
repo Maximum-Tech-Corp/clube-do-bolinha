@@ -13,6 +13,31 @@ vi.mock('@/actions/game-stats', () => ({
   renameGameTeam: (...args: unknown[]) => mockRenameGameTeam(...args),
 }));
 
+// Mock base-ui Accordion (panels always visible in tests)
+vi.mock('@base-ui/react/accordion', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const React = require('react');
+  return {
+    Accordion: {
+      Root: ({ children }: { children: unknown }) =>
+        React.createElement('div', null, children),
+      Item: ({ children }: { children: unknown }) =>
+        React.createElement('div', null, children),
+      Header: ({ children }: { children: unknown }) =>
+        React.createElement('div', null, children),
+      Trigger: ({
+        children,
+        ...props
+      }: {
+        children: unknown;
+        [key: string]: unknown;
+      }) => React.createElement('button', props, children),
+      Panel: ({ children }: { children: unknown }) =>
+        React.createElement('div', null, children),
+    },
+  };
+});
+
 // Mock Radix Dialog
 vi.mock('@/components/ui/dialog', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -424,7 +449,7 @@ describe('TeamsClient', () => {
       expect(screen.queryByText('Time 1')).not.toBeInTheDocument();
     });
 
-    it('shows pencil icon when game is not finished', () => {
+    it('shows "Mudar nome" button when game is not finished', () => {
       render(
         <TeamsClient
           gameId="game-1"
@@ -435,11 +460,11 @@ describe('TeamsClient', () => {
         />,
       );
       expect(
-        screen.getAllByRole('button', { name: 'Renomear time' }),
+        screen.getAllByRole('button', { name: /mudar nome/i }),
       ).toHaveLength(2);
     });
 
-    it('does not show pencil icon when game is finished', () => {
+    it('does not show "Mudar nome" button when game is finished', () => {
       render(
         <TeamsClient
           gameId="game-1"
@@ -450,11 +475,11 @@ describe('TeamsClient', () => {
         />,
       );
       expect(
-        screen.queryByRole('button', { name: 'Renomear time' }),
+        screen.queryByRole('button', { name: /mudar nome/i }),
       ).not.toBeInTheDocument();
     });
 
-    it('clicking pencil enters edit mode with input', async () => {
+    it('clicking "Mudar nome" enters edit mode with input', async () => {
       const user = userEvent.setup();
       render(
         <TeamsClient
@@ -465,10 +490,10 @@ describe('TeamsClient', () => {
           tournamentCompleted={false}
         />,
       );
-      const pencilButtons = screen.getAllByRole('button', {
-        name: 'Renomear time',
+      const mudarNomeButtons = screen.getAllByRole('button', {
+        name: /mudar nome/i,
       });
-      await user.click(pencilButtons[0]);
+      await user.click(mudarNomeButtons[0]);
       expect(
         screen.getByRole('textbox', { name: 'Nome do time' }),
       ).toBeInTheDocument();
@@ -485,10 +510,10 @@ describe('TeamsClient', () => {
           tournamentCompleted={false}
         />,
       );
-      const pencilButtons = screen.getAllByRole('button', {
-        name: 'Renomear time',
+      const mudarNomeButtons = screen.getAllByRole('button', {
+        name: /mudar nome/i,
       });
-      await user.click(pencilButtons[0]);
+      await user.click(mudarNomeButtons[0]);
       await user.click(screen.getByRole('button', { name: 'Cancelar' }));
       expect(
         screen.queryByRole('textbox', { name: 'Nome do time' }),
@@ -507,10 +532,10 @@ describe('TeamsClient', () => {
           tournamentCompleted={false}
         />,
       );
-      const pencilButtons = screen.getAllByRole('button', {
-        name: 'Renomear time',
+      const mudarNomeButtons = screen.getAllByRole('button', {
+        name: /mudar nome/i,
       });
-      await user.click(pencilButtons[0]);
+      await user.click(mudarNomeButtons[0]);
       const input = screen.getByRole('textbox', { name: 'Nome do time' });
       await user.clear(input);
       await user.type(input, 'Eagles');
@@ -531,10 +556,10 @@ describe('TeamsClient', () => {
           tournamentCompleted={false}
         />,
       );
-      const pencilButtons = screen.getAllByRole('button', {
-        name: 'Renomear time',
+      const mudarNomeButtons = screen.getAllByRole('button', {
+        name: /mudar nome/i,
       });
-      await user.click(pencilButtons[0]);
+      await user.click(mudarNomeButtons[0]);
       const input = screen.getByRole('textbox', { name: 'Nome do time' });
       await user.clear(input);
       await user.click(screen.getByRole('button', { name: 'Salvar nome' }));
@@ -555,10 +580,10 @@ describe('TeamsClient', () => {
           tournamentCompleted={false}
         />,
       );
-      const pencilButtons = screen.getAllByRole('button', {
-        name: 'Renomear time',
+      const mudarNomeButtons = screen.getAllByRole('button', {
+        name: /mudar nome/i,
       });
-      await user.click(pencilButtons[0]);
+      await user.click(mudarNomeButtons[0]);
       const input = screen.getByRole('textbox', { name: 'Nome do time' });
       await user.clear(input);
       await user.type(input, 'Eagles');
@@ -581,10 +606,10 @@ describe('TeamsClient', () => {
           tournamentCompleted={false}
         />,
       );
-      const pencilButtons = screen.getAllByRole('button', {
-        name: 'Renomear time',
+      const mudarNomeButtons = screen.getAllByRole('button', {
+        name: /mudar nome/i,
       });
-      await user.click(pencilButtons[0]);
+      await user.click(mudarNomeButtons[0]);
       const input = screen.getByRole('textbox', { name: 'Nome do time' });
       await user.clear(input);
       await user.type(input, 'Eagles');

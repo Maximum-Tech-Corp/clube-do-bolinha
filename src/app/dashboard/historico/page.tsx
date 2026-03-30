@@ -2,19 +2,19 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createServiceClient } from '@/lib/supabase/server';
 import { getAdminContext } from '@/lib/admin-context';
-import { Badge } from '@/components/ui/badge';
 import { AdminPageHeader } from '@/components/dashboard/admin-page-header';
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString('pt-BR', {
+  const formatted = new Date(iso).toLocaleString('pt-BR', {
     timeZone: 'America/Sao_Paulo',
-    weekday: 'short',
+    weekday: 'long',
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   });
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
 export default async function HistoricoPage() {
@@ -48,30 +48,26 @@ export default async function HistoricoPage() {
             Nenhum jogo finalizado ainda.
           </p>
         ) : (
-          <ul className="space-y-2">
+          <div className="space-y-2">
             {finishedGames.map(game => (
-              <li key={game.id}>
-                <Link
-                  href={`/dashboard/historico/${game.id}`}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium">
-                      {formatDate(game.scheduled_at)}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {game.location ?? 'Local não definido'}
-                    </p>
-                  </div>
-                  {game.is_tournament && (
-                    <Badge variant="secondary" className="shrink-0">
-                      Campeonato
-                    </Badge>
-                  )}
-                </Link>
-              </li>
+              <Link
+                key={game.id}
+                href={`/dashboard/historico/${game.id}`}
+                className="flex items-center justify-between gap-2 rounded-lg shadow-md bg-gray-50 px-3 py-2 hover:bg-gray-100 transition-colors"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">
+                    {formatDate(game.scheduled_at)}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {game.location ?? 'Local não definido'}
+                    {game.is_tournament && ' · Campeonato'}
+                    {' · Finalizado'}
+                  </p>
+                </div>
+              </Link>
             ))}
-          </ul>
+          </div>
         )}
       </div>
     </>

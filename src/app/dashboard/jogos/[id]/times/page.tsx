@@ -12,14 +12,15 @@ interface Props {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString('pt-BR', {
+  const formatted = new Date(iso).toLocaleString('pt-BR', {
     timeZone: 'America/Sao_Paulo',
-    weekday: 'short',
+    weekday: 'long',
     day: '2-digit',
     month: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
   });
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
 export default async function TimesPage({ params }: Props) {
@@ -147,7 +148,7 @@ export default async function TimesPage({ params }: Props) {
         {game.is_tournament && (
           <Link
             href={`/dashboard/jogos/${gameId}/campeonato`}
-            className="inline-flex w-full items-center justify-center rounded-lg border border-primary/40 bg-primary/5 text-primary text-sm font-medium h-9 hover:bg-primary/10 transition-colors"
+            className="inline-flex w-full items-center justify-center rounded-lg border border-primary/40 bg-primary/5 text-primary text-sm font-medium py-2.5 hover:bg-primary/10 transition-colors"
           >
             Ver campeonato
           </Link>

@@ -178,15 +178,18 @@ describe('GameCard', () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows 'Ver times sorteados' when open, draw_done, not tournament", () => {
+  it("shows 'Ver times e gols' when open, draw_done, not tournament", () => {
     render(
       <GameCard
         {...BASE_PROPS}
         game={{ ...BASE_GAME, draw_done: true, is_tournament: false }}
       />,
     );
-    const link = screen.getByRole('link', { name: /Ver times sorteados/ });
-    expect(link).toHaveAttribute('href', '/jogador/BOLA-ABC123/times/game-1');
+    const link = screen.getByRole('link', { name: /Ver times e gols/ });
+    expect(link).toHaveAttribute(
+      'href',
+      '/jogador/BOLA-ABC123/acompanhar/game-1',
+    );
   });
 
   it("shows 'Acompanhar Jogos' when open, draw_done, is_tournament, tournamentStarted", () => {

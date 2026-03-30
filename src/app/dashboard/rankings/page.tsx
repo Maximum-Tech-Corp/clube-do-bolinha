@@ -45,13 +45,13 @@ function RankingTable({
   if (sorted.length === 0) return null;
 
   return (
-    <div className="rounded-lg border border-border overflow-hidden">
-      <div className="px-4 py-2 bg-muted/50">
-        <h2 className="font-semibold text-sm">{title}</h2>
+    <div className="rounded-lg shadow-md bg-gray-50 overflow-hidden">
+      <div className="px-4 py-2 bg-primary/10">
+        <h2 className="font-semibold text-sm text-primary">{title}</h2>
       </div>
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-muted-foreground text-xs border-b border-border">
+          <tr className="text-muted-foreground text-xs border-b border-gray-200">
             <th className="text-left px-4 py-1.5 w-6">#</th>
             <th className="text-left px-4 py-1.5">Jogador</th>
             <th className="text-center px-2 py-1.5">{label}</th>
@@ -60,7 +60,7 @@ function RankingTable({
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-border">
+        <tbody className="divide-y divide-gray-200">
           {sorted.map((r, i) => (
             <tr key={r.playerId}>
               <td className="px-4 py-2 text-muted-foreground text-xs">
@@ -89,13 +89,15 @@ function GeneralStatsTable({ rows }: { rows: PlayerRanking[] }) {
   if (sorted.length === 0) return null;
 
   return (
-    <div className="rounded-lg border border-border overflow-hidden">
-      <div className="px-4 py-2 bg-muted/50">
-        <h2 className="font-semibold text-sm">Estatísticas Gerais</h2>
+    <div className="rounded-lg shadow-md bg-gray-50 overflow-hidden">
+      <div className="px-4 py-2 bg-primary/10">
+        <h2 className="font-semibold text-sm text-primary">
+          Estatísticas Gerais
+        </h2>
       </div>
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-muted-foreground text-xs border-b border-border">
+          <tr className="text-muted-foreground text-xs border-b border-gray-200">
             <th className="text-left px-4 py-1.5 w-6">#</th>
             <th className="text-left px-4 py-1.5">Jogador</th>
             <th className="text-center px-2 py-1.5">Qtd. Jogos</th>
@@ -103,7 +105,7 @@ function GeneralStatsTable({ rows }: { rows: PlayerRanking[] }) {
             <th className="text-center px-2 py-1.5">Vice</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-border">
+        <tbody className="divide-y divide-gray-200">
           {sorted.map((r, i) => (
             <tr key={r.playerId}>
               <td className="px-4 py-2 text-muted-foreground text-xs">
@@ -328,7 +330,7 @@ export default async function RankingsPage({ searchParams }: Props) {
     <>
       <AdminPageHeader title="Rankings" />
       <div className="max-w-2xl mx-auto p-4 space-y-4">
-        <div className="flex justify-end">
+        <div className="flex justify-center">
           <YearSelect years={availableYears} current={year} />
         </div>
 

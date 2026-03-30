@@ -91,47 +91,40 @@ export default async function TeamPage({ params }: Props) {
     (startedMatchesResult.data ?? []).map(m => m.game_id),
   );
 
-  // Busca o último jogo finalizado em que o jogador participou
-  let lastGame: {
-    id: string;
-    location: string | null;
-    scheduled_at: string;
-    status: string;
-    is_tournament: boolean;
-    draw_done: boolean;
-  } | null = null;
+  // Busca o último jogo finalizado da turma (visível para todos os jogadores)
+  const { data: lastGameRaw } = await service
+    .from('games')
+    .select('id, location, scheduled_at, status, is_tournament, draw_done')
+    .eq('team_id', team.id)
+    .eq('status', 'finished')
+    .order('finished_at', { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
+
+  const lastGame = lastGameRaw ?? null;
   let lastGameConfirmedCount = 0;
+  let lastGamePlayerStatus: string | null = null;
 
-  if (playerData) {
-    const { data: playerConfirmedGames } = await service
-      .from('game_confirmations')
-      .select('game_id')
-      .eq('player_id', playerData.id)
-      .in('status', ['confirmed', 'waitlist']);
+  if (lastGame) {
+    const [countResult, playerConfirmationResult] = await Promise.all([
+      service
+        .from('game_confirmations')
+        .select('id', { count: 'exact', head: true })
+        .eq('game_id', lastGame.id)
+        .eq('status', 'confirmed'),
 
-    const playerGameIds = (playerConfirmedGames ?? []).map(c => c.game_id);
+      playerData
+        ? service
+            .from('game_confirmations')
+            .select('status')
+            .eq('game_id', lastGame.id)
+            .eq('player_id', playerData.id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
 
-    if (playerGameIds.length > 0) {
-      const { data: lastGameRaw } = await service
-        .from('games')
-        .select('id, location, scheduled_at, status, is_tournament, draw_done')
-        .eq('team_id', team.id)
-        .eq('status', 'finished')
-        .in('id', playerGameIds)
-        .order('finished_at', { ascending: false, nullsFirst: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (lastGameRaw) {
-        lastGame = lastGameRaw;
-        const { count } = await service
-          .from('game_confirmations')
-          .select('id', { count: 'exact', head: true })
-          .eq('game_id', lastGameRaw.id)
-          .eq('status', 'confirmed');
-        lastGameConfirmedCount = count ?? 0;
-      }
-    }
+    lastGameConfirmedCount = countResult.count ?? 0;
+    lastGamePlayerStatus = playerConfirmationResult.data?.status ?? null;
   }
 
   // Monta mapa de contagens e status do jogador por jogo
@@ -162,90 +155,99 @@ export default async function TeamPage({ params }: Props) {
     new Date(playerData.suspended_until) > new Date();
 
   return (
-    <div className="max-w-md mx-auto p-4 pb-24 space-y-4">
-      <div className="flex flex-col items-center gap-1">
-        <AppLogo size="sm" />
-        <h1 className="text-base font-bold">{team.name}</h1>
-        <p className="text-sm text-muted-foreground">Próximos 7 dias</p>
+    <div className="min-h-screen flex flex-col bg-background">
+      <div
+        className="w-full flex flex-col items-center pt-12 pb-10 px-8"
+        style={{ backgroundColor: '#fed015' }}
+      >
+        <AppLogo size="md" />
+        <p className="text-sm mt-4 font-bold" style={{ color: '#002776' }}>
+          {team.name}
+        </p>
       </div>
 
-      {isBanned && (
-        <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 text-sm space-y-1">
-          <p className="font-semibold text-destructive">Acesso bloqueado</p>
-          <p className="text-muted-foreground">
-            Você foi banido desta turma e não pode confirmar presença nos jogos.
-            Em caso de dúvidas, entre em contato com o organizador.
-          </p>
-        </div>
-      )}
-
-      {!isBanned && isActivelySuspended && (
-        <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 text-sm space-y-1">
-          <p className="font-semibold text-destructive">
-            Suspenso até{' '}
-            {new Date(playerData!.suspended_until!).toLocaleDateString(
-              'pt-BR',
-              { day: '2-digit', month: '2-digit', year: 'numeric' },
-            )}
-          </p>
-          {playerData?.suspension_reason && (
+      <div className="flex-1 w-full max-w-sm mx-auto px-4 pt-6 pb-24 space-y-4">
+        {isBanned && (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 text-sm space-y-1">
+            <p className="font-semibold text-destructive">Acesso bloqueado</p>
             <p className="text-muted-foreground">
-              {playerData.suspension_reason}
+              Você foi banido desta turma e não pode confirmar presença nos
+              jogos. Em caso de dúvidas, entre em contato com o organizador.
             </p>
-          )}
-          <p className="text-muted-foreground">
-            Você não pode confirmar presença durante este período.
-          </p>
-        </div>
-      )}
+          </div>
+        )}
 
-      {gameList.length === 0 ? (
-        <p className="text-muted-foreground text-sm text-center py-12">
-          Nenhum jogo marcado para os próximos 7 dias.
-        </p>
-      ) : (
-        <div className="space-y-3">
-          {gameList.map(game => (
+        {!isBanned && isActivelySuspended && (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 text-sm space-y-1">
+            <p className="font-semibold text-destructive">
+              Suspenso até{' '}
+              {new Date(playerData!.suspended_until!).toLocaleDateString(
+                'pt-BR',
+                { day: '2-digit', month: '2-digit', year: 'numeric' },
+              )}
+            </p>
+            {playerData?.suspension_reason && (
+              <p className="text-muted-foreground">
+                {playerData.suspension_reason}
+              </p>
+            )}
+            <p className="text-muted-foreground">
+              Você não pode confirmar presença durante este período.
+            </p>
+          </div>
+        )}
+
+        {gameList.length === 0 ? (
+          <p className="text-muted-foreground text-sm text-center py-12">
+            Nenhum jogo marcado para os próximos 7 dias.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm font-semibold text-center text-foreground">
+              Próximos 7 dias
+            </p>
+            {gameList.map(game => (
+              <GameCard
+                key={game.id}
+                game={game}
+                teamId={team.id}
+                teamCode={code.toUpperCase()}
+                confirmedCount={gameStats[game.id].confirmedCount}
+                playerStatus={gameStats[game.id].playerStatus}
+                phone={playerPhone}
+                tournamentStarted={tournamentStartedGameIds.has(game.id)}
+              />
+            ))}
+          </div>
+        )}
+
+        {lastGame && (
+          <div className="space-y-2">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Último jogo
+            </h2>
             <GameCard
-              key={game.id}
-              game={game}
+              game={lastGame}
               teamId={team.id}
               teamCode={code.toUpperCase()}
-              confirmedCount={gameStats[game.id].confirmedCount}
-              playerStatus={gameStats[game.id].playerStatus}
+              confirmedCount={lastGameConfirmedCount}
+              playerStatus={lastGamePlayerStatus}
               phone={playerPhone}
-              tournamentStarted={tournamentStartedGameIds.has(game.id)}
+              detailsHref={`/jogador/${code.toUpperCase()}/historico/${lastGame.id}`}
             />
-          ))}
-        </div>
-      )}
+          </div>
+        )}
 
-      {lastGame && (
-        <div className="space-y-2">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Último jogo
-          </h2>
-          <GameCard
-            game={lastGame}
+        {playerData && (
+          <PlayerDataSection
+            player={playerData}
             teamId={team.id}
             teamCode={code.toUpperCase()}
-            confirmedCount={lastGameConfirmedCount}
-            playerStatus="confirmed"
-            phone={playerPhone}
-            detailsHref={`/jogador/${code.toUpperCase()}/historico/${lastGame.id}`}
           />
-        </div>
-      )}
+        )}
 
-      {playerData && (
-        <PlayerDataSection
-          player={playerData}
-          teamId={team.id}
-          teamCode={code.toUpperCase()}
-        />
-      )}
-
-      <PlayerBottomNav teamCode={code.toUpperCase()} />
+        <PlayerBottomNav teamCode={code.toUpperCase()} />
+      </div>
     </div>
   );
 }

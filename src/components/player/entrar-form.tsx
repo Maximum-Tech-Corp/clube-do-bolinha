@@ -192,13 +192,13 @@ export function EntrarForm({ teamId, teamCode }: Props) {
           </div>
 
           <div className="space-y-1">
-            <Label>Resistência — quantos jogos você aguenta seguidos?</Label>
+            <Label>Quantos jogos você aguenta seguidos?</Label>
             <Select
               onValueChange={v =>
                 registerForm.setValue('stamina', v as StaminaLevel)
               }
             >
-              <SelectTrigger className="border-gray-300">
+              <SelectTrigger className="w-full h-auto! py-2 border-gray-300">
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
               <SelectContent>
