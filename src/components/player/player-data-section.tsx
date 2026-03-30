@@ -63,7 +63,7 @@ export function PlayerDataSection({ player, teamId, teamCode }: Props) {
           onClick={handleNotMe}
           className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
         >
-          Eu não sou esse jogador
+          Sair e entrar como outro Jogador
         </button>
       </div>
     </div>
