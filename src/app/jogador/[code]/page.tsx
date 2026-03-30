@@ -91,47 +91,40 @@ export default async function TeamPage({ params }: Props) {
     (startedMatchesResult.data ?? []).map(m => m.game_id),
   );
 
-  // Busca o último jogo finalizado em que o jogador participou
-  let lastGame: {
-    id: string;
-    location: string | null;
-    scheduled_at: string;
-    status: string;
-    is_tournament: boolean;
-    draw_done: boolean;
-  } | null = null;
+  // Busca o último jogo finalizado da turma (visível para todos os jogadores)
+  const { data: lastGameRaw } = await service
+    .from('games')
+    .select('id, location, scheduled_at, status, is_tournament, draw_done')
+    .eq('team_id', team.id)
+    .eq('status', 'finished')
+    .order('finished_at', { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
+
+  const lastGame = lastGameRaw ?? null;
   let lastGameConfirmedCount = 0;
+  let lastGamePlayerStatus: string | null = null;
 
-  if (playerData) {
-    const { data: playerConfirmedGames } = await service
-      .from('game_confirmations')
-      .select('game_id')
-      .eq('player_id', playerData.id)
-      .in('status', ['confirmed', 'waitlist']);
+  if (lastGame) {
+    const [countResult, playerConfirmationResult] = await Promise.all([
+      service
+        .from('game_confirmations')
+        .select('id', { count: 'exact', head: true })
+        .eq('game_id', lastGame.id)
+        .eq('status', 'confirmed'),
 
-    const playerGameIds = (playerConfirmedGames ?? []).map(c => c.game_id);
+      playerData
+        ? service
+            .from('game_confirmations')
+            .select('status')
+            .eq('game_id', lastGame.id)
+            .eq('player_id', playerData.id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
 
-    if (playerGameIds.length > 0) {
-      const { data: lastGameRaw } = await service
-        .from('games')
-        .select('id, location, scheduled_at, status, is_tournament, draw_done')
-        .eq('team_id', team.id)
-        .eq('status', 'finished')
-        .in('id', playerGameIds)
-        .order('finished_at', { ascending: false, nullsFirst: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (lastGameRaw) {
-        lastGame = lastGameRaw;
-        const { count } = await service
-          .from('game_confirmations')
-          .select('id', { count: 'exact', head: true })
-          .eq('game_id', lastGameRaw.id)
-          .eq('status', 'confirmed');
-        lastGameConfirmedCount = count ?? 0;
-      }
-    }
+    lastGameConfirmedCount = countResult.count ?? 0;
+    lastGamePlayerStatus = playerConfirmationResult.data?.status ?? null;
   }
 
   // Monta mapa de contagens e status do jogador por jogo
@@ -238,7 +231,7 @@ export default async function TeamPage({ params }: Props) {
               teamId={team.id}
               teamCode={code.toUpperCase()}
               confirmedCount={lastGameConfirmedCount}
-              playerStatus="confirmed"
+              playerStatus={lastGamePlayerStatus}
               phone={playerPhone}
               detailsHref={`/jogador/${code.toUpperCase()}/historico/${lastGame.id}`}
             />
