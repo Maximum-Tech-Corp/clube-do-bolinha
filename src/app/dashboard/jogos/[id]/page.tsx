@@ -394,9 +394,10 @@ export default async function GameDetailPage({ params }: Props) {
 
         {game.status === 'cancelled' && (
           <div className="space-y-3">
-            <p className="text-sm text-muted-foreground rounded-lg border border-border p-3">
-              Este jogo foi cancelado.
-            </p>
+            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+              <span className="mt-px shrink-0 font-bold">i</span>
+              <span>Este jogo foi cancelado.</span>
+            </div>
             <div className="space-y-2">
               <p className="text-sm font-medium text-muted-foreground">
                 Jogadores que haviam confirmado ({confirmed.length}):

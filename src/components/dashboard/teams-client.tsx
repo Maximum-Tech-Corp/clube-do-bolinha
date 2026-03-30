@@ -350,9 +350,10 @@ export function TeamsClient({
   return (
     <div className="space-y-4">
       {isFinished && (
-        <p className="text-sm text-muted-foreground rounded-lg border border-border p-3">
-          Este jogo foi finalizado. Os dados são somente leitura.
-        </p>
+        <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+          <span className="mt-px shrink-0 font-bold">i</span>
+          <span>Este jogo foi finalizado. Os dados são somente leitura.</span>
+        </div>
       )}
 
       <Accordion.Root className="space-y-2">
