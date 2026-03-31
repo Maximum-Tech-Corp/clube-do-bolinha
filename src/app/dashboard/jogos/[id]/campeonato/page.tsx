@@ -1,4 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
+import Link from 'next/link';
 import { createServiceClient } from '@/lib/supabase/server';
 import { getAdminContext } from '@/lib/admin-context';
 import { TournamentClient } from '@/components/dashboard/tournament-client';
@@ -117,6 +118,13 @@ export default async function CampeonatoPage({ params }: Props) {
         backHref={`/dashboard/jogos/${gameId}`}
       />
       <div className="max-w-2xl mx-auto p-4 space-y-4">
+        <Link
+          href={`/dashboard/jogos/${gameId}/times`}
+          className="inline-flex w-full items-center justify-center rounded-lg border border-primary/40 bg-primary/5 text-primary text-sm font-medium py-2.5 hover:bg-primary/10 transition-colors"
+        >
+          Ver times
+        </Link>
+
         {game.status !== 'finished' && (
           <MatchTimer
             gameId={`${gameId}_camp`}
