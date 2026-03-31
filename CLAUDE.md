@@ -196,6 +196,18 @@ Group phase matches auto-generated after draw (round-robin via `buildGroupMatchO
 
 ---
 
+## Attendance Chart
+
+Rendered on `/dashboard` when the team has at least one finished game. Implemented as a pure Server Component (`src/components/dashboard/attendance-chart.tsx`) using inline SVG — no external chart library.
+
+Data fetched in `dashboard/page.tsx`:
+1. Last 8 `finished` games for the team, ordered chronologically (oldest → left)
+2. `game_confirmations` with `status IN ('confirmed', 'waitlist')` for those game IDs — counted per `game_id` in JS
+
+A dashed average line is drawn across the displayed window. The chart block is omitted entirely if no finished games exist.
+
+---
+
 ## Attendance Calculation
 
 `attendanceRate` = confirmations with status `confirmed` or `waitlist` in finished games ÷ finished games that occurred **after** the player's `created_at`. Applied in `listPlayers()` and rankings page.
