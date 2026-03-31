@@ -1,14 +1,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Pencil } from 'lucide-react';
 import { clearPlayerCookie } from '@/actions/player';
 
-const STAMINA_LABEL: Record<string, string> = {
-  '1': '1 jogo',
-  '2': '2 jogos',
-  '3': '3 jogos',
-  '4plus': '4 ou mais jogos',
-};
 
 interface Props {
   player: {
@@ -32,7 +28,16 @@ export function PlayerDataSection({ player, teamId, teamCode }: Props) {
 
   return (
     <div className="rounded-lg shadow-md bg-gray-50 px-3 py-4 space-y-2 text-sm">
-      <p className="text-base font-semibold">Meus dados</p>
+      <div className="flex items-center justify-between">
+        <p className="text-base font-semibold">Meus dados</p>
+        <Link
+          href={`/jogador/${teamCode}/editar`}
+          className="text-primary hover:text-primary/80 transition-colors"
+          aria-label="Editar meus dados"
+        >
+          <Pencil className="h-5 w-5" />
+        </Link>
+      </div>
       <div className="flex justify-between">
         <span className="text-muted-foreground">Nome</span>
         <span className="font-medium">{player.name}</span>
@@ -44,12 +49,6 @@ export function PlayerDataSection({ player, teamId, teamCode }: Props) {
       <div className="flex justify-between">
         <span className="text-muted-foreground">Peso</span>
         <span className="font-medium">{player.weight_kg} kg</span>
-      </div>
-      <div className="flex justify-between">
-        <span className="text-muted-foreground">Resistência</span>
-        <span className="font-medium">
-          {STAMINA_LABEL[player.stamina] ?? player.stamina}
-        </span>
       </div>
       {player.is_star && (
         <div className="flex justify-between">

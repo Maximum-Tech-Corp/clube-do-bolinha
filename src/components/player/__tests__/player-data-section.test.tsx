@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PlayerDataSection } from '../player-data-section';
+import '@/test/mocks/next';
 
 const mockClearPlayerCookie = vi.fn().mockResolvedValue(undefined);
 
@@ -55,7 +56,7 @@ describe('PlayerDataSection', () => {
     expect(screen.getByText('75 kg')).toBeInTheDocument();
   });
 
-  it("renders stamina label for '3'", () => {
+  it('does not show resistência info', () => {
     render(
       <PlayerDataSection
         player={BASE_PLAYER}
@@ -63,29 +64,7 @@ describe('PlayerDataSection', () => {
         teamCode="CODE-1"
       />,
     );
-    expect(screen.getByText('3 jogos')).toBeInTheDocument();
-  });
-
-  it("renders stamina label for '1'", () => {
-    render(
-      <PlayerDataSection
-        player={{ ...BASE_PLAYER, stamina: '1' }}
-        teamId="team-1"
-        teamCode="CODE-1"
-      />,
-    );
-    expect(screen.getByText('1 jogo')).toBeInTheDocument();
-  });
-
-  it("renders stamina label for '4plus'", () => {
-    render(
-      <PlayerDataSection
-        player={{ ...BASE_PLAYER, stamina: '4plus' }}
-        teamId="team-1"
-        teamCode="CODE-1"
-      />,
-    );
-    expect(screen.getByText('4 ou mais jogos')).toBeInTheDocument();
+    expect(screen.queryByText('Resistência')).not.toBeInTheDocument();
   });
 
   it('does not show star classification when is_star is false', () => {
@@ -149,5 +128,18 @@ describe('PlayerDataSection', () => {
       />,
     );
     expect(screen.getByText('Meus dados')).toBeInTheDocument();
+  });
+
+  it('renders edit link pointing to /jogador/CODE-1/editar', () => {
+    render(
+      <PlayerDataSection
+        player={BASE_PLAYER}
+        teamId="team-1"
+        teamCode="CODE-1"
+      />,
+    );
+    const editLink = screen.getByRole('link', { name: 'Editar meus dados' });
+    expect(editLink).toBeInTheDocument();
+    expect(editLink).toHaveAttribute('href', '/jogador/CODE-1/editar');
   });
 });
