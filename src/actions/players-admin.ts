@@ -64,12 +64,14 @@ export async function listPlayers() {
     );
     const numerator = eligible.length;
     const waitlistCount = eligible.filter(c => c.status === 'waitlist').length;
+    const confirmedCount = eligible.filter(c => c.status === 'confirmed').length;
 
     return {
       ...p,
       attendanceCount: numerator,
       attendanceRate:
         denominator > 0 ? Math.round((numerator / denominator) * 100) : null,
+      confirmedCount,
       waitlistCount,
     };
   });

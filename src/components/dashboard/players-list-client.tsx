@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
 interface Player {
@@ -15,7 +14,7 @@ interface Player {
   is_star: boolean;
   is_banned: boolean;
   suspended_until: string | null;
-  attendanceRate: number | null;
+  confirmedCount: number;
   waitlistCount: number;
 }
 
@@ -24,10 +23,10 @@ interface Props {
 }
 
 const staminaLabel: Record<string, string> = {
-  '1': '1 jogo',
-  '2': '2 jogos',
-  '3': '3 jogos',
-  '4plus': '4+ jogos',
+  '1': 'nível 1',
+  '2': 'nível 2',
+  '3': 'nível 3',
+  '4plus': 'nível 4+',
 };
 
 export function PlayersListClient({ players }: Props) {
@@ -45,6 +44,7 @@ export function PlayersListClient({ players }: Props) {
         placeholder="Buscar por nome..."
         value={search}
         onChange={e => setSearch(e.target.value)}
+        className="h-auto py-2 border-gray-300"
       />
 
       {filtered.length === 0 ? (
@@ -55,23 +55,28 @@ export function PlayersListClient({ players }: Props) {
         </p>
       ) : (
         <div className="space-y-2">
-          {filtered.map(player => (
-            <Link
-              key={player.id}
-              href={`/dashboard/jogadores/${player.id}`}
-              className="block"
-            >
-              <Card
-                className={
-                  player.is_banned
-                    ? 'bg-red-50 ring-red-300'
-                    : player.suspended_until &&
-                        new Date(player.suspended_until) > new Date()
-                      ? 'bg-yellow-50 ring-yellow-300'
-                      : 'hover:bg-muted/50 transition-colors'
-                }
+          {filtered.map(player => {
+            const isSuspended =
+              !player.is_banned &&
+              !!player.suspended_until &&
+              new Date(player.suspended_until) > new Date();
+
+            const cardBg = player.is_banned
+              ? 'bg-red-50'
+              : isSuspended
+                ? 'bg-yellow-50'
+                : 'bg-gray-50';
+
+            return (
+              <Link
+                key={player.id}
+                href={`/dashboard/jogadores/${player.id}`}
+                className="block"
               >
-                <CardContent className="py-3 px-4">
+                <div
+                  data-testid="player-card"
+                  className={`rounded-lg shadow-md ${cardBg} px-3 py-2`}
+                >
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
@@ -83,13 +88,11 @@ export function PlayersListClient({ players }: Props) {
                             Banido
                           </Badge>
                         )}
-                        {!player.is_banned &&
-                          player.suspended_until &&
-                          new Date(player.suspended_until) > new Date() && (
-                            <Badge className="shrink-0 bg-yellow-100 text-yellow-700 border-transparent">
-                              Suspenso
-                            </Badge>
-                          )}
+                        {isSuspended && (
+                          <Badge className="shrink-0 bg-yellow-100 text-yellow-700 border-transparent">
+                            Suspenso
+                          </Badge>
+                        )}
                         {player.is_star && (
                           <Badge variant="secondary" className="shrink-0">
                             ⭐ Destaque
@@ -104,12 +107,10 @@ export function PlayersListClient({ players }: Props) {
                     <div className="text-right shrink-0 space-y-1">
                       <div>
                         <p className="text-sm font-medium">
-                          {player.attendanceRate !== null
-                            ? `${player.attendanceRate}%`
-                            : '—'}
+                          {player.confirmedCount}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          participação
+                          participações em jogos
                         </p>
                       </div>
                       {player.waitlistCount > 0 && (
@@ -124,10 +125,10 @@ export function PlayersListClient({ players }: Props) {
                       )}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

@@ -16,7 +16,7 @@ const PLAYERS = [
     is_star: false,
     is_banned: false,
     suspended_until: null,
-    attendanceRate: 85,
+    confirmedCount: 17,
     waitlistCount: 2,
   },
   {
@@ -28,7 +28,7 @@ const PLAYERS = [
     is_star: true,
     is_banned: false,
     suspended_until: null,
-    attendanceRate: 60,
+    confirmedCount: 9,
     waitlistCount: 0,
   },
   {
@@ -40,7 +40,7 @@ const PLAYERS = [
     is_star: false,
     is_banned: false,
     suspended_until: null,
-    attendanceRate: null,
+    confirmedCount: 0,
     waitlistCount: 0,
   },
 ];
@@ -77,15 +77,11 @@ describe('PlayersListClient', () => {
       expect(screen.getByText('André Costa')).toBeInTheDocument();
     });
 
-    it('shows attendance as percentage when not null', () => {
+    it('shows confirmedCount as a number with label', () => {
       render(<PlayersListClient players={PLAYERS} />);
-      expect(screen.getByText('85%')).toBeInTheDocument();
-      expect(screen.getByText('60%')).toBeInTheDocument();
-    });
-
-    it("shows '—' when attendanceRate is null", () => {
-      render(<PlayersListClient players={PLAYERS} />);
-      expect(screen.getByText('—')).toBeInTheDocument();
+      expect(screen.getByText('17')).toBeInTheDocument();
+      expect(screen.getByText('9')).toBeInTheDocument();
+      expect(screen.getAllByText('participações em jogos').length).toBeGreaterThan(0);
     });
 
     it("shows '⭐ Destaque' badge for star players", () => {
@@ -192,14 +188,8 @@ describe('PlayersListClient', () => {
 
     it('applies red background to the card', () => {
       render(<PlayersListClient players={[BANNED_PLAYER]} />);
-      const card = screen.getByText('Banido').closest('[data-slot="card"]');
+      const card = screen.getByText('Banido').closest('[data-testid="player-card"]');
       expect(card?.className).toContain('bg-red-50');
-    });
-
-    it('applies red ring to the card', () => {
-      render(<PlayersListClient players={[BANNED_PLAYER]} />);
-      const card = screen.getByText('Banido').closest('[data-slot="card"]');
-      expect(card?.className).toContain('ring-red-300');
     });
 
     it('does not show "— Banido" for a normal player', () => {
@@ -238,14 +228,8 @@ describe('PlayersListClient', () => {
 
     it('applies yellow background to the card', () => {
       render(<PlayersListClient players={[SUSPENDED_PLAYER]} />);
-      const card = screen.getByText('Suspenso').closest('[data-slot="card"]');
+      const card = screen.getByText('Suspenso').closest('[data-testid="player-card"]');
       expect(card?.className).toContain('bg-yellow-50');
-    });
-
-    it('applies yellow ring to the card', () => {
-      render(<PlayersListClient players={[SUSPENDED_PLAYER]} />);
-      const card = screen.getByText('Suspenso').closest('[data-slot="card"]');
-      expect(card?.className).toContain('ring-yellow-300');
     });
 
     it('does not show "— Suspenso" when suspension has expired', () => {
@@ -255,7 +239,7 @@ describe('PlayersListClient', () => {
 
     it('does not apply yellow styles when suspension has expired', () => {
       render(<PlayersListClient players={[EXPIRED_SUSPENSION_PLAYER]} />);
-      const cards = document.querySelectorAll('[data-slot="card"]');
+      const cards = document.querySelectorAll('[data-testid="player-card"]');
       cards.forEach(card => {
         expect(card.className).not.toContain('bg-yellow-50');
       });
@@ -269,7 +253,7 @@ describe('PlayersListClient', () => {
 
     it('applies red (not yellow) styles when player is both banned and suspended', () => {
       render(<PlayersListClient players={[BANNED_AND_SUSPENDED_PLAYER]} />);
-      const card = document.querySelector('[data-slot="card"]');
+      const card = document.querySelector('[data-testid="player-card"]');
       expect(card?.className).toContain('bg-red-50');
       expect(card?.className).not.toContain('bg-yellow-50');
     });

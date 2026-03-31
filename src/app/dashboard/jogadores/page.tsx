@@ -20,7 +20,7 @@ export default async function JogadoresPage() {
             href="/dashboard/jogadores/novo"
             className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-3 h-9 text-sm font-medium hover:bg-primary/80 transition-colors"
           >
-            Adicionar jogador
+            Cadastrar
           </Link>
         </div>
 
