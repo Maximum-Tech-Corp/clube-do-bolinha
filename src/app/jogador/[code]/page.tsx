@@ -36,7 +36,6 @@ export default async function TeamPage({ params }: Props) {
     .select('id, location, scheduled_at, status, is_tournament, draw_done')
     .eq('team_id', team.id)
     .eq('status', 'open')
-    .gte('scheduled_at', now.toISOString())
     .order('scheduled_at', { ascending: true });
 
   const gameList = games ?? [];
