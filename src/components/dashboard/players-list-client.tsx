@@ -104,24 +104,17 @@ export function PlayersListClient({ players }: Props) {
                         {staminaLabel[player.stamina]}
                       </p>
                     </div>
-                    <div className="text-right shrink-0 space-y-1">
-                      <div>
-                        <p className="text-sm font-medium">
-                          {player.confirmedCount}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          participações em jogos
-                        </p>
-                      </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-medium">
+                        {player.confirmedCount}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        participações em jogos
+                      </p>
                       {player.waitlistCount > 0 && (
-                        <div>
-                          <p className="text-sm font-medium text-orange-600">
-                            {player.waitlistCount}x
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            fila de espera
-                          </p>
-                        </div>
+                        <p className="text-xs text-red-400">
+                          (e {player.waitlistCount}x na fila de espera)
+                        </p>
                       )}
                     </div>
                   </div>

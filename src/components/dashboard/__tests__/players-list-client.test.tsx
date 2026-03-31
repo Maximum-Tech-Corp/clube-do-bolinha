@@ -81,7 +81,9 @@ describe('PlayersListClient', () => {
       render(<PlayersListClient players={PLAYERS} />);
       expect(screen.getByText('17')).toBeInTheDocument();
       expect(screen.getByText('9')).toBeInTheDocument();
-      expect(screen.getAllByText('participações em jogos').length).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText('participações em jogos').length,
+      ).toBeGreaterThan(0);
     });
 
     it("shows '⭐ Destaque' badge for star players", () => {
@@ -163,13 +165,12 @@ describe('PlayersListClient', () => {
   describe('waitlist count', () => {
     it('shows waitlistCount with "x" and "fila de espera" label when count > 0', () => {
       render(<PlayersListClient players={[PLAYERS[0]]} />);
-      expect(screen.getByText('2x')).toBeInTheDocument();
-      expect(screen.getByText('fila de espera')).toBeInTheDocument();
+      expect(screen.getByText(/e 2x na fila de espera/)).toBeInTheDocument();
     });
 
-    it('does not show waitlist section when waitlistCount is 0', () => {
+    it('does not show waitlist info when waitlistCount is 0', () => {
       render(<PlayersListClient players={[PLAYERS[1]]} />);
-      expect(screen.queryByText('fila de espera')).not.toBeInTheDocument();
+      expect(screen.queryByText(/na fila de espera/)).not.toBeInTheDocument();
     });
   });
 
@@ -188,7 +189,9 @@ describe('PlayersListClient', () => {
 
     it('applies red background to the card', () => {
       render(<PlayersListClient players={[BANNED_PLAYER]} />);
-      const card = screen.getByText('Banido').closest('[data-testid="player-card"]');
+      const card = screen
+        .getByText('Banido')
+        .closest('[data-testid="player-card"]');
       expect(card?.className).toContain('bg-red-50');
     });
 
@@ -228,7 +231,9 @@ describe('PlayersListClient', () => {
 
     it('applies yellow background to the card', () => {
       render(<PlayersListClient players={[SUSPENDED_PLAYER]} />);
-      const card = screen.getByText('Suspenso').closest('[data-testid="player-card"]');
+      const card = screen
+        .getByText('Suspenso')
+        .closest('[data-testid="player-card"]');
       expect(card?.className).toContain('bg-yellow-50');
     });
 
