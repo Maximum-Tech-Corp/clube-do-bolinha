@@ -86,7 +86,11 @@ export function EditPlayerForm({ player }: { player: Player }) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-1">
         <Label htmlFor="name">Nome</Label>
-        <Input id="name" {...register('name')} />
+        <Input
+          id="name"
+          className="h-auto py-2 border-gray-300"
+          {...register('name')}
+        />
         {errors.name && (
           <p className="text-sm text-destructive">{errors.name.message}</p>
         )}
@@ -94,7 +98,11 @@ export function EditPlayerForm({ player }: { player: Player }) {
 
       <div className="space-y-1">
         <Label>Celular</Label>
-        <Input value={player.phone} disabled />
+        <Input
+          value={player.phone}
+          disabled
+          className="h-auto py-2 border-gray-300"
+        />
         <p className="text-xs text-muted-foreground">
           O telefone não pode ser alterado.
         </p>
@@ -105,6 +113,7 @@ export function EditPlayerForm({ player }: { player: Player }) {
         <Input
           id="weight_kg"
           type="number"
+          className="h-auto py-2 border-gray-300"
           {...register('weight_kg', { valueAsNumber: true })}
         />
         {errors.weight_kg && (
@@ -112,41 +121,57 @@ export function EditPlayerForm({ player }: { player: Player }) {
         )}
       </div>
 
-      <div className="space-y-1">
-        <Label>Resistência</Label>
-        <Select
-          value={stamina}
-          onValueChange={v => setValue('stamina', v as StaminaLevel)}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1">1 jogo</SelectItem>
-            <SelectItem value="2">2 jogos</SelectItem>
-            <SelectItem value="3">3 jogos</SelectItem>
-            <SelectItem value="4plus">4 ou mais jogos</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <Label>Resistência</Label>
+          <Select
+            value={stamina}
+            onValueChange={v => setValue('stamina', v as StaminaLevel)}
+          >
+            <SelectTrigger className="h-auto! py-2 border-gray-300 w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1" className="py-2">
+                1 jogo
+              </SelectItem>
+              <SelectItem value="2" className="py-2">
+                2 jogos
+              </SelectItem>
+              <SelectItem value="3" className="py-2">
+                3 jogos
+              </SelectItem>
+              <SelectItem value="4plus" className="py-2">
+                4 ou mais jogos
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-      <div className="space-y-1">
-        <Label>Posição</Label>
-        <Select
-          value={position ?? ''}
-          onValueChange={v =>
-            setValue('position', v === '' ? null : (v as PlayerPosition))
-          }
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Não definida" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="zagueiro">Zagueiro</SelectItem>
-            <SelectItem value="atacante">Atacante</SelectItem>
-            <SelectItem value="libero">Líbero</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="space-y-1">
+          <Label>Posição</Label>
+          <Select
+            value={position ?? ''}
+            onValueChange={v =>
+              setValue('position', v === '' ? null : (v as PlayerPosition))
+            }
+          >
+            <SelectTrigger className="h-auto! py-2 border-gray-300 w-full">
+              <SelectValue placeholder="Não definida" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="zagueiro" className="py-2">
+                Zagueiro
+              </SelectItem>
+              <SelectItem value="atacante" className="py-2">
+                Atacante
+              </SelectItem>
+              <SelectItem value="libero" className="py-2">
+                Líbero
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="flex items-center gap-3">

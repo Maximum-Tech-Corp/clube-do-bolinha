@@ -5,6 +5,7 @@ import { RetroactiveStatForm } from '@/components/dashboard/retroactive-stat-for
 import { PlayerSituationForm } from '@/components/dashboard/player-situation-form';
 import { Separator } from '@/components/ui/separator';
 import { AdminPageHeader } from '@/components/dashboard/admin-page-header';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -22,33 +23,41 @@ export default async function EditPlayerPage({ params }: Props) {
   return (
     <>
       <AdminPageHeader title={player.name} backHref="/dashboard/jogadores" />
-      <div className="max-w-md mx-auto p-4 space-y-6">
-        <p className="text-sm text-muted-foreground">{player.phone}</p>
+      <div className="max-w-md mx-auto p-4">
+        <Tabs defaultValue="dados" className="w-full">
+          <TabsList variant="line" className="w-full mb-6">
+            <TabsTrigger value="dados" className="flex-1">
+              Dados do jogador
+            </TabsTrigger>
+            <TabsTrigger value="retroativos" className="flex-1">
+              Dados retroativos
+            </TabsTrigger>
+          </TabsList>
 
-        <EditPlayerForm player={player} />
+          <TabsContent value="dados" className="space-y-6">
+            <EditPlayerForm player={player} />
 
-        <Separator />
+            <Separator />
 
-        <div className="space-y-3">
-          <h2 className="font-semibold">Estatísticas retroativas</h2>
-          <p className="text-xs text-muted-foreground">
-            Adicione gols e assistências de temporadas/jogos anteriores.
-          </p>
+            <div className="space-y-3">
+              <h2 className="font-semibold">Situação do jogador</h2>
+              <PlayerSituationForm
+                playerId={player.id}
+                isBanned={player.is_banned}
+                suspendedUntil={player.suspended_until}
+                suspensionReason={player.suspension_reason}
+              />
+            </div>
+          </TabsContent>
 
-          <RetroactiveStatForm playerId={player.id} stats={stats} />
-        </div>
-
-        <Separator />
-
-        <div className="space-y-3">
-          <h2 className="font-semibold">Situação do jogador</h2>
-          <PlayerSituationForm
-            playerId={player.id}
-            isBanned={player.is_banned}
-            suspendedUntil={player.suspended_until}
-            suspensionReason={player.suspension_reason}
-          />
-        </div>
+          <TabsContent value="retroativos" className="space-y-3">
+            <h2 className="font-semibold">Estatísticas retroativas</h2>
+            <p className="text-xs text-muted-foreground">
+              Adicione gols e assistências de temporadas/jogos anteriores.
+            </p>
+            <RetroactiveStatForm playerId={player.id} stats={stats} />
+          </TabsContent>
+        </Tabs>
       </div>
     </>
   );
