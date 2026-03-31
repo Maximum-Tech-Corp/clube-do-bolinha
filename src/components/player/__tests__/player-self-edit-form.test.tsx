@@ -350,7 +350,9 @@ describe('PlayerSelfEditForm', () => {
     });
 
     it('shows error toast on failure', async () => {
-      mockUpdatePlayerSelf.mockResolvedValue({ error: 'Erro ao salvar dados.' });
+      mockUpdatePlayerSelf.mockResolvedValue({
+        error: 'Erro ao salvar dados.',
+      });
       const user = userEvent.setup();
       render(<PlayerSelfEditForm player={BASE_PLAYER} teamId="team-1" />);
 

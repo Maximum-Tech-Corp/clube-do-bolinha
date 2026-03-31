@@ -162,7 +162,8 @@ export async function updatePlayerSelf(
       .eq('phone', params.phone)
       .maybeSingle();
 
-    if (existing) return { error: 'Este número já está cadastrado nesta turma.' };
+    if (existing)
+      return { error: 'Este número já está cadastrado nesta turma.' };
   }
 
   const { error } = await service

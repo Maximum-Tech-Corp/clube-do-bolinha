@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Pencil } from 'lucide-react';
 import { clearPlayerCookie } from '@/actions/player';
 
-
 interface Props {
   player: {
     name: string;
