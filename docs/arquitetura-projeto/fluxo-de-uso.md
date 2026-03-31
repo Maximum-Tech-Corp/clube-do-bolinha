@@ -32,6 +32,8 @@ https://clubedobolinha.com.br/jogador/ABCD-123456
 
 Ao abrir o link, o app exibe a tela do time com os próximos jogos marcados para os próximos 7 dias.
 
+**Nas visitas seguintes**, o jogador pode acessar diretamente `/jogador` (sem o código no link) — o app lembra o último código utilizado via cookie `last_team_code` (válido por 1 ano) e redireciona automaticamente.
+
 ---
 
 ### 2. Se identificar
@@ -108,7 +110,9 @@ Se não houver jogo marcado para os próximos 7 dias, a tela principal exibe uma
 
 ### Trocar de time
 
-Se o jogador faz parte de mais de um time (com códigos diferentes), basta acessar o link do outro time. Cada time tem sua própria identificação por telefone — o mesmo número pode existir em times diferentes.
+Se o jogador faz parte de mais de um time, ele pode trocar pelo menu de navegação inferior (**"Trocar turma"**). Isso limpa o cookie `last_team_code` e redireciona para `/jogador`, onde ele digita o código do outro time.
+
+Cada time tem sua própria identificação por telefone — o mesmo número pode existir em times diferentes.
 
 ---
 
@@ -294,4 +298,12 @@ Se a assinatura for cancelada ou o pagamento falhar, o acesso ao painel é bloqu
 
 O Admin pode solicitar a redefinição de senha pela tela de login clicando em **"Esqueci minha senha"**. Um e-mail de redefinição é enviado. Após redefinir, o acesso é restaurado normalmente.
 
-O Admin logado também pode trocar a senha pelo menu **⋮ → Alterar senha**.
+O Admin logado também pode trocar a senha pelo menu **⋮ → Trocar Senha**.
+
+---
+
+### Enviar mensagem de suporte
+
+O Admin acessa o menu **⋮ → Suporte**. Um modal exibe um campo de tipo (Bug, Reclamação, Sugestão, Ajuda) e um campo de mensagem livre.
+
+Ao enviar, a mensagem é encaminhada por e-mail via Resend para a caixa de suporte do sistema. O `Reply-To` é configurado com o e-mail do admin — responder ao e-mail vai direto para ele.

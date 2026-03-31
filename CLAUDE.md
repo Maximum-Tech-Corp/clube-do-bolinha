@@ -13,6 +13,7 @@ PWA for organizing amateur football (futsal/soccer) groups. Admins manage teams,
 | Framework | Next.js 16 (App Router) |
 | Database + Auth | Supabase |
 | Payments | Stripe |
+| Email | Resend |
 | Deploy | Vercel |
 | UI | shadcn/ui + Tailwind CSS |
 
@@ -212,6 +213,8 @@ STRIPE_SECRET_KEY
 STRIPE_WEBHOOK_SECRET
 STRIPE_PRICE_ID
 NEXT_PUBLIC_APP_URL
+RESEND_API_KEY
+SUPPORT_EMAIL
 ```
 
 ---
