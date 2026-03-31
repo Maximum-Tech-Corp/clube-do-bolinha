@@ -16,6 +16,7 @@ const {
   registerPlayer,
   saveLastTeamCode,
   clearLastTeamCode,
+  updatePlayerSelf,
 } = await import('@/actions/player');
 
 const TEAM_ID = 'team-uuid';
@@ -442,6 +443,103 @@ describe('confirmPresence', () => {
       newPlayer: { name: 'Novo Jogador', weight_kg: 75, stamina: '3' },
     });
     expect(result).toEqual({ status: 'confirmed' });
+  });
+});
+
+// ─── updatePlayerSelf ─────────────────────────────────────────────────────────
+
+const SELF_PARAMS = {
+  name: 'Carlos Ramos',
+  phone: PHONE,
+  weight_kg: 75,
+  stamina: '3' as const,
+  position: null,
+  is_star: false,
+};
+
+describe('updatePlayerSelf', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockCookieGet.mockReturnValue({ value: PHONE });
+  });
+
+  it('returns error when no player cookie exists', async () => {
+    mockCookieGet.mockReturnValue(undefined);
+    const result = await updatePlayerSelf(TEAM_ID, SELF_PARAMS);
+    expect(result).toEqual({ error: 'Não identificado.' });
+    expect(mockSupabaseFrom).not.toHaveBeenCalled();
+  });
+
+  it('returns error when player is not found', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }),
+    );
+    const result = await updatePlayerSelf(TEAM_ID, SELF_PARAMS);
+    expect(result).toEqual({ error: 'Jogador não encontrado.' });
+  });
+
+  it('returns error when new phone is already taken by another player', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { id: 'player-1' }, error: null }), // found by current phone
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { id: 'player-2' }, error: null }), // new phone already exists
+    );
+    const result = await updatePlayerSelf(TEAM_ID, {
+      ...SELF_PARAMS,
+      phone: '11911112222',
+    });
+    expect(result).toEqual({
+      error: 'Este número já está cadastrado nesta turma.',
+    });
+  });
+
+  it('returns error when update query fails', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { id: 'player-1' }, error: null }), // found
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: { message: 'db error' } }), // update fails
+    );
+    const result = await updatePlayerSelf(TEAM_ID, SELF_PARAMS);
+    expect(result).toEqual({ error: 'Erro ao salvar dados.' });
+  });
+
+  it('returns {} and revalidates when phone is unchanged', async () => {
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { id: 'player-1' }, error: null }),
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }), // update success
+    );
+    const result = await updatePlayerSelf(TEAM_ID, SELF_PARAMS);
+    expect(result).toEqual({});
+    expect(mockCookieSet).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/jogador/[code]', 'page');
+  });
+
+  it('updates cookie when phone changes and returns {}', async () => {
+    const newPhone = '11911112222';
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: { id: 'player-1' }, error: null }), // found by current phone
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }), // new phone not taken
+    );
+    mockSupabaseFrom.mockReturnValueOnce(
+      createQueryMock({ data: null, error: null }), // update success
+    );
+    const result = await updatePlayerSelf(TEAM_ID, {
+      ...SELF_PARAMS,
+      phone: newPhone,
+    });
+    expect(result).toEqual({});
+    expect(mockCookieSet).toHaveBeenCalledWith(
+      `player_${TEAM_ID}`,
+      newPhone,
+      expect.objectContaining({ httpOnly: true }),
+    );
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/jogador/[code]', 'page');
   });
 });
 

@@ -3,7 +3,7 @@
 import { createServiceClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-import type { StaminaLevel } from '@/types/database.types';
+import type { StaminaLevel, PlayerPosition } from '@/types/database.types';
 
 export async function cancelPresence(params: {
   gameId: string;
@@ -125,6 +125,73 @@ export async function registerPlayer(params: {
   });
 
   return { success: true };
+}
+
+export async function updatePlayerSelf(
+  teamId: string,
+  params: {
+    name: string;
+    phone: string;
+    weight_kg: number;
+    stamina: StaminaLevel;
+    position: PlayerPosition | null;
+    is_star: boolean;
+  },
+): Promise<{ error?: string }> {
+  const cookieStore = await cookies();
+  const currentPhone = cookieStore.get(`player_${teamId}`)?.value;
+  if (!currentPhone) return { error: 'Não identificado.' };
+
+  const service = createServiceClient();
+
+  const { data: player } = await service
+    .from('players')
+    .select('id')
+    .eq('team_id', teamId)
+    .eq('phone', currentPhone)
+    .maybeSingle();
+
+  if (!player) return { error: 'Jogador não encontrado.' };
+
+  // Check phone uniqueness only when it actually changed
+  if (params.phone !== currentPhone) {
+    const { data: existing } = await service
+      .from('players')
+      .select('id')
+      .eq('team_id', teamId)
+      .eq('phone', params.phone)
+      .maybeSingle();
+
+    if (existing)
+      return { error: 'Este número já está cadastrado nesta turma.' };
+  }
+
+  const { error } = await service
+    .from('players')
+    .update({
+      name: params.name,
+      phone: params.phone,
+      weight_kg: params.weight_kg,
+      stamina: params.stamina,
+      position: params.position,
+      is_star: params.is_star,
+    })
+    .eq('id', player.id);
+
+  if (error) return { error: 'Erro ao salvar dados.' };
+
+  // Update cookie if phone changed
+  if (params.phone !== currentPhone) {
+    cookieStore.set(`player_${teamId}`, params.phone, {
+      maxAge: 60 * 60 * 24 * 365,
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+    });
+  }
+
+  revalidatePath(`/jogador/[code]`, 'page');
+  return {};
 }
 
 export async function validateTeamCode(
