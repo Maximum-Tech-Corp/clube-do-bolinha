@@ -199,6 +199,8 @@ export async function createPlayer(params: {
   phone: string;
   weight_kg: number;
   stamina: StaminaLevel;
+  position?: PlayerPosition | null;
+  is_star?: boolean;
 }): Promise<{ error?: string }> {
   const teamId = await getEffectiveTeamId();
   if (!teamId) return { error: 'Não autorizado.' };
@@ -222,6 +224,8 @@ export async function createPlayer(params: {
     phone: params.phone,
     weight_kg: params.weight_kg,
     stamina: params.stamina,
+    position: params.position ?? null,
+    is_star: params.is_star ?? false,
   });
 
   if (error) return { error: 'Erro ao criar jogador.' };

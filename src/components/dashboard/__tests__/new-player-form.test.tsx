@@ -17,7 +17,7 @@ vi.mock('@/actions/players-admin', () => ({
   addRetroactiveStat: vi.fn(),
 }));
 
-// Radix UI Select doesn't work in happy-dom — replace with a native <select>
+// Radix UI Select doesn't work in happy-dom — replace with native <select>
 vi.mock('@/components/ui/select', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require('react');
@@ -32,7 +32,6 @@ vi.mock('@/components/ui/select', () => {
       React.createElement(
         'select',
         {
-          'data-testid': 'stamina-select',
           onChange: (e: React.ChangeEvent<HTMLSelectElement>) =>
             onValueChange?.(e.target.value),
         },
@@ -41,7 +40,7 @@ vi.mock('@/components/ui/select', () => {
     SelectTrigger: ({ children }: { children: unknown }) =>
       React.createElement(React.Fragment, null, children),
     SelectValue: ({ placeholder }: { placeholder?: string }) =>
-      React.createElement('option', { value: '' }, placeholder),
+      React.createElement('option', { value: '' }, placeholder ?? ''),
     SelectContent: ({ children }: { children: unknown }) =>
       React.createElement(React.Fragment, null, children),
     SelectItem: ({ value, children }: { value: string; children: unknown }) =>
@@ -49,12 +48,13 @@ vi.mock('@/components/ui/select', () => {
   };
 });
 
+// stamina = combobox index 0, position = combobox index 1
 async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText('Nome'), 'Carlos Ramos');
   await user.type(screen.getByLabelText('Celular'), '11988887777');
   await user.clear(screen.getByLabelText('Peso médio (kg)'));
   await user.type(screen.getByLabelText('Peso médio (kg)'), '80');
-  await user.selectOptions(screen.getByTestId('stamina-select'), '3');
+  await user.selectOptions(screen.getAllByRole('combobox')[0], '3');
 }
 
 describe('NewPlayerForm', () => {
@@ -73,13 +73,33 @@ describe('NewPlayerForm', () => {
 
     it('renders stamina select with options', () => {
       render(<NewPlayerForm />);
-      expect(screen.getByTestId('stamina-select')).toBeInTheDocument();
+      const staminaSelect = screen.getAllByRole('combobox')[0];
+      expect(staminaSelect).toBeInTheDocument();
       expect(
         screen.getByRole('option', { name: '1 jogo' }),
       ).toBeInTheDocument();
       expect(
         screen.getByRole('option', { name: '4 ou mais jogos' }),
       ).toBeInTheDocument();
+    });
+
+    it('renders position select with options', () => {
+      render(<NewPlayerForm />);
+      expect(
+        screen.getByRole('option', { name: 'Zagueiro' }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('option', { name: 'Atacante' }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('option', { name: 'Líbero' }),
+      ).toBeInTheDocument();
+    });
+
+    it('renders is_star toggle', () => {
+      render(<NewPlayerForm />);
+      expect(screen.getByRole('switch')).toBeInTheDocument();
+      expect(screen.getByText('Jogador destaque ⭐')).toBeInTheDocument();
     });
 
     it('renders submit button', () => {
@@ -155,6 +175,56 @@ describe('NewPlayerForm', () => {
             weight_kg: 80,
             stamina: '3',
           }),
+        );
+      });
+    });
+
+    it('sends selected position to createPlayer', async () => {
+      const user = userEvent.setup();
+      render(<NewPlayerForm />);
+
+      await fillValidForm(user);
+      await user.selectOptions(screen.getAllByRole('combobox')[1], 'zagueiro');
+      await user.click(
+        screen.getByRole('button', { name: 'Cadastrar jogador' }),
+      );
+
+      await waitFor(() => {
+        expect(mockCreatePlayer).toHaveBeenCalledWith(
+          expect.objectContaining({ position: 'zagueiro' }),
+        );
+      });
+    });
+
+    it('sends null position when none selected', async () => {
+      const user = userEvent.setup();
+      render(<NewPlayerForm />);
+
+      await fillValidForm(user);
+      await user.click(
+        screen.getByRole('button', { name: 'Cadastrar jogador' }),
+      );
+
+      await waitFor(() => {
+        expect(mockCreatePlayer).toHaveBeenCalledWith(
+          expect.objectContaining({ position: null }),
+        );
+      });
+    });
+
+    it('sends is_star true when toggle is on', async () => {
+      const user = userEvent.setup();
+      render(<NewPlayerForm />);
+
+      await fillValidForm(user);
+      await user.click(screen.getByRole('switch'));
+      await user.click(
+        screen.getByRole('button', { name: 'Cadastrar jogador' }),
+      );
+
+      await waitFor(() => {
+        expect(mockCreatePlayer).toHaveBeenCalledWith(
+          expect.objectContaining({ is_star: true }),
         );
       });
     });
