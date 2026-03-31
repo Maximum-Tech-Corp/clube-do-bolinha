@@ -3,6 +3,8 @@
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useState } from 'react';
+import type React from 'react';
 import { toast } from 'sonner';
 import { updatePlayerSelf } from '@/actions/player';
 import { Button } from '@/components/ui/button';
@@ -29,6 +31,7 @@ function formatPhone(raw: string): string {
 
 const schema = z.object({
   name: z.string().min(2, 'Informe o nome'),
+  phone: z.string().min(10, 'Informe um celular válido'),
   weight_kg: z.number().min(30).max(250),
   position: z.enum(['zagueiro', 'atacante', 'libero']).nullable(),
 });
@@ -44,13 +47,14 @@ interface Player {
   is_star: boolean;
 }
 
-
 interface Props {
   player: Player;
   teamId: string;
 }
 
 export function PlayerSelfEditForm({ player, teamId }: Props) {
+  const [phoneDisplay, setPhoneDisplay] = useState(formatPhone(player.phone));
+
   const {
     register,
     handleSubmit,
@@ -61,6 +65,7 @@ export function PlayerSelfEditForm({ player, teamId }: Props) {
     resolver: zodResolver(schema),
     defaultValues: {
       name: player.name,
+      phone: player.phone,
       weight_kg: player.weight_kg,
       position: player.position,
     },
@@ -68,9 +73,16 @@ export function PlayerSelfEditForm({ player, teamId }: Props) {
 
   const position = useWatch({ control, name: 'position' });
 
+  function handlePhoneChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 11);
+    setPhoneDisplay(formatPhone(digits));
+    setValue('phone', digits, { shouldValidate: true });
+  }
+
   async function onSubmit(data: FormData) {
     const result = await updatePlayerSelf(teamId, {
       name: data.name,
+      phone: data.phone,
       weight_kg: data.weight_kg,
       stamina: player.stamina as StaminaLevel,
       position: data.position,
@@ -100,15 +112,18 @@ export function PlayerSelfEditForm({ player, teamId }: Props) {
       </div>
 
       <div className="space-y-1">
-        <Label>Celular</Label>
+        <Label htmlFor="phone">Celular</Label>
         <Input
-          value={formatPhone(player.phone)}
-          disabled
+          id="phone"
+          type="tel"
+          placeholder="(11) 99999-9999"
           className="h-auto py-2 border-gray-300"
+          value={phoneDisplay}
+          onChange={handlePhoneChange}
         />
-        <p className="text-xs text-muted-foreground">
-          O telefone não pode ser alterado.
-        </p>
+        {errors.phone && (
+          <p className="text-sm text-destructive">{errors.phone.message}</p>
+        )}
       </div>
 
       <div className="space-y-1">

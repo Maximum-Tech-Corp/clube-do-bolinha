@@ -78,12 +78,11 @@ describe('PlayerSelfEditForm', () => {
       expect(nameInput.value).toBe('Carlos Ramos');
     });
 
-    it('renders disabled phone field with mask (11 digits)', () => {
+    it('renders editable phone field with mask (11 digits)', () => {
       render(<PlayerSelfEditForm player={BASE_PLAYER} teamId="team-1" />);
-      const phoneInput = screen.getByDisplayValue(
-        '(11) 98888-7777',
-      ) as HTMLInputElement;
-      expect(phoneInput).toBeDisabled();
+      const phoneInput = screen.getByLabelText('Celular') as HTMLInputElement;
+      expect(phoneInput.value).toBe('(11) 98888-7777');
+      expect(phoneInput).not.toBeDisabled();
     });
 
     it('renders phone mask for 10-digit number', () => {
@@ -123,9 +122,8 @@ describe('PlayerSelfEditForm', () => {
           teamId="team-1"
         />,
       );
-      // disabled input with empty value is rendered
-      const inputs = document.querySelectorAll('input[disabled]');
-      expect(inputs.length).toBeGreaterThan(0);
+      const phoneInput = screen.getByLabelText('Celular') as HTMLInputElement;
+      expect(phoneInput.value).toBe('');
     });
 
     it('renders weight field with player weight', () => {
@@ -152,12 +150,74 @@ describe('PlayerSelfEditForm', () => {
         screen.getByRole('button', { name: 'Salvar alterações' }),
       ).toBeInTheDocument();
     });
+  });
 
-    it('shows phone cannot be changed notice', () => {
+  describe('phone field interaction', () => {
+    it('applies mask as user types a new phone number', async () => {
+      const user = userEvent.setup();
       render(<PlayerSelfEditForm player={BASE_PLAYER} teamId="team-1" />);
-      expect(
-        screen.getByText('O telefone não pode ser alterado.'),
-      ).toBeInTheDocument();
+
+      const phoneInput = screen.getByLabelText('Celular');
+      await user.clear(phoneInput);
+      await user.type(phoneInput, '11977776666');
+
+      expect((phoneInput as HTMLInputElement).value).toBe('(11) 97777-6666');
+    });
+
+    it('shows error when phone is too short', async () => {
+      const user = userEvent.setup();
+      render(<PlayerSelfEditForm player={BASE_PLAYER} teamId="team-1" />);
+
+      const phoneInput = screen.getByLabelText('Celular');
+      await user.clear(phoneInput);
+      await user.type(phoneInput, '1199');
+      await user.click(
+        screen.getByRole('button', { name: 'Salvar alterações' }),
+      );
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('Informe um celular válido'),
+        ).toBeInTheDocument();
+      });
+      expect(mockUpdatePlayerSelf).not.toHaveBeenCalled();
+    });
+
+    it('sends updated phone digits to updatePlayerSelf', async () => {
+      const user = userEvent.setup();
+      render(<PlayerSelfEditForm player={BASE_PLAYER} teamId="team-1" />);
+
+      const phoneInput = screen.getByLabelText('Celular');
+      await user.clear(phoneInput);
+      await user.type(phoneInput, '11977776666');
+      await user.click(
+        screen.getByRole('button', { name: 'Salvar alterações' }),
+      );
+
+      await waitFor(() => {
+        expect(mockUpdatePlayerSelf).toHaveBeenCalledWith(
+          'team-1',
+          expect.objectContaining({ phone: '11977776666' }),
+        );
+      });
+    });
+
+    it('shows error toast when phone is already taken', async () => {
+      mockUpdatePlayerSelf.mockResolvedValue({
+        error: 'Este número já está cadastrado nesta turma.',
+      });
+      const user = userEvent.setup();
+      render(<PlayerSelfEditForm player={BASE_PLAYER} teamId="team-1" />);
+
+      await user.click(
+        screen.getByRole('button', { name: 'Salvar alterações' }),
+      );
+
+      await waitFor(() => {
+        expect(mockToastError).toHaveBeenCalledWith(
+          'Este número já está cadastrado nesta turma.',
+        );
+      });
     });
   });
 
@@ -226,6 +286,7 @@ describe('PlayerSelfEditForm', () => {
           'team-1',
           expect.objectContaining({
             name: 'Novo Nome',
+            phone: '11988887777',
             weight_kg: 75,
             position: null,
             is_star: false,
@@ -282,7 +343,9 @@ describe('PlayerSelfEditForm', () => {
       );
 
       await waitFor(() => {
-        expect(mockToastSuccess).toHaveBeenCalledWith('Dados salvos com sucesso!');
+        expect(mockToastSuccess).toHaveBeenCalledWith(
+          'Dados salvos com sucesso!',
+        );
       });
     });
 
@@ -311,7 +374,9 @@ describe('PlayerSelfEditForm', () => {
         screen.getByRole('button', { name: 'Salvar alterações' }),
       );
 
-      expect(screen.getByRole('button', { name: 'Salvando...' })).toBeDisabled();
+      expect(
+        screen.getByRole('button', { name: 'Salvando...' }),
+      ).toBeDisabled();
 
       await waitFor(() => {
         expect(
