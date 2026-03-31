@@ -71,7 +71,7 @@ export default function Home() {
           height={101}
           className="h-7 w-auto opacity-60"
         />
-        <span className="text-xs text-muted-foreground/60">v1.0.0</span>
+        <span className="text-xs text-muted-foreground/60">v1.1.0</span>
       </footer>
     </div>
   );
