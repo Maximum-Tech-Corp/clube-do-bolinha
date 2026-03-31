@@ -137,7 +137,7 @@ export function MatchTimer({ gameId, defaultMinutes }: Props) {
   const isZeroed = timerState.startedAt === null;
 
   return (
-    <div className="rounded-lg border border-border p-4 space-y-3">
+    <div className="rounded-lg shadow-md bg-gray-50 p-4 space-y-3">
       {/* Display */}
       <div className="flex items-center justify-center">
         <span

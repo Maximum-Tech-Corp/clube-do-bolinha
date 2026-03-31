@@ -7,6 +7,8 @@ import {
   reopenMatch,
   generateNextPhase,
 } from '@/actions/tournament';
+import { Check, ChevronDown, Loader2 } from 'lucide-react';
+import { Accordion } from '@base-ui/react/accordion';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import type { TournamentPhase } from '@/types/database.types';
@@ -183,9 +185,9 @@ function MatchCard({
                 setDrawError(false);
               }}
               placeholder="0"
-              className="w-14 h-8 rounded border border-border text-center text-sm tabular-nums bg-background"
+              className="w-14 h-auto py-2 rounded border border-border text-center text-sm tabular-nums bg-background"
             />
-            <span className="text-muted-foreground text-xs">×</span>
+            <span className="text-foreground text-sm font-bold">×</span>
             <input
               type="number"
               min={0}
@@ -195,14 +197,19 @@ function MatchCard({
                 setDrawError(false);
               }}
               placeholder="0"
-              className="w-14 h-8 rounded border border-border text-center text-sm tabular-nums bg-background"
+              className="w-14 h-auto py-2 rounded border border-border text-center text-sm tabular-nums bg-background"
             />
             <Button
-              size="sm"
+              className="py-5"
               onClick={handleSubmit}
               disabled={saving || homeInput === '' || awayInput === ''}
             >
-              Confirmar
+              {saving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Check className="w-4 h-4" />
+              )}
+              {saving ? 'Salvando...' : 'Confirmar'}
             </Button>
           </div>
           {drawError && (
@@ -236,25 +243,35 @@ function PhaseSection({
   saving: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-border overflow-hidden">
-      <div className="px-4 py-2 bg-muted/50">
-        <h2 className="font-semibold text-sm">{title}</h2>
-      </div>
-      <ul className="divide-y divide-border">
-        {matches.map(m => (
-          <li key={m.id}>
-            <MatchCard
-              match={m}
-              nameMap={nameMap}
-              isFinished={isFinished}
-              onSave={onSave}
-              onReopen={onReopen}
-              saving={saving}
-            />
-          </li>
-        ))}
-      </ul>
-    </div>
+    <Accordion.Root
+      defaultValue={[title]}
+      className="rounded-lg shadow-md bg-gray-50 overflow-hidden"
+    >
+      <Accordion.Item value={title}>
+        <Accordion.Header>
+          <Accordion.Trigger className="flex w-full items-center justify-between px-4 py-3 border-b border-gray-200 hover:bg-gray-100 transition-colors [&[data-open]>svg]:rotate-180">
+            <h2 className="font-semibold text-base">{title}</h2>
+            <ChevronDown className="w-5 h-5 text-foreground transition-transform duration-200" />
+          </Accordion.Trigger>
+        </Accordion.Header>
+        <Accordion.Panel>
+          <ul className="divide-y divide-border">
+            {matches.map(m => (
+              <li key={m.id}>
+                <MatchCard
+                  match={m}
+                  nameMap={nameMap}
+                  isFinished={isFinished}
+                  onSave={onSave}
+                  onReopen={onReopen}
+                  saving={saving}
+                />
+              </li>
+            ))}
+          </ul>
+        </Accordion.Panel>
+      </Accordion.Item>
+    </Accordion.Root>
   );
 }
 
@@ -344,9 +361,9 @@ export function TournamentClient({
     <div className="space-y-4">
       {/* Tabela de classificação */}
       {groupMatches.length > 0 && (
-        <div className="rounded-lg border border-border overflow-hidden">
-          <div className="px-4 py-2 bg-muted/50">
-            <h2 className="font-semibold text-sm">Classificação</h2>
+        <div className="rounded-lg shadow-md bg-gray-50 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-200">
+            <h2 className="font-semibold text-base">Classificação</h2>
           </div>
           <div className="px-4 py-3">
             <StandingsTable standings={standings} nameMap={nameMap} />
@@ -404,7 +421,7 @@ export function TournamentClient({
         <>
           <Separator />
           <Button
-            className="w-full"
+            className="w-full py-5"
             onClick={handleGenerateNext}
             disabled={pending}
           >

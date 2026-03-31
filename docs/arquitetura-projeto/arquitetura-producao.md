@@ -32,6 +32,7 @@ Não há separação de repositórios frontend/backend — um único deploy cobr
 - **Server Actions** (`src/actions/`) — toda mutação de dados roda no servidor; secrets nunca chegam ao browser.
 - **`src/proxy.ts`** — guarda de autenticação; protege `/dashboard/*` e redireciona admins logados para fora do `/login`.
 - Jogadores acessam sem login — identidade resolvida por cookie `player_{teamId}` no servidor.
+- **Gráficos via SVG inline** — o gráfico de confirmações do dashboard (`AttendanceChart`) é um Server Component com SVG puro, sem biblioteca de charting, para não adicionar peso ao bundle do cliente.
 
 ---
 

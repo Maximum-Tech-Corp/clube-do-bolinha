@@ -9,6 +9,7 @@ import {
   LogOut,
   KeyRound,
   Users,
+  Headphones,
 } from 'lucide-react';
 import {
   Dialog,
@@ -22,6 +23,15 @@ import { Label } from '@/components/ui/label';
 import { updateTeamSettings } from '@/actions/team';
 import { createBillingPortalSession } from '@/actions/stripe';
 import { logout, changePassword } from '@/actions/auth';
+import { sendSupportEmail } from '@/actions/support';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface Props {
   appUrl: string;
@@ -50,6 +60,14 @@ export function DashboardMenu({
   const [changingPassword, setChangingPassword] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSaved, setPasswordSaved] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
+  const [supportType, setSupportType] = useState<
+    'bug' | 'suggestion' | 'complaint' | 'help'
+  >('bug');
+  const [supportMessage, setSupportMessage] = useState('');
+  const [sendingSupport, setSendingSupport] = useState(false);
+  const [supportSent, setSupportSent] = useState(false);
+  const [supportError, setSupportError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -100,6 +118,28 @@ iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de I
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
+      }, 1500);
+    }
+  }
+
+  async function handleSendSupport() {
+    if (!supportMessage.trim()) return;
+    setSupportError(null);
+    setSendingSupport(true);
+    const result = await sendSupportEmail({
+      type: supportType,
+      message: supportMessage,
+    });
+    setSendingSupport(false);
+    if ('error' in result) {
+      setSupportError(result.error);
+    } else {
+      setSupportSent(true);
+      setTimeout(() => {
+        setSupportOpen(false);
+        setSupportSent(false);
+        setSupportMessage('');
+        setSupportType('bug');
       }, 1500);
     }
   }
@@ -164,6 +204,17 @@ iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de I
           >
             <KeyRound className="w-4 h-4 text-muted-foreground" />
             Trocar Senha
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMenuOpen(false);
+              setSupportOpen(true);
+            }}
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+          >
+            <Headphones className="w-4 h-4 text-muted-foreground" />
+            Suporte
           </button>
           <a
             href={`https://wa.me/?text=${shareText}`}
@@ -291,6 +342,78 @@ iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de I
                 : passwordSaved
                   ? 'Senha alterada!'
                   : 'Salvar'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={supportOpen}
+        onOpenChange={open => {
+          setSupportOpen(open);
+          if (!open) {
+            setSupportMessage('');
+            setSupportType('bug');
+            setSupportError(null);
+            setSupportSent(false);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Suporte</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <p className="text-sm text-muted-foreground">
+              Use este canal para reportar problemas, deixar sugestões ou tirar
+              dúvidas. Responderemos pelo seu e-mail de cadastro.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="support-type">Tipo</Label>
+              <Select
+                value={supportType}
+                onValueChange={val =>
+                  setSupportType(
+                    val as 'bug' | 'suggestion' | 'complaint' | 'help',
+                  )
+                }
+              >
+                <SelectTrigger
+                  id="support-type"
+                  className="w-full h-auto! py-2 border-gray-300"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bug">Reportar bug</SelectItem>
+                  <SelectItem value="complaint">Reclamação</SelectItem>
+                  <SelectItem value="suggestion">Sugestão</SelectItem>
+                  <SelectItem value="help">Ajuda</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="support-message">Mensagem</Label>
+              <Textarea
+                id="support-message"
+                value={supportMessage}
+                onChange={e => setSupportMessage(e.target.value)}
+                rows={5}
+              />
+            </div>
+            {supportError && (
+              <p className="text-sm text-destructive">{supportError}</p>
+            )}
+            <Button
+              onClick={handleSendSupport}
+              disabled={sendingSupport || supportSent}
+              className="w-full"
+            >
+              {sendingSupport
+                ? 'Enviando...'
+                : supportSent
+                  ? 'Enviado!'
+                  : 'Enviar'}
             </Button>
           </div>
         </DialogContent>

@@ -13,6 +13,7 @@ PWA for organizing amateur football (futsal/soccer) groups. Admins manage teams,
 | Framework | Next.js 16 (App Router) |
 | Database + Auth | Supabase |
 | Payments | Stripe |
+| Email | Resend |
 | Deploy | Vercel |
 | UI | shadcn/ui + Tailwind CSS |
 
@@ -64,6 +65,11 @@ When a test breaks:
 - Page JSX must be a React fragment `<>...</>` with `AdminPageHeader` first, then the content `div`
 - Action buttons (e.g. "+ Novo jogo", "Adicionar jogador") go in the content area below the header, not in the header itself
 - For pages whose title is dynamic (game date, player name), format and pass the value as the `title` prop from the page component
+
+**List item cards** (player rows, game rows, any repeated item in a list):
+- `className="rounded-lg shadow-md bg-gray-50 px-3 py-2"`
+- No border — shadow replaces the visual separation
+- List wrapper: `className="space-y-2"` for consistent gap between cards
 
 **Forms:**
 - No Card wrapper — loose form with `className="space-y-4"`
@@ -190,6 +196,18 @@ Group phase matches auto-generated after draw (round-robin via `buildGroupMatchO
 
 ---
 
+## Attendance Chart
+
+Rendered on `/dashboard` when the team has at least one finished game. Implemented as a pure Server Component (`src/components/dashboard/attendance-chart.tsx`) using inline SVG — no external chart library.
+
+Data fetched in `dashboard/page.tsx`:
+1. Last 8 `finished` games for the team, ordered chronologically (oldest → left)
+2. `game_confirmations` with `status IN ('confirmed', 'waitlist')` for those game IDs — counted per `game_id` in JS
+
+A dashed average line is drawn across the displayed window. The chart block is omitted entirely if no finished games exist.
+
+---
+
 ## Attendance Calculation
 
 `attendanceRate` = confirmations with status `confirmed` or `waitlist` in finished games ÷ finished games that occurred **after** the player's `created_at`. Applied in `listPlayers()` and rankings page.
@@ -207,6 +225,8 @@ STRIPE_SECRET_KEY
 STRIPE_WEBHOOK_SECRET
 STRIPE_PRICE_ID
 NEXT_PUBLIC_APP_URL
+RESEND_API_KEY
+SUPPORT_EMAIL
 ```
 
 ---

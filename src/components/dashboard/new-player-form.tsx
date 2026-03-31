@@ -94,7 +94,7 @@ export function NewPlayerForm() {
       </div>
 
       <div className="space-y-1">
-        <Label>Resistência — quantos jogos aguenta seguidos?</Label>
+        <Label>Quantos jogos aguenta seguidos?</Label>
         <Select onValueChange={v => setValue('stamina', v as StaminaLevel)}>
           <SelectTrigger>
             <SelectValue placeholder="Selecione" />

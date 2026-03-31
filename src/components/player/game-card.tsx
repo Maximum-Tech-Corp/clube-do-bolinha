@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ConfirmPresenceDialog } from './confirm-presence-dialog';
 import { cancelPresence } from '@/actions/player';
@@ -78,124 +77,132 @@ export function GameCard({
 
   return (
     <>
-      <Card className={isCancelled ? 'opacity-60' : ''}>
-        <CardContent className="py-4 space-y-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="space-y-0.5">
-              <p className="font-semibold capitalize">{dateStr}</p>
-              <p className="text-sm text-muted-foreground">{timeStr}</p>
-              {game.location && (
-                <p className="text-sm text-muted-foreground">{game.location}</p>
-              )}
-              {game.is_tournament && !isCancelled && (
-                <p className="text-xs text-primary font-medium">
-                  Modo Campeonato
-                </p>
-              )}
-            </div>
-            <div className="shrink-0">
-              {isCancelled && (
-                <span className="text-xs font-medium text-destructive border border-destructive rounded px-2 py-0.5">
-                  Cancelado
-                </span>
-              )}
-              {isFinished && (
-                <span className="text-xs font-medium text-muted-foreground border border-border rounded px-2 py-0.5">
-                  Finalizado
-                </span>
-              )}
-              {isOpen && (
-                <span className="text-xs font-medium text-primary border border-primary/40 bg-primary/5 rounded px-2 py-0.5">
-                  Agendado
-                </span>
-              )}
-            </div>
-          </div>
-
-          {!isCancelled && !isFinished && (
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                {confirmedCount} confirmado{confirmedCount !== 1 ? 's' : ''}
+      <div
+        className={`rounded-lg shadow-md bg-gray-50 px-3 py-4 space-y-3${isCancelled ? ' opacity-60' : ''}`}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="space-y-0.5">
+            <p className="font-semibold capitalize">{dateStr}</p>
+            <p className="text-sm text-muted-foreground">{timeStr}</p>
+            {game.location && (
+              <p className="text-sm text-muted-foreground">{game.location}</p>
+            )}
+            {game.is_tournament && !isCancelled && (
+              <p className="text-xs text-primary font-medium">
+                Modo Campeonato
               </p>
-              {playerStatusLabel ? (
-                <div className="space-y-2">
-                  {playerStatus === 'waitlist' ? (
-                    <span className="inline-flex items-center text-xs font-medium text-orange-600 border border-orange-300 bg-orange-50 rounded px-2 py-0.5">
-                      Você ficou na fila de espera
-                    </span>
-                  ) : (
-                    <span className="text-sm font-medium text-primary">
-                      {playerStatusLabel}
-                    </span>
-                  )}
-                  {canCancel && (
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="w-full"
-                      disabled={cancelling}
-                      onClick={handleCancel}
-                    >
-                      {cancelling ? 'Cancelando...' : 'Não irei mais'}
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                isOpen && (
+            )}
+          </div>
+          <div className="shrink-0">
+            {isCancelled && (
+              <span className="text-xs font-medium text-destructive border border-destructive rounded px-2 py-0.5">
+                Cancelado
+              </span>
+            )}
+            {isFinished && (
+              <span className="text-xs font-medium text-muted-foreground border border-border rounded px-2 py-0.5">
+                Finalizado
+              </span>
+            )}
+            {isOpen && (
+              <span className="text-xs font-medium text-primary border border-primary/40 bg-primary/5 rounded px-2 py-0.5">
+                Agendado
+              </span>
+            )}
+          </div>
+        </div>
+
+        {!isCancelled && !isFinished && (
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              {confirmedCount} confirmado{confirmedCount !== 1 ? 's' : ''}
+            </p>
+            {playerStatusLabel ? (
+              <div className="space-y-2">
+                {playerStatus === 'waitlist' ? (
+                  <span className="inline-flex items-center text-xs font-medium text-orange-600 border border-orange-300 bg-orange-50 rounded px-2 py-0.5">
+                    Você ficou na fila de espera
+                  </span>
+                ) : (
+                  <span className="text-sm font-medium text-primary">
+                    {playerStatusLabel}
+                  </span>
+                )}
+                {canCancel && (
                   <Button
-                    size="sm"
-                    className="w-full"
-                    onClick={() => setDialogOpen(true)}
+                    variant="destructive"
+                    className="w-full py-5"
+                    disabled={cancelling}
+                    onClick={handleCancel}
                   >
-                    Confirmar presença
+                    {cancelling ? 'Cancelando...' : 'Não irei mais'}
                   </Button>
-                )
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            ) : (
+              isOpen && (
+                <Button
+                  className="w-full py-5"
+                  onClick={() => setDialogOpen(true)}
+                >
+                  Confirmar presença
+                </Button>
+              )
+            )}
+          </div>
+        )}
 
-          {isOpen && !game.draw_done && (
+        {isOpen && !game.draw_done && (
+          <Link
+            href={`/jogador/${teamCode}/lista/${game.id}`}
+            className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-2.5 hover:bg-primary/10 transition-colors"
+          >
+            Ver lista
+          </Link>
+        )}
+
+        {isOpen &&
+          game.draw_done &&
+          game.is_tournament &&
+          tournamentStarted && (
             <Link
-              href={`/jogador/${teamCode}/lista/${game.id}`}
-              className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-1.5 hover:bg-primary/10 transition-colors"
+              href={`/jogador/${teamCode}/campeonato/${game.id}`}
+              className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-2.5 hover:bg-primary/10 transition-colors"
             >
-              Ver lista
+              Acompanhar Jogos
             </Link>
           )}
 
-          {isOpen &&
-            game.draw_done &&
-            game.is_tournament &&
-            tournamentStarted && (
-              <Link
-                href={`/jogador/${teamCode}/campeonato/${game.id}`}
-                className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-1.5 hover:bg-primary/10 transition-colors"
-              >
-                Acompanhar Jogos
-              </Link>
-            )}
+        {isOpen && game.draw_done && !game.is_tournament && (
+          <Link
+            href={`/jogador/${teamCode}/acompanhar/${game.id}`}
+            className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-2.5 hover:bg-primary/10 transition-colors"
+          >
+            Ver times e gols
+          </Link>
+        )}
 
-          {isOpen &&
-            game.draw_done &&
-            (!game.is_tournament || !tournamentStarted) && (
-              <Link
-                href={`/jogador/${teamCode}/times/${game.id}`}
-                className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-1.5 hover:bg-primary/10 transition-colors"
-              >
-                Ver times sorteados
-              </Link>
-            )}
-
-          {isFinished && detailsHref && (
+        {isOpen &&
+          game.draw_done &&
+          game.is_tournament &&
+          !tournamentStarted && (
             <Link
-              href={detailsHref}
-              className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-1.5 hover:bg-primary/10 transition-colors"
+              href={`/jogador/${teamCode}/times/${game.id}`}
+              className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-2.5 hover:bg-primary/10 transition-colors"
             >
-              Ver detalhes
+              Ver times sorteados
             </Link>
           )}
-        </CardContent>
-      </Card>
+
+        {isFinished && detailsHref && (
+          <Link
+            href={detailsHref}
+            className="block w-full text-center text-sm font-medium text-primary border border-primary/40 bg-primary/5 rounded-md py-2.5 hover:bg-primary/10 transition-colors"
+          >
+            Ver detalhes
+          </Link>
+        )}
+      </div>
 
       <ConfirmPresenceDialog
         gameId={game.id}

@@ -7,6 +7,7 @@ const mockUpdateTeamSettings = vi.fn();
 const mockCreateBillingPortalSession = vi.fn();
 const mockLogout = vi.fn();
 const mockChangePassword = vi.fn();
+const mockSendSupportEmail = vi.fn();
 
 vi.mock('@/actions/team', () => ({
   updateTeamSettings: (...args: unknown[]) => mockUpdateTeamSettings(...args),
@@ -22,6 +23,81 @@ vi.mock('@/actions/auth', () => ({
   logout: (...args: unknown[]) => mockLogout(...args),
   changePassword: (...args: unknown[]) => mockChangePassword(...args),
 }));
+
+vi.mock('@/actions/support', () => ({
+  sendSupportEmail: (...args: unknown[]) => mockSendSupportEmail(...args),
+}));
+
+// Mock Select (base-ui)
+vi.mock('@/components/ui/select', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const React = require('react');
+  return {
+    Select: ({
+      children,
+      value,
+      onValueChange,
+    }: {
+      children: unknown;
+      value: string;
+      onValueChange?: (val: string) => void;
+    }) =>
+      React.createElement(
+        'div',
+        { 'data-testid': 'select-root', 'data-value': value },
+        children,
+        onValueChange
+          ? React.createElement('button', {
+              'data-testid': 'select-change-bug',
+              onClick: () => onValueChange('bug'),
+            })
+          : null,
+        onValueChange
+          ? React.createElement('button', {
+              'data-testid': 'select-change-suggestion',
+              onClick: () => onValueChange('suggestion'),
+            })
+          : null,
+        onValueChange
+          ? React.createElement('button', {
+              'data-testid': 'select-change-complaint',
+              onClick: () => onValueChange('complaint'),
+            })
+          : null,
+        onValueChange
+          ? React.createElement('button', {
+              'data-testid': 'select-change-help',
+              onClick: () => onValueChange('help'),
+            })
+          : null,
+      ),
+    SelectTrigger: ({ children }: { children: unknown }) =>
+      React.createElement('div', { 'data-testid': 'select-trigger' }, children),
+    SelectValue: () => React.createElement('span', null),
+    SelectContent: ({ children }: { children: unknown }) =>
+      React.createElement('div', { 'data-testid': 'select-content' }, children),
+    SelectItem: ({ children, value }: { children: unknown; value: string }) =>
+      React.createElement(
+        'div',
+        { 'data-testid': `select-item-${value}` },
+        children,
+      ),
+  };
+});
+
+// Mock Textarea
+vi.mock('@/components/ui/textarea', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const React = require('react');
+  const TextareaForwardRef = React.forwardRef(
+    (
+      props: React.ComponentProps<'textarea'>,
+      ref: React.Ref<HTMLTextAreaElement>,
+    ) => React.createElement('textarea', { ...props, ref }),
+  );
+  TextareaForwardRef.displayName = 'Textarea';
+  return { Textarea: TextareaForwardRef };
+});
 
 // Mock Radix Dialog
 vi.mock('@/components/ui/dialog', () => {
@@ -79,6 +155,7 @@ describe('DashboardMenu', () => {
     mockCreateBillingPortalSession.mockResolvedValue(undefined);
     mockLogout.mockResolvedValue(undefined);
     mockChangePassword.mockResolvedValue({ success: true });
+    mockSendSupportEmail.mockResolvedValue({ success: true });
   });
 
   describe('menu button', () => {
@@ -451,6 +528,160 @@ describe('DashboardMenu', () => {
 
       const link = screen.getByRole('link', { name: /defina co-admin/i });
       expect(link.getAttribute('href')).toBe('/dashboard/co-admin');
+    });
+  });
+
+  describe('suporte', () => {
+    async function openSupport(user: ReturnType<typeof userEvent.setup>) {
+      await user.click(screen.getByRole('button', { name: 'Menu' }));
+      await user.click(screen.getByRole('button', { name: /suporte/i }));
+    }
+
+    it('shows Suporte button in menu', async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await user.click(screen.getByRole('button', { name: 'Menu' }));
+
+      expect(
+        screen.getByRole('button', { name: /suporte/i }),
+      ).toBeInTheDocument();
+    });
+
+    it('opens support dialog when Suporte is clicked', async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await openSupport(user);
+
+      expect(screen.getByLabelText('Mensagem')).toBeInTheDocument();
+      expect(screen.getByTestId('select-root')).toBeInTheDocument();
+    });
+
+    it('closes menu when Suporte is clicked', async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await openSupport(user);
+
+      expect(screen.queryByText('Compartilhar')).not.toBeInTheDocument();
+    });
+
+    it('calls sendSupportEmail with correct data on submit', async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await openSupport(user);
+
+      await user.type(
+        screen.getByLabelText('Mensagem'),
+        'O app travou ao confirmar',
+      );
+      await user.click(screen.getByRole('button', { name: 'Enviar' }));
+
+      await waitFor(() => {
+        expect(mockSendSupportEmail).toHaveBeenCalledWith({
+          type: 'bug',
+          message: 'O app travou ao confirmar',
+        });
+      });
+    });
+
+    it('calls sendSupportEmail with suggestion type when changed', async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await openSupport(user);
+
+      await user.click(screen.getByTestId('select-change-suggestion'));
+      await user.type(screen.getByLabelText('Mensagem'), 'Adicionar ranking');
+      await user.click(screen.getByRole('button', { name: 'Enviar' }));
+
+      await waitFor(() => {
+        expect(mockSendSupportEmail).toHaveBeenCalledWith({
+          type: 'suggestion',
+          message: 'Adicionar ranking',
+        });
+      });
+    });
+
+    it("shows 'Enviando...' during submission", async () => {
+      mockSendSupportEmail.mockImplementation(
+        () =>
+          new Promise(resolve =>
+            setTimeout(() => resolve({ success: true }), 200),
+          ),
+      );
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await openSupport(user);
+      await user.type(screen.getByLabelText('Mensagem'), 'Teste de loading');
+      await user.click(screen.getByRole('button', { name: 'Enviar' }));
+
+      expect(
+        screen.getByRole('button', { name: 'Enviando...' }),
+      ).toBeDisabled();
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole('button', { name: 'Enviado!' }),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("shows 'Enviado!' on success", async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await openSupport(user);
+      await user.type(screen.getByLabelText('Mensagem'), 'Tudo ok');
+      await user.click(screen.getByRole('button', { name: 'Enviar' }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole('button', { name: 'Enviado!' }),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('shows error when sendSupportEmail fails', async () => {
+      mockSendSupportEmail.mockResolvedValueOnce({
+        error: 'Não foi possível enviar. Tente novamente.',
+      });
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await openSupport(user);
+      await user.type(screen.getByLabelText('Mensagem'), 'Mensagem de erro');
+      await user.click(screen.getByRole('button', { name: 'Enviar' }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('Não foi possível enviar. Tente novamente.'),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('resets fields when dialog is closed', async () => {
+      const user = userEvent.setup();
+      render(<DashboardMenu {...DEFAULT_PROPS} />);
+
+      await openSupport(user);
+      await user.type(screen.getByLabelText('Mensagem'), 'Conteúdo digitado');
+
+      const closeButtons = screen.getAllByTestId('dialog-close');
+      await user.click(closeButtons[closeButtons.length - 1]);
+
+      await waitFor(() => {
+        expect(screen.queryByLabelText('Mensagem')).not.toBeInTheDocument();
+      });
+
+      await openSupport(user);
+
+      expect(
+        (screen.getByLabelText('Mensagem') as HTMLTextAreaElement).value,
+      ).toBe('');
     });
   });
 

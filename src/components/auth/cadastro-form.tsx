@@ -10,6 +10,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+function formatPhone(digits: string): string {
+  const d = digits.slice(0, 11);
+  if (d.length <= 2) return d.length ? `(${d}` : '';
+  if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+}
+
 const schema = z
   .object({
     name: z.string().min(2, 'Informe seu nome completo'),
@@ -28,15 +35,19 @@ type FormData = z.infer<typeof schema>;
 
 export function CadastroForm() {
   const [serverError, setServerError] = useState<string | null>(null);
+  const [phoneDisplay, setPhoneDisplay] = useState('');
   const router = useRouter();
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
+
+  register('phone');
 
   async function onSubmit(data: FormData) {
     setServerError(null);
@@ -88,9 +99,15 @@ export function CadastroForm() {
           <Input
             id="phone"
             type="tel"
+            inputMode="numeric"
             placeholder="(11) 99999-9999"
             className="h-auto py-2 border-gray-300"
-            {...register('phone')}
+            value={phoneDisplay}
+            onChange={e => {
+              const digits = e.target.value.replace(/\D/g, '');
+              setPhoneDisplay(formatPhone(digits));
+              setValue('phone', digits, { shouldValidate: true });
+            }}
           />
           {errors.phone && (
             <p className="text-sm text-destructive">{errors.phone.message}</p>
