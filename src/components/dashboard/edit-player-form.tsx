@@ -188,7 +188,7 @@ export function EditPlayerForm({ player }: { player: Player }) {
         <p className="text-sm text-green-600">Dados salvos com sucesso!</p>
       )}
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
+      <Button type="submit" className="w-full py-5" disabled={isSubmitting}>
         {isSubmitting ? 'Salvando...' : 'Salvar alterações'}
       </Button>
     </form>
