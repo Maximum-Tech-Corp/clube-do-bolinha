@@ -76,13 +76,7 @@ vi.mock('@/components/ui/select', () => {
     SelectValue: () => React.createElement('span', null),
     SelectContent: ({ children }: { children: unknown }) =>
       React.createElement('div', { 'data-testid': 'select-content' }, children),
-    SelectItem: ({
-      children,
-      value,
-    }: {
-      children: unknown;
-      value: string;
-    }) =>
+    SelectItem: ({ children, value }: { children: unknown; value: string }) =>
       React.createElement(
         'div',
         { 'data-testid': `select-item-${value}` },
@@ -95,14 +89,14 @@ vi.mock('@/components/ui/select', () => {
 vi.mock('@/components/ui/textarea', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require('react');
-  return {
-    Textarea: React.forwardRef(
-      (
-        props: React.ComponentProps<'textarea'>,
-        ref: React.Ref<HTMLTextAreaElement>,
-      ) => React.createElement('textarea', { ...props, ref }),
-    ),
-  };
+  const TextareaForwardRef = React.forwardRef(
+    (
+      props: React.ComponentProps<'textarea'>,
+      ref: React.Ref<HTMLTextAreaElement>,
+    ) => React.createElement('textarea', { ...props, ref }),
+  );
+  TextareaForwardRef.displayName = 'Textarea';
+  return { Textarea: TextareaForwardRef };
 });
 
 // Mock Radix Dialog
@@ -549,7 +543,9 @@ describe('DashboardMenu', () => {
 
       await user.click(screen.getByRole('button', { name: 'Menu' }));
 
-      expect(screen.getByRole('button', { name: /suporte/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /suporte/i }),
+      ).toBeInTheDocument();
     });
 
     it('opens support dialog when Suporte is clicked', async () => {
@@ -577,7 +573,10 @@ describe('DashboardMenu', () => {
 
       await openSupport(user);
 
-      await user.type(screen.getByLabelText('Mensagem'), 'O app travou ao confirmar');
+      await user.type(
+        screen.getByLabelText('Mensagem'),
+        'O app travou ao confirmar',
+      );
       await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
       await waitFor(() => {
@@ -608,7 +607,10 @@ describe('DashboardMenu', () => {
 
     it("shows 'Enviando...' during submission", async () => {
       mockSendSupportEmail.mockImplementation(
-        () => new Promise(resolve => setTimeout(() => resolve({ success: true }), 200)),
+        () =>
+          new Promise(resolve =>
+            setTimeout(() => resolve({ success: true }), 200),
+          ),
       );
       const user = userEvent.setup();
       render(<DashboardMenu {...DEFAULT_PROPS} />);
@@ -617,10 +619,14 @@ describe('DashboardMenu', () => {
       await user.type(screen.getByLabelText('Mensagem'), 'Teste de loading');
       await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
-      expect(screen.getByRole('button', { name: 'Enviando...' })).toBeDisabled();
+      expect(
+        screen.getByRole('button', { name: 'Enviando...' }),
+      ).toBeDisabled();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'Enviado!' })).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: 'Enviado!' }),
+        ).toBeInTheDocument();
       });
     });
 
@@ -633,7 +639,9 @@ describe('DashboardMenu', () => {
       await user.click(screen.getByRole('button', { name: 'Enviar' }));
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'Enviado!' })).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: 'Enviado!' }),
+        ).toBeInTheDocument();
       });
     });
 
@@ -671,7 +679,9 @@ describe('DashboardMenu', () => {
 
       await openSupport(user);
 
-      expect((screen.getByLabelText('Mensagem') as HTMLTextAreaElement).value).toBe('');
+      expect(
+        (screen.getByLabelText('Mensagem') as HTMLTextAreaElement).value,
+      ).toBe('');
     });
   });
 

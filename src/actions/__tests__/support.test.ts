@@ -25,13 +25,19 @@ describe('sendSupportEmail', () => {
       error: null,
     });
     mockSupabaseFrom.mockReturnValue(
-      createQueryMock({ data: { name: 'João', phone: '11999999999' }, error: null }),
+      createQueryMock({
+        data: { name: 'João', phone: '11999999999' },
+        error: null,
+      }),
     );
     mockResendSend.mockResolvedValue({ data: {}, error: null });
   });
 
   it('returns { success: true } when email is sent', async () => {
-    const result = await sendSupportEmail({ type: 'bug', message: 'App travou' });
+    const result = await sendSupportEmail({
+      type: 'bug',
+      message: 'App travou',
+    });
     expect(result).toEqual({ success: true });
   });
 
@@ -41,25 +47,38 @@ describe('sendSupportEmail', () => {
       error: null,
     });
 
-    const result = await sendSupportEmail({ type: 'bug', message: 'Algo errado' });
+    const result = await sendSupportEmail({
+      type: 'bug',
+      message: 'Algo errado',
+    });
 
     expect(result).toEqual({ error: 'Sessão inválida.' });
     expect(mockResendSend).not.toHaveBeenCalled();
   });
 
   it('returns { error } when Resend fails', async () => {
-    mockResendSend.mockResolvedValue({ data: null, error: { message: 'API error' } });
+    mockResendSend.mockResolvedValue({
+      data: null,
+      error: { message: 'API error' },
+    });
 
-    const result = await sendSupportEmail({ type: 'suggestion', message: 'Minha sugestão' });
+    const result = await sendSupportEmail({
+      type: 'suggestion',
+      message: 'Minha sugestão',
+    });
 
-    expect(result).toEqual({ error: 'Não foi possível enviar. Tente novamente.' });
+    expect(result).toEqual({
+      error: 'Não foi possível enviar. Tente novamente.',
+    });
   });
 
   it('subject contains "Bug Report" when type is bug', async () => {
     await sendSupportEmail({ type: 'bug', message: 'Erro na tela' });
 
     expect(mockResendSend).toHaveBeenCalledWith(
-      expect.objectContaining({ subject: expect.stringContaining('Bug Report') }),
+      expect.objectContaining({
+        subject: expect.stringContaining('Bug Report'),
+      }),
     );
   });
 
@@ -72,10 +91,15 @@ describe('sendSupportEmail', () => {
   });
 
   it('subject contains "Reclamação" when type is complaint', async () => {
-    await sendSupportEmail({ type: 'complaint', message: 'Insatisfeito com X' });
+    await sendSupportEmail({
+      type: 'complaint',
+      message: 'Insatisfeito com X',
+    });
 
     expect(mockResendSend).toHaveBeenCalledWith(
-      expect.objectContaining({ subject: expect.stringContaining('Reclamação') }),
+      expect.objectContaining({
+        subject: expect.stringContaining('Reclamação'),
+      }),
     );
   });
 

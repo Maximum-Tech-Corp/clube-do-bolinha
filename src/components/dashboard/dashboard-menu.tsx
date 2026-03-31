@@ -61,7 +61,9 @@ export function DashboardMenu({
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
-  const [supportType, setSupportType] = useState<'bug' | 'suggestion' | 'complaint' | 'help'>('bug');
+  const [supportType, setSupportType] = useState<
+    'bug' | 'suggestion' | 'complaint' | 'help'
+  >('bug');
   const [supportMessage, setSupportMessage] = useState('');
   const [sendingSupport, setSendingSupport] = useState(false);
   const [supportSent, setSupportSent] = useState(false);
@@ -124,7 +126,10 @@ iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de I
     if (!supportMessage.trim()) return;
     setSupportError(null);
     setSendingSupport(true);
-    const result = await sendSupportEmail({ type: supportType, message: supportMessage });
+    const result = await sendSupportEmail({
+      type: supportType,
+      message: supportMessage,
+    });
     setSendingSupport(false);
     if ('error' in result) {
       setSupportError(result.error);
@@ -360,15 +365,23 @@ iPhone: abra no Safari, toque em Compartilhar e selecione "Adicionar a Tela de I
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <p className="text-sm text-muted-foreground">
-              Use este canal para reportar problemas, deixar sugestões ou tirar dúvidas. Responderemos pelo seu e-mail de cadastro.
+              Use este canal para reportar problemas, deixar sugestões ou tirar
+              dúvidas. Responderemos pelo seu e-mail de cadastro.
             </p>
             <div className="space-y-2">
               <Label htmlFor="support-type">Tipo</Label>
               <Select
                 value={supportType}
-                onValueChange={val => setSupportType(val as 'bug' | 'suggestion' | 'complaint' | 'help')}
+                onValueChange={val =>
+                  setSupportType(
+                    val as 'bug' | 'suggestion' | 'complaint' | 'help',
+                  )
+                }
               >
-                <SelectTrigger id="support-type" className="w-full h-auto! py-2 border-gray-300">
+                <SelectTrigger
+                  id="support-type"
+                  className="w-full h-auto! py-2 border-gray-300"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
